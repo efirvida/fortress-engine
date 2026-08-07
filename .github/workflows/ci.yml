@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests + coverage gate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests with branch coverage
+        run: |
+          pytest \
+            --cov=src/fortress_engine \
+            --cov-branch \
+            --cov-report=term-missing \
+            --cov-report=json \
+            -q
+
+      - name: Enforce coverage hard gate (> 99% statements AND branches)
+        run: python scripts/check_coverage_gate.py
+
+      - name: Fail if gate script missing
+        if: failure()
+        run: echo "Coverage gate failed — fix tests before merging."
