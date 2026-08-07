@@ -227,7 +227,7 @@ El motor carga los datos del mundo escaneando directorios de archivos YAML. El p
    - Sin referencias colgantes (toda entidad referenciada en cliques, predicados y operadores existe)
    - Sin prioridades duplicadas para el mismo par (verbo, objetivo) — si dos Hiper-Aristas comparten verbo, objetivo y prioridad, el motor emite una advertencia
    - Todas las banderas referenciadas en predicados `flag`/`flag_not` están declaradas en `world.yaml` o en algún episodio
-   - Todas las habitaciones referenciadas como `start_room` existen en los datos de rooms
+   - Todas las habitaciones referenciadas como `start_anchor` existen en los datos de rooms
    - Validación de carry_over: los ítems y banderas referenciados existen en el episodio origen
 7. Construye la estructura de grafo en memoria
 
@@ -242,7 +242,7 @@ episodes:
   - id: "ep-1"
     name: "La Fortaleza — Parte I"
     requires: []
-    start_room: room-01
+    start_anchor: room-01
     goal:
       conditions:
         - type: entity_not_in_room
@@ -255,7 +255,7 @@ episodes:
   - id: "ep-2"
     name: "La Fortaleza — Parte II"
     requires: [ep-1]
-    start_room: room-01
+    start_anchor: room-01
     goal:
       conditions:
         - type: entity_in_room
@@ -271,7 +271,7 @@ episodes:
 - `id`: identificador único del episodio
 - `name`: nombre descriptivo
 - `requires: []`: lista de episodios que deben completarse antes. `[]` = independiente (puede iniciarse directamente). `[ep-1]` = secuencial.
-- `start_room`: habitación donde aparece el jugador al iniciar el episodio
+- `start_anchor`: habitación donde aparece el jugador al iniciar el episodio
 - `goal`: condiciones de victoria evaluadas por el motor al final de cada turno
 - `carry_over`: qué se transfiere al próximo episodio
 
@@ -284,7 +284,7 @@ episodes:
 2. El motor emite los eventos de victoria (texto de cierre, eventos del mundo)
 3. Si existe un próximo episodio (definido por `requires` o secuencia), el motor aplica `carry_over`: transfiere inventario y banderas según lo especificado
 4. Descarga el grafo del episodio actual y carga el grafo del próximo episodio desde `episodes/<id>.yaml` y sus directorios asociados
-5. Ejecuta TELEPORT del jugador a `start_room` del nuevo episodio
+5. Ejecuta TELEPORT del jugador a `start_anchor` del nuevo episodio
 6. Emite evento de inicio de episodio (texto de introducción, descripción de la habitación inicial)
 
 Si no hay próximo episodio, el motor emite el evento de victoria final del mundo.
@@ -406,12 +406,12 @@ Output: texto para el jugador (string)
 - Sin generación — el texto es exactamente el definido por el diseñador del mundo
 
 El narrador V1 es responsable de TODO el texto que ve el jugador:
-- **Descripciones de habitaciones**: después de cada TELEPORT del protagonista, el motor notifica al narrador con `room_entered`, y el narrador emite la descripción de la habitación desde el componente `description` de la entidad room.
+- **Descripciones de habitaciones**: después de cada TELEPORT del protagonista, el motor notifica al narrador con `entity_entered`, y el narrador emite la descripción de la habitación desde el componente `description` de la entidad room.
 - **Output de acciones**: el texto del campo `output` de cada Hiper-Arista ejecutada.
 - **Mensajes del sistema**: errores del parser, mensajes de peso excedido, notificaciones de guardado.
 - **Eventos narrativos**: introducción de episodios, textos de victoria y derrota.
 
-El motor produce eventos (`room_entered`, `action_output`, `error_output`, etc.) y el narrador los convierte en texto. Ver `docs/13-event-system.md` para la taxonomía completa de eventos.
+El motor produce eventos (`entity_entered`, `action_output`, `error_output`, etc.) y el narrador los convierte en texto. Ver `docs/13-event-system.md` para la taxonomía completa de eventos.
 
 ### V2: Narrador Inmersivo (IA)
 
@@ -441,7 +441,7 @@ Fortaleza es el proof-of-concept que valida la arquitectura del motor. No es el 
 | **Objetos** | ~120 (~70 Parte I + ~53 Parte II) | Nodos Micro con componentes |
 | **NPCs** | ~50 (14 Trolls + 8 Guards Parte I, 18 Trolls + 5 Guards + 1 TDaugther Parte II) | Nodos Micro con componente `brain` |
 | **Puzles** | 93 (43 Parte I + 50 Parte II) | Hiper-Aristas con Cliques de Participación |
-| **Acertijos** | 7 (4 Parte I + 3 Parte II) | Aristas RiddleLink con predicado `answer` |
+| **Acertijos** | 7 (4 Parte I + 3 Parte II) | Aristas RiddleLink con `question` + `requires_text` |
 | **Verbos del parser** | 37 | Vocabulario del parser clásico V1 |
 | **Sustantivos** | ~180 | Nombres de entidades en el grafo |
 | **Texto en español** | ~22,000 palabras | Componentes `description` en entidades |
@@ -452,12 +452,14 @@ Cada tipo de conexión del original se modela como una arista del Grafo Macro co
 
 | Tipo Original | Modelo en el Grafo | Predicados |
 |---------------|-------------------|------------|
-| **Linking** | Arista Macro con predicado `password` | `{ password: "..." }` — si `null`, siempre abierta |
-| **OpenLink** | Arista Macro sin condiciones | `{ open: true }` |
-| **DangerLink** | Arista Macro con predicado `requires_item` | `{ requires_item: "Talismán de aire" }` — sin él, FLAG `player_dead` |
-| **DangerLink2** | Arista Macro con predicado `forbids_item` | `{ forbids_item: "Anillo de oro" }` — si se lleva, FLAG `player_dead` |
-| **RiddleLink** | Arista Macro con predicado `answer` | `{ answer: "treinta y nueve", question: "¿Cuántos peldaños tiene la escalera?" }` |
+| **Linking** | Arista Macro con predicado `requires_text` | `{ requires_text: "...", open: false }` — si no, siempre abierta |
+| **OpenLink** | Arista Macro sin condiciones | *(sin predicados)* |
+| **DangerLink** | Arista Macro con predicado `requires_item` | `{ requires_item: "Talismán de aire", death_message: "..." }` — sin él, muerte |
+| **DangerLink2** | Arista Macro con predicado `forbids_item` | `{ forbids_item: "Anillo de oro", death_message: "..." }` — si se lleva, muerte |
+| **RiddleLink** | Arista Macro con `question` + `requires_text` | `{ question: "...", requires_text: "treinta y nueve", open: false }` |
 | **Hidden** | Arista Micro con operador COMBINE | `{ breaker: "Maza", reveals: "Trebol" }` — COMBINE(Maza, Monolito) → Trebol |
+
+Los predicados de arista son **genéricos** — no existe `connection_type`. El motor evalúa los predicados de forma uniforme y `death_message` distingue cruce fatal de cruce bloqueado.
 
 ### 7.3 Puzles como Hiper-Aristas
 

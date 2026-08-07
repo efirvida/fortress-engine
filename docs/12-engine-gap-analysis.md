@@ -433,7 +433,7 @@ worlds/fortaleza/
 id: "episode-01"
 name: "La Fortaleza"
 order: 1
-start_room: "room-01"
+start_anchor: "room-01"
 description: "Primera parte: derrota a la Bestia"
 
 victory:
@@ -482,7 +482,7 @@ while not world.game_over:
             #   2. Vaciar grafo de habitaciones
             #   3. Cargar grafo del próximo episodio
             #   4. Transferir carry_over (inventario, flags) del jugador
-            #   5. TELEPORT(jugador, start_room del nuevo episodio)
+            #   5. TELEPORT(jugador, start_anchor del nuevo episodio)
             #   6. Mostrar introducción del nuevo episodio
         else:
             world.win_game()

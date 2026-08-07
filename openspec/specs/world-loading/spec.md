@@ -34,4 +34,4 @@ The loader SHALL expose the exact methods `load_world_config() -> dict[str, Any]
 
 ## Contract notes
 
-`EntityYAML`, `CliqueYAML`, and `HyperEdgeYAML` are Pydantic load schemas. Pydantic models MUST NOT enter runtime state, operator results, or event payloads.
+`EntityYAML`, `CliqueYAML`, `HyperEdgeYAML`, and `MacroEdgeYAML` are Pydantic load schemas. `MacroEdgeYAML` models only generic predicate fields (`question`, `requires_text`, `requires_item`, `forbids_item`, `requires_flag`, `forbids_flag`, `death_message`) and sets `extra="forbid"`, so a world YAML that still writes a legacy connection-type/password/answer field fails loudly at load time instead of being silently dropped. Pydantic models MUST NOT enter runtime state, operator results, or event payloads.
