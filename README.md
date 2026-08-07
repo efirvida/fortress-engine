@@ -27,11 +27,12 @@ was one of the most popular games of its kind in the Spanish-speaking world:
 88 rooms, ~120 items, ~50 NPCs, 93 puzzles, and over 22,000 words of original
 Spanish prose.
 
-The original Turbo Pascal source code is preserved in
-[`docs/original-source/`](docs/original-source/) as a tribute and reference.
-Fortaleza itself is the engine's first example world — proof that a data-driven
-architecture can faithfully replicate a complex, hand-crafted interactive
-fiction work.
+The original Turbo Pascal source code lives at
+[merchise/fortaleza](https://github.com/merchise/fortaleza) on GitHub and is
+also preserved in [`docs/original-source/`](docs/original-source/) as a tribute
+and reference. Fortaleza itself is the engine's first example world — proof
+that a data-driven architecture can faithfully replicate a complex, hand-crafted
+interactive fiction work.
 
 ## Why a graph engine?
 
