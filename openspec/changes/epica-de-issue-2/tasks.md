@@ -32,11 +32,11 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: P2 — SQLite Repository (TDD §4.10, specs/persistence-sqlite)
 
-- [ ] P2.1 RED `test_persistence/test_sqlite_repository.py`: file round-trip (two SQLiteWorldStateRepository(:memory:)), missing snapshot → None, corrupted snapshot JSON → CorruptSnapshotError, independent slots no cross-talk
-- [ ] P2.2 RED (continued): reject action_output/entity_entered/error_output → NonPersistableEventError, unknown event type reject, get_event_log(since_turn) ordered by turn+id, get_latest_turn → 0 for empty log
-- [ ] P2.3 GREEN `persistence/sqlite_repository.py`: SQLiteWorldStateRepository(db_path), create_engine, Base.metadata.create_all bootstrap, append_event with persistable filter (action_resolved has_effects=true + 5 state-change types), NonPersistableEventError on reject
-- [ ] P2.4 GREEN (continued): get_event_log WHERE turn>since_turn ORDER BY turn, id; get_latest_turn MAX→0; save_snapshot upsert via merge on (save_slot, turn_number); load_latest_snapshot ORDER BY turn DESC LIMIT 1 → (state,turn) or None; CorruptSnapshotError on bad JSON
-- [ ] P2.5 GATE: `pytest tests/test_persistence/ --cov=src/fortress_engine/persistence --cov-branch --cov-report=term-missing -q` >99%; commit P2
+- [x] P2.1 RED `test_persistence/test_sqlite_repository.py`: file round-trip (two SQLiteWorldStateRepository(:memory:)), missing snapshot → None, corrupted snapshot JSON → CorruptSnapshotError, independent slots no cross-talk
+- [x] P2.2 RED (continued): reject action_output/entity_entered/error_output → NonPersistableEventError, unknown event type reject, get_event_log(since_turn) ordered by turn+id, get_latest_turn → 0 for empty log
+- [x] P2.3 GREEN `persistence/sqlite_repository.py`: SQLiteWorldStateRepository(db_path), create_engine, Base.metadata.create_all bootstrap, append_event with persistable filter (action_resolved has_effects=true + 5 state-change types), NonPersistableEventError on reject
+- [x] P2.4 GREEN (continued): get_event_log WHERE turn>since_turn ORDER BY turn, id; get_latest_turn MAX→0; save_snapshot upsert via query-then-update-or-insert on (save_slot, turn_number); load_latest_snapshot ORDER BY turn DESC LIMIT 1 → (state,turn) or None; CorruptSnapshotError on bad JSON
+- [x] P2.5 GATE: `pytest tests/test_persistence/ --cov=src/fortress_engine/persistence --cov-branch --cov-report=term-missing -q` >99%; commit P2
 
 ## Phase 3: P3 — Save System + Orchestrator (TDD §4.11, specs/event-sourcing-save-system + turn-orchestrator)
 
