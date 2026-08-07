@@ -186,30 +186,34 @@ from dataclasses import dataclass
 
 @dataclass
 class MacroEdge:
-    """Arista del Grafo Macro: conexión entre rooms (PRD 4.2, GDD 2.2)."""
+    """Arista del Grafo Macro: conexión entre anchors (PRD 4.2, GDD 2.2).
+
+    Los predicados son GENÉRICOS y se evalúan de forma uniforme; NO existe
+    connection_type. El creador del mundo decide la semántica según qué
+    predicados defina. Una arista sin predicados siempre es transitable.
+    """
     macro_edge_id: str
-    connection_type: str           # "open" | "password" | "riddle" | "danger" | "danger_inverse" | "conditional"
-    from_room: str                 # entity_id de la room origen
-    to_room: str                   # entity_id de la room destino
-    direction: str                 # "bidirectional" | "unidirectional"
-    door_name: str                 # nombre que el parser usa para matchear comandos de movimiento
-    door_description: str | None   # texto mostrado al examinar la puerta
-    # Predicates — dependen del connection_type (GDD 2.2)
-    password: str | None = None          # para connection_type="password"
-    question: str | None = None          # para connection_type="riddle"
-    answer: str | None = None            # para connection_type="riddle"
-    requires_item: str | None = None     # para connection_type="danger"
-    forbids_item: str | None = None      # para connection_type="danger_inverse"
-    requires_flag: str | None = None     # para connection_type="conditional"
-    forbids_flag: str | None = None      # para connection_type="conditional"
-    death_message: str | None = None     # texto mostrado al morir cruzando danger/danger_inverse
-    open: bool = True                    # estado actual de la puerta; False = cerrada (password/riddle no resuelta)
+    from_anchor: str                 # entity_id del anchor origen
+    to_anchor: str                   # entity_id del anchor destino
+    direction: str                   # "bidirectional" | "unidirectional"
+    passage_name: str                # nombre que el parser usa para matchear comandos de movimiento
+    passage_description: str = ""    # texto mostrado al examinar el pasaje
+    # Predicados genéricos — semántica decidida por el creador del mundo
+    question: str | None = None      # texto de acertijo (narración, no se evalúa)
+    requires_text: str | None = None # texto que el jugador debe decir para desbloquear (password/riddle)
+    requires_item: str | None = None # ítem que debe estar en el inventario (danger)
+    forbids_item: str | None = None  # ítem que NO debe estar en el inventario (danger_inverse)
+    requires_flag: str | None = None # bandera que debe estar activa (conditional)
+    forbids_flag: str | None = None  # bandera que debe estar inactiva/ausente (conditional)
+    death_message: str | None = None # fatal si un predicado falla; si no → bloqueado
+    open: bool = True                # estado actual del pasaje; False = cerrado (texto no resuelto)
 ```
 
 **Notas de implementación**:
-- Las aristas `password` arrancan con `open: False`. Se abren cuando el jugador dice la contraseña correcta.
-- Las aristas `open` tienen `open: True` siempre.
+- Las aristas con `requires_text` arrancan con `open: False`. Se abren cuando el jugador dice el texto correcto (coincidencia insensible a mayúsculas y tildes).
+- Una arista sin predicados tiene `open: True` siempre.
 - El campo `open` es mutable — se modifica durante el juego (a diferencia del resto de campos que son inmutables después de la carga).
+- `death_message` es el único discriminador entre fatal y bloqueado; el motor nunca interpreta nombres de tipos de conexión.
 
 ### 3.4 Operators
 
@@ -257,8 +261,8 @@ class TeleportOp:
     """TELEPORT: Cambia el anclaje espacial de una entidad (PRD 4.4, GDD 2.4)."""
     type: str = "TELEPORT"
     entity: str                              # entity_id a teletransportar
-    from_room: str | None = None             # room actual (para logging/validación; None si es desde limbo)
-    to_room: str                             # room destino
+    from_anchor: str | None = None           # anchor de origen (para logging/validación; None si es desde limbo)
+    to_anchor: str                           # anchor de destino
 
 
 Operator = Union[TransferOp, TransformOp, CombineOp, FlagOp, TeleportOp]
@@ -388,7 +392,7 @@ class Episode:
     order: int                       # orden secuencial
     description: str | None          # texto de introducción
     requires: list[str]              # IDs de episodios que deben completarse antes. [] = independiente.
-    start_room: str                  # entity_id de la room inicial
+    start_anchor: str                # entity_id de la anchor inicial
     goal: GoalConditions             # condiciones de victoria
     carry_over: CarryOver            # reglas de continuidad
 ```
@@ -503,43 +507,43 @@ El orquestador intercepta los siguientes comandos antes del parseo normal:
 ```python
 class DualGraphEngine:
     def __init__(self) -> None:
-        self._rooms: dict[str, Entity] = {}                    # room_id → Entity
-        self._macro_edges: dict[str, list[MacroEdge]] = {}     # from_room_id → [MacroEdge]
-        self._hyper_edges: dict[str, dict[str, list[HyperEdge]]] = {}  # room_id → { verb: [HyperEdge] }
+        self._anchors: dict[str, Entity] = {}                  # anchor_id → Entity
+        self._macro_edges: dict[str, list[MacroEdge]] = {}     # from_anchor_id → [MacroEdge]
+        self._hyper_edges: dict[str, dict[str, list[HyperEdge]]] = {}  # anchor_id → { verb: [HyperEdge] }
 
-    def add_room(self, room: Entity) -> None:
-        """Registra una room como Nodo del Grafo Macro."""
+    def add_anchor(self, anchor: Entity) -> None:
+        """Registra una anchor como Nodo del Grafo Macro."""
         ...
 
     def add_macro_edge(self, edge: MacroEdge) -> None:
         """Registra una arista del Grafo Macro."""
         ...
 
-    def add_hyper_edge(self, room_id: str, hyper_edge: HyperEdge) -> None:
-        """Registra una Hiper-Arista en el Grafo Micro de una room."""
+    def add_hyper_edge(self, anchor_id: str, hyper_edge: HyperEdge) -> None:
+        """Registra una Hiper-Arista en el Grafo Micro de una anchor."""
         ...
 
     def build_macro_graph(
-        self, rooms: list[Entity], macro_edges: list[MacroEdge]
+        self, anchors: list[Entity], macro_edges: list[MacroEdge]
     ) -> None:
-        """Construye el grafo completo desde listas de rooms y aristas macro."""
+        """Construye el grafo completo desde listas de anchors y aristas macro."""
         ...
 
-    def get_edges_from_room(self, room_id: str) -> list[MacroEdge]:
-        """Retorna las aristas Macro que salen de una room."""
-        return self._macro_edges.get(room_id, [])
+    def get_edges_from_anchor(self, anchor_id: str) -> list[MacroEdge]:
+        """Retorna las aristas Macro que salen de una anchor."""
+        return self._macro_edges.get(anchor_id, [])
 
-    def get_macro_edge_by_door_name(
-        self, room_id: str, door_name: str
+    def get_macro_edge_by_passage_name(
+        self, anchor_id: str, passage_name: str
     ) -> MacroEdge | None:
-        """Busca una arista Macro por nombre de puerta en una room."""
+        """Busca una arista Macro por nombre de pasaje en una anchor."""
         ...
 
     def get_hyper_edges_for_verb(
-        self, room_id: str, verb: str
+        self, anchor_id: str, verb: str
     ) -> list[HyperEdge]:
         """
-        Retorna Hiper-Aristas del Grafo Micro de la room que matchean el verbo,
+        Retorna Hiper-Aristas del Grafo Micro de la anchor que matchean el verbo,
         ordenadas por prioridad descendente.
         """
         ...
@@ -552,11 +556,11 @@ class DualGraphEngine:
         con el estado actual del mundo (PRD 4.3, GDD 2.3).
 
         Reglas de validación (GDD 2.3):
-        - subject: debe ser el protagonista activo o estar en la misma room que target.
+        - subject: debe ser el protagonista activo o estar en la misma anchor que target.
         - verb: debe coincidir exactamente.
-        - target: debe estar en la misma room que subject, o en el inventario de subject.
-          "*" = any entity in room or inventory.
-        - instrument: si se especifica, debe estar en inventario de subject o en la room.
+        - target: debe estar en la misma anchor que subject, o en el inventario de subject.
+          "*" = any entity in anchor or inventory.
+        - instrument: si se especifica, debe estar en inventario de subject o en la anchor.
           "*" = cualquier ítem portable.
         - context: misma regla que target.
         - instrument_not: el instrumento NO debe ser este. Si lo es, clique no se forma.
@@ -589,9 +593,9 @@ class DualGraphEngine:
 ```
 
 **Notas de implementación**:
-- Las Hiper-Aristas se indexan por `(room_id, verb)` para búsqueda O(1).
+- Las Hiper-Aristas se indexan por `(anchor_id, verb)` para búsqueda O(1).
 - El ordenamiento por prioridad descendente ocurre al insertar o al consultar. Si se hace al insertar, se usa `bisect` para mantener la lista ordenada.
-- El motor valida que no existan dos Hiper-Aristas con el mismo `(verb, target, priority)` en la misma room. Si las hay, emite una advertencia (PRD 4.8).
+- El motor valida que no existan dos Hiper-Aristas con el mismo `(verb, target, priority)` en la misma anchor. Si las hay, emite una advertencia (PRD 4.8).
 
 ### 4.3 `engine/operators.py` — Operadores Atómicos
 
@@ -652,7 +656,7 @@ def execute_transform(
 
 
 def execute_combine(
-    state: WorldState, op: CombineOp, room_id: str
+    state: WorldState, op: CombineOp, anchor_id: str
 ) -> OperatorResult:
     """
     COMBINE: Destruye inputs y produce output (PRD 4.4, GDD 2.4).
@@ -663,7 +667,7 @@ def execute_combine(
 
     Postcondiciones:
     - input_entities: TRANSFER a null (destruidas).
-    - output_entity: TELEPORT desde su ubicación actual a room_id.
+    - output_entity: TELEPORT desde su ubicación actual a anchor_id.
     """
     ...
 
@@ -690,10 +694,10 @@ def execute_teleport(
 
     Validaciones:
     - entity existe.
-    - to_room existe en el grafo (las rooms del grafo se pasan como parámetro o se consultan del state).
+    - to_anchor existe en el grafo (las anchors del grafo se pasan como parámetro o se consultan del state).
 
     Postcondiciones:
-    - entity.spatial_anchor = to_room.
+    - entity.spatial_anchor = to_anchor.
     - Si la entidad es una room (no aplica para TELEPORT, pero por completitud):
       - Marca room.visited = True.
     """
@@ -864,7 +868,7 @@ class EpisodeManager:
         """
         Carga el grafo del episodio desde archivos YAML.
         - Carga rooms, items, npcs, actions, macros del directorio del episodio.
-        - TELEPORT del protagonista a start_room.
+        - TELEPORT del protagonista a start_anchor.
         - Emite episode_started.
         - Retorna el DualGraphEngine construido.
         """
@@ -976,7 +980,7 @@ class EventBus:
 ```
 
 **Suscriptores estándar** (Event System 4.2):
-- **UI Layer**: se suscribe a `room_entered`, `action_output`, `error_output`, `game_over`, `input_received`.
+- **UI Layer**: se suscribe a `entity_entered`, `action_output`, `error_output`, `game_over`, `input_received`.
 - **Save System**: se suscribe a `*` (todos los eventos → event log).
 - **Debug Console**: se suscribe a `*` (todos los eventos → pretty print, solo en modo debug).
 
@@ -1189,7 +1193,7 @@ class EventSourcingSaveSystem:
 ```
 
 **Notas de implementación**:
-- Solo se persisten eventos que modifican estado (`action_resolved` con `has_effects: true`). Eventos de narración (`action_output`, `room_entered`) no se persisten porque son derivables del estado.
+- Solo se persisten eventos que modifican estado (`action_resolved` con `has_effects: true`). Eventos de narración (`action_output`, `entity_entered`) no se persisten porque son derivables del estado.
 - El replay carga el snapshot más reciente y reproduce solo los eventos posteriores a ese snapshot. Si no hay snapshot, reproduce todo el log desde el estado inicial.
 
 ### 4.12 `entities/loader.py` — Cargador YAML de Entidades
@@ -1262,11 +1266,11 @@ class EntityLoader:
         """
         Valida la integridad del mundo:
         - Sin referencias colgantes (toda entidad referenciada existe).
-        - Sin prioridades duplicadas para (verb, target) en la misma room.
+        - Sin prioridades duplicadas para (verb, target) en la misma anchor.
         - Todas las banderas en predicados flag/flag_not declaradas.
-        - Todas las start_room existen.
+        - Todas las start_anchor existen.
         - carry_over: ítems y banderas existen en el episodio origen.
-        - Todas las rooms alcanzables desde start_room.
+        - Todas las rooms alcanzables desde start_anchor.
 
         Retorna una lista de mensajes de error. Lista vacía = mundo válido.
         """
@@ -1367,7 +1371,7 @@ class NarratorInterface(ABC):
         Retorna None si el evento no produce salida de texto.
 
         Eventos que típicamente producen texto:
-        - room_entered → descripción de la habitación
+        - entity_entered → descripción de la habitación
         - action_output → texto del campo output de la Hiper-Arista
         - error_output → mensaje de error
         - episode_completed → texto de victoria
@@ -1466,7 +1470,7 @@ class TemplateNarrator(NarratorInterface):
     Narrador V1: texto directo desde datos del mundo (PRD 6, GDD 2.5).
 
     Responsable de TODO el texto que ve el jugador:
-    - Descripciones de habitaciones (room_entered → room.components.description)
+    - Descripciones de habitaciones (entity_entered → room.components.description)
     - Output de acciones (action_output → texto del campo output de Hiper-Arista)
     - Mensajes de error (error_output → mensaje)
     - Mensajes de sistema (system_message → mensaje)
@@ -1482,13 +1486,13 @@ class TemplateNarrator(NarratorInterface):
 
     def initialize(self, event_bus: 'EventBus') -> None:
         """Se suscribe a eventos que producen texto para el jugador."""
-        event_bus.subscribe("room_entered", self._on_room_entered)
+        event_bus.subscribe("entity_entered", self._on_entity_entered)
         event_bus.subscribe("action_output", self._on_action_output)
         event_bus.subscribe("error_output", self._on_error_output)
         event_bus.subscribe("episode_completed", self._on_episode_completed)
         event_bus.subscribe("game_over", self._on_game_over)
         event_bus.subscribe("system_message", self._on_system_message)
-        event_bus.subscribe("room_described", self._on_room_described)
+        event_bus.subscribe("entity_described", self._on_entity_described)
         event_bus.subscribe("item_examined", self._on_item_examined)
         event_bus.subscribe("inventory_listed", self._on_inventory_listed)
 
@@ -1498,7 +1502,7 @@ class TemplateNarrator(NarratorInterface):
         """Despacha el evento al handler correspondiente. Retorna el texto o None."""
         ...
 
-    def _on_room_entered(self, event: 'EngineEvent') -> str | None:
+    def _on_entity_entered(self, event: 'EngineEvent') -> str | None:
         """Retorna la descripción de la room desde el payload del evento."""
         ...
 
@@ -1642,7 +1646,7 @@ Este flujo describe lo que ocurre cuando el motor carga un mundo (PRD 4.8, GDD 2
    - Si es carga desde save slot: restaurar `current_episode_id` desde snapshot.
 
 4. **Cargar datos del episodio** desde `episodes/<id>.yaml`:
-   - `goal`, `carry_over`, `start_room`.
+   - `goal`, `carry_over`, `start_anchor`.
    - Validar con Pydantic.
 
 5. **Cargar rooms** desde `episode-XX/rooms/*.yaml`:
@@ -1659,24 +1663,24 @@ Este flujo describe lo que ocurre cuando el motor carga un mundo (PRD 4.8, GDD 2
 
 8. **Cargar aristas Macro** desde `episode-XX/macros/*.yaml`:
    - Cada archivo → un `MacroEdge`.
-   - Validar `connection_type` contra la lista de tipos conocidos.
+   - Validar que no contengan campos legados (`connection_type`, `password`, `answer`): `MacroEdgeYAML` usa `extra="forbid"` y falla ruidosamente ante ellos.
 
 9. **Cargar Hiper-Aristas** desde `episode-XX/actions/*.yaml`:
    - Cada archivo → un `HyperEdge`.
    - Validar estructura de `clique` y `operators`.
 
 10. **Construir el Grafo Dual**:
-    - `DualGraphEngine.add_room()` para cada room.
+    - `DualGraphEngine.add_anchor()` para cada room.
     - `DualGraphEngine.add_macro_edge()` para cada arista Macro.
-    - `DualGraphEngine.add_hyper_edge()` para cada Hiper-Arista (indexada por room y verbo).
+    - `DualGraphEngine.add_hyper_edge()` para cada Hiper-Arista (indexada por anchor y verbo).
 
 11. **Validar integridad del grafo**:
     - Sin referencias colgantes: toda entidad referenciada en cliques, predicados y operadores existe en `entities`.
     - Sin prioridades duplicadas: si dos Hiper-Aristas en la misma room comparten `(verb, target, priority)`, emitir advertencia (no bloquear).
     - Todas las banderas en predicados `flag`/`flag_not` están declaradas en `world.yaml` o en el episodio.
-    - `start_room` existe en las rooms cargadas.
+    - `start_anchor` existe en las rooms cargadas.
     - Validación de `carry_over`: los ítems y banderas referenciados existen.
-    - (Futuro v1.1) Rooms alcanzables desde `start_room`.
+    - (Futuro v1.1) Rooms alcanzables desde `start_anchor`.
 
 12. **Inicializar WorldState**:
     - `entities`: todas las entidades cargadas.
@@ -1693,8 +1697,8 @@ Este flujo describe lo que ocurre cuando el motor carga un mundo (PRD 4.8, GDD 2
 
 14. **Emitir eventos de inicio**:
     - `turn_started({ turn_number: 1, active_protagonist_id })`.
-    - `episode_started({ episode_id, episode_name, start_room_id })`.
-    - `room_entered` con la descripción de `start_room`.
+    - `episode_started({ episode_id, episode_name, start_anchor_id })`.
+    - `entity_entered` con la descripción de `start_anchor`.
     - El narrador produce la salida inicial que el jugador ve.
 
 15. **Entrar en el bucle de turnos**:
@@ -1758,7 +1762,7 @@ def test_teleport_moves_entity():
     ...
 
 def test_teleport_fails_if_room_not_found():
-    """TELEPORT: to_room no existe → error."""
+    """TELEPORT: to_anchor no existe → error."""
     ...
 ```
 
@@ -1818,23 +1822,23 @@ def test_hyper_edges_ordered_by_priority():
     ...
 
 def test_macro_edge_open_always_valid():
-    """Arista open → siempre transitable."""
+    """Arista sin predicados → siempre transitable."""
     ...
 
-def test_macro_edge_password_requires_correct_answer():
-    """Arista password → requiere contraseña correcta."""
+def test_macro_edge_requires_text_unlocks_with_correct_text():
+    """Arista con requires_text → se abre con el texto correcto."""
     ...
 
-def test_macro_edge_danger_requires_item():
-    """Arista danger → sin ítem, player_dead."""
+def test_macro_edge_requires_item_blocks_or_kills():
+    """Arista con requires_item → sin ítem se bloquea (o muere si hay death_message)."""
     ...
 
-def test_macro_edge_danger_inverse_forbids_item():
-    """Arista danger_inverse → con ítem, player_dead."""
+def test_macro_edge_forbids_item_blocks_or_kills():
+    """Arista con forbids_item → con ítem se bloquea (o muere si hay death_message)."""
     ...
 
-def test_macro_edge_riddle_requires_correct_answer():
-    """Arista riddle → requiere respuesta correcta al acertijo."""
+def test_macro_edge_requires_flag_blocks():
+    """Arista con requires_flag → sin la bandera se bloquea."""
     ...
 ```
 
@@ -1920,7 +1924,7 @@ def test_episode_transition():
     1. Completar goal de episode-01.
     2. Verificar carry_over aplicado.
     3. Verificar que episode-02 cargó correctamente.
-    4. Verificar que el jugador está en start_room de episode-02.
+    4. Verificar que el jugador está en start_anchor de episode-02.
     """
     ...
 ```
@@ -1971,7 +1975,7 @@ episodes:
   - id: "ep-1"
     name: "Test Episode"
     requires: []
-    start_room: "test-room-01"
+    start_anchor: "test-room-01"
     goal:
       conditions:
         - type: flag_is_set
@@ -2259,8 +2263,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     graph = DualGraphEngine()
     graph.build_macro_graph(episode_data["rooms"], episode_data["macro_edges"])
     for he in episode_data["hyper_edges"]:
-        # Determinar room: buscar target/spatial_anchor
-        graph.add_hyper_edge(room_id, he)
+        # Determinar anchor: buscar target/spatial_anchor
+        graph.add_hyper_edge(anchor_id, he)
 
     # 7. Inicializar WorldState
     for entity in episode_data["rooms"] + episode_data["items"] + episode_data["npcs"]:
@@ -2271,8 +2275,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     state.active_protagonist_id = player.entity_id
     state.current_episode_id = active_episode.id
 
-    # TELEPORT a start_room
-    state.get_entity(player.entity_id).spatial_anchor = active_episode.start_room
+    # TELEPORT a start_anchor
+    state.get_entity(player.entity_id).spatial_anchor = active_episode.start_anchor
 
     # 8. Inicializar orquestador
     goal_evaluator = GoalEvaluator(active_episode.goal)
@@ -2299,7 +2303,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         payload={
             "episode_id": active_episode.id,
             "episode_name": active_episode.name,
-            "start_room_id": active_episode.start_room,
+            "start_anchor_id": active_episode.start_anchor,
         },
     ))
 

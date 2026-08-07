@@ -163,24 +163,22 @@ spatial_anchor: room_a
         "episode-01/macros/door.yaml",
         """\
 - macro_edge_id: door_north
-  connection_type: open
   from_anchor: room_a
   to_anchor: room_b
   direction: bidirectional
-  door_name: north
-  door_description: "A wooden door."
+  passage_name: north
+  passage_description: "A wooden door."
 """,
     )
     _w(
         "episode-01/macros/danger_door.yaml",
         """\
 - macro_edge_id: danger_pass
-  connection_type: danger
   from_anchor: room_b
   to_anchor: room_a
   direction: bidirectional
-  door_name: back
-  door_description: "A dangerous path."
+  passage_name: back
+  passage_description: "A dangerous path."
   requires_item: amulet
   death_message: "You died on the path."
   open: true
@@ -622,7 +620,7 @@ def test_execute_turn_movement_macro_edge(tmp_path):
     narrator = _StubNarrator()
 
     # Parse "ir north" — the orchestrator should detect this as movement
-    # and find the macro edge with door_name="north"
+    # and find the macro edge with passage_name="north"
     parser = _StubParser(
         ParsedCommand(subject="hero", verb="ir", target="north")
     )
@@ -656,17 +654,187 @@ def test_execute_turn_movement_macro_edge(tmp_path):
 
 
 # ===================================================================
+# Movement — requires_text macro edges (text gate)
+# ===================================================================
+
+
+def _add_text_door(graph, passage_name="puerta principal"):
+    """Register a closed requires_text edge from room_a in *graph*."""
+    graph.add_macro_edge(
+        MacroEdge(
+            macro_edge_id="pass_principal",
+            from_anchor="room_a",
+            to_anchor="room_b",
+            direction="bidirectional",
+            passage_name=passage_name,
+            passage_description="A locked main door.",
+            requires_text="treinta y nueve",
+            open=False,
+        )
+    )
+
+
+def test_movement_abrir_text_door_blocked(tmp_path):
+    """ABRIR on a closed requires_text door without the text → error_output."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    _add_text_door(graph)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="abrir", target="puerta principal")
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+
+    orch.execute_turn("abrir puerta principal")
+
+    error_events = [e for e in received if e.type == ERROR_OUTPUT]
+    assert len(error_events) == 1
+    assert error_events[0].payload["error_code"] == "blocked"
+    assert "cerrada" in error_events[0].payload["message"]
+
+    # No teleport — the hero stays in room_a and the door stays closed.
+    assert state.get_entity("hero").spatial_anchor == "room_a"
+    assert not any(e.type == ENTITY_TELEPORTED for e in received)
+    assert graph.get_macro_edge_by_passage_name("room_a", "puerta principal").open is False
+
+
+def test_movement_abrir_text_correct_opens_and_moves(tmp_path):
+    """ABRIR ... DICIENDO <correct text> → opens the door and teleports."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    _add_text_door(graph)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(
+        ParsedCommand(
+            subject="hero",
+            verb="abrir",
+            target="puerta principal",
+            text="treinta y nueve",
+        )
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+
+    orch.execute_turn("abrir puerta principal diciendo treinta y nueve")
+
+    # Door opened and hero moved to room_b.
+    assert graph.get_macro_edge_by_passage_name("room_a", "puerta principal").open is True
+    assert state.get_entity("hero").spatial_anchor == "room_b"
+    assert any(e.type == ENTITY_TELEPORTED for e in received)
+
+    # No error was emitted.
+    assert not any(e.type == ERROR_OUTPUT for e in received)
+
+
+def test_movement_ir_open_door_still_works(tmp_path):
+    """Regression: IR through an open edge still moves the hero."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="ir", target="north")
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+
+    orch.execute_turn("ir north")
+
+    assert state.get_entity("hero").spatial_anchor == "room_b"
+    assert any(e.type == ENTITY_TELEPORTED for e in received)
+
+
+def test_movement_ir_closed_text_door_blocked(tmp_path):
+    """IR on a closed requires_text edge without the text → error_output.
+
+    The orchestrator passes text=None for IR commands, so the door must
+    not open and the hero must not move.
+    """
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    _add_text_door(graph)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="ir", target="puerta principal")
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+
+    orch.execute_turn("ir puerta principal")
+
+    error_events = [e for e in received if e.type == ERROR_OUTPUT]
+    assert len(error_events) == 1
+    assert error_events[0].payload["error_code"] == "blocked"
+
+    assert state.get_entity("hero").spatial_anchor == "room_a"
+    assert not any(e.type == ENTITY_TELEPORTED for e in received)
+    assert graph.get_macro_edge_by_passage_name("room_a", "puerta principal").open is False
+
+
+# ===================================================================
 # Movement fails (danger without item)
 # ===================================================================
 
 
 def test_execute_turn_danger_macro_edge_fails(tmp_path):
-    """Movement through danger edge without required item emits game_over."""
+    """Movement through a requires_item gate without the item → game_over."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
 
-    # Move hero to room_b first so we can try the danger edge back
+    # Move hero to room_b first so we can try the fatal edge back
     from fortress_engine.engine.operators import execute_teleport
 
     execute_teleport(state, TeleportOp(entity="hero", to_anchor="room_b"))
@@ -691,7 +859,7 @@ def test_execute_turn_danger_macro_edge_fails(tmp_path):
 
     orch.execute_turn("ir back")
 
-    # Danger edge requires amulet, hero doesn't have it → game_over
+    # Fatal gate requires amulet, hero doesn't have it → game_over
     game_over_events = [e for e in received if e.type == GAME_OVER]
     assert len(game_over_events) == 1
     assert "You died on the path." in game_over_events[0].payload.get("reason", "")
@@ -1070,22 +1238,21 @@ def test_execute_turn_cambiar_a_invalid_name(tmp_path):
 
 
 def test_execute_turn_conditional_edge_blocked(tmp_path):
-    """Conditional macro edge that is blocked emits error_output (no death)."""
+    """requires_flag macro edge that is blocked emits error_output (no death)."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
 
-    # Add a conditional edge from room_a that requires a flag
+    # Add a flag-gate edge from room_a that requires a flag
     from fortress_engine.engine.graph import MacroEdge
 
     cond_edge = MacroEdge(
         macro_edge_id="conditional_door",
-        connection_type="conditional",
         from_anchor="room_a",
         to_anchor="room_b",
         direction="bidirectional",
-        door_name="este",
-        door_description="A locked gate.",
+        passage_name="este",
+        passage_description="A locked gate.",
         requires_flag="key_found",
     )
     graph.add_macro_edge(cond_edge)

@@ -144,13 +144,16 @@ class TurnOrchestrator:
         if anchor_id is None:  # pragma: no cover
             anchor_id = ""
 
-        # Check for movement: verb "ir" with a target that matches a door name.
+        # Check for movement: verb "ir"/"abrir" with a target that matches a
+        # passage name.
         movement_edge = self._resolve_movement(parsed, anchor_id)
         if movement_edge is not None:
             # _handle_movement already runs _post_action_checks on every
             # path (valid move, danger death, blocked door) and emits the
             # single turn_ended for this turn.
-            self._handle_movement(movement_edge, protagonist_id, anchor_id)
+            self._handle_movement(
+                movement_edge, protagonist_id, anchor_id, parsed.text
+            )
             return
 
         candidates = self._graph.get_hyper_edges_for_verb(anchor_id, parsed.verb)
@@ -383,23 +386,30 @@ class TurnOrchestrator:
         """If *parsed* is a movement command, find the matching macro edge.
 
         Movement is detected when:
-        - verb is ``"ir"``
+        - verb is ``"ir"`` or ``"abrir"`` (ABRIR ... DICIENDO/RESPONDIENDO
+          unlocks a closed edge with a ``requires_text`` gate)
         - target is not None
-        - The target matches a door_name from ``anchor_id``.
+        - The target matches a passage_name from ``anchor_id``.
         """
-        if parsed.verb != "ir" or parsed.target is None:
+        if parsed.verb not in ("ir", "abrir") or parsed.target is None:
             return None
         if anchor_id == "":  # pragma: no cover — unreachable (see above)
             return None
-        return self._graph.get_macro_edge_by_door_name(anchor_id, parsed.target)
+        return self._graph.get_macro_edge_by_passage_name(anchor_id, parsed.target)
 
     def _handle_movement(
         self,
         edge: MacroEdge,
         protagonist_id: str,
         current_anchor: str,
+        text: str | None = None,
     ) -> None:
-        """Execute a movement through a macro edge."""
+        """Execute a movement through a macro edge.
+
+        *text* carries spoken text (from ABRIR ... DICIENDO/RESPONDIENDO)
+        so closed edges with a ``requires_text`` gate can be evaluated and
+        opened.
+        """
         # Emit action_attempted.
         self._emit(
             ACTION_ATTEMPTED,
@@ -408,7 +418,7 @@ class TurnOrchestrator:
                 "clique": {
                     "subject": protagonist_id,
                     "verb": "ir",
-                    "target": edge.door_name,
+                    "target": edge.passage_name,
                 },
                 "protagonist_id": protagonist_id,
             },
@@ -416,12 +426,12 @@ class TurnOrchestrator:
 
         # Validate macro edge.
         is_valid, death_msg = self._graph.validate_macro_edge(
-            edge, self._state
+            edge, self._state, text
         )
 
         if not is_valid:
             if edge.death_message is not None and death_msg == edge.death_message:
-                # Danger edge (has explicit death_message) → game_over.
+                # Fatal gate (edge with death_message) → game_over.
                 self._emit(
                     GAME_OVER,
                     {"reason": death_msg, "turn_number": self._state.turn_number},
@@ -434,7 +444,7 @@ class TurnOrchestrator:
                     },
                 )
             else:
-                # Non-fatal block (conditional, etc.) → error_output.
+                # Non-fatal block (edge without death_message) → error_output.
                 self._emit(
                     ERROR_OUTPUT,
                     {

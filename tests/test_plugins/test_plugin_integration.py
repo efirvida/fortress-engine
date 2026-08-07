@@ -108,12 +108,11 @@ spatial_anchor: room_a
         "episode-01/macros/door.yaml",
         """\
 - macro_edge_id: door_north
-  connection_type: open
   from_anchor: room_a
   to_anchor: room_b
   direction: bidirectional
-  door_name: norte
-  door_description: "A wooden door."
+  passage_name: norte
+  passage_description: "A wooden door."
 """,
     )
     _w(

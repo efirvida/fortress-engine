@@ -227,7 +227,10 @@ spatial_anchor: "mundo-ejemplo-room-02"
 
 ##### Door
 
-Una puerta o pasaje que conecta dos rooms. Puede tener predicados de acceso.
+Una puerta es una **entidad del mundo** como cualquier otra: el motor no conoce el tipo
+`door`. Los datos de la conexión (qué anchors conecta y bajo qué predicados) viven en el
+**MacroEdge** (ver 2.2), no en los componentes de la entidad. La entidad door es opcional
+y se usa para examinar la puerta, describirla, etc.
 
 ```yaml
 entity_id: "fortaleza-1-door-puerta-principal"
@@ -235,14 +238,23 @@ type: "door"
 name: "Puerta principal"
 components:
   description: "Una pesada puerta de roble con refuerzos de hierro."
-  from_room: "fortaleza-1-room-01"
-  to_room: "fortaleza-1-room-02"
-  connection_type: "password"
-  password: "ábrete sésamo"
-  open: false
-  bidirectional: true
-spatial_anchor: null
+spatial_anchor: "fortaleza-1-room-01"
 ```
+
+La conexión correspondiente se define como MacroEdge con sus predicados:
+
+```yaml
+macro_edge_id: "fortaleza-1-edge-puerta-principal"
+from_anchor: "fortaleza-1-room-01"
+to_anchor: "fortaleza-1-room-02"
+direction: "bidirectional"
+passage_name: "Puerta principal"
+passage_description: "Una pesada puerta de roble con refuerzos de hierro."
+requires_text: "ábrete sésamo"   # predicado genérico: se abre diciendo el texto
+open: false
+```
+
+Los predicados de acceso son **genéricos** (ver 2.2): `requires_text`, `requires_item`, `forbids_item`, `requires_flag`, `forbids_flag`, y `death_message`. No existe `connection_type` — el motor nunca interpreta nombres de tipos de conexión.
 
 ### 2.2 Grafo Macro (Mapa Físico)
 
@@ -250,103 +262,98 @@ El Grafo Macro define la topología del mundo: qué rooms están conectadas y ba
 
 #### Tipos de conexión
 
-Cada arista del Grafo Macro tiene un `connection_type` que determina cómo el motor evalúa el cruce:
+Cada arista del Grafo Macro es un conjunto de **predicados genéricos** que el motor evalúa de forma uniforme. No existe un `connection_type`: el creador del mundo decide la semántica según qué predicados defina. Una arista sin predicados siempre es transitable.
 
-| Tipo | Comportamiento | Predicados |
-|------|---------------|------------|
-| `open` | Siempre transitable. Sin condiciones. | `open: true` |
-| `password` | El jugador debe pronunciar la contraseña correcta. | `password: "<string>"` |
-| `riddle` | El jugador debe responder un acertijo. | `question: "<string>"`, `answer: "<string>"` |
-| `danger` | Si el jugador NO lleva el ítem requerido, muere al cruzar. | `requires_item: "<entity_id>"` |
-| `danger_inverse` | Si el jugador SÍ lleva el ítem prohibido, muere al cruzar. | `forbids_item: "<entity_id>"` |
-| `conditional` | Cruce condicionado por una bandera global. | `requires_flag: "<flag>"` o `forbids_flag: "<flag>"` |
+| Predicado | Significado | Comportamiento |
+|-----------|-------------|----------------|
+| *(ninguno)* | Arista abierta. | Siempre transitable. |
+| `requires_text` | Texto que el jugador debe decir para desbloquear. | Con `open: false`, el cruce se permite al pronunciar el texto correcto (`ABRIR ... DICIENDO <texto>` / `RESPONDIENDO <texto>`); la coincidencia es insensible a mayúsculas y tildes y abre la arista. |
+| `question` | Texto de acertijo mostrado por el narrador. | Datos de mundo para narración; el motor **no** la evalúa. |
+| `requires_item` | Ítem que debe estar en el inventario. | Sin el ítem, el cruce se bloquea (o mata si hay `death_message`). |
+| `forbids_item` | Ítem que NO debe estar en el inventario. | Con el ítem, el cruce se bloquea (o mata si hay `death_message`). |
+| `requires_flag` | Bandera que debe estar activa. | Si no lo está, el cruce se bloquea. |
+| `forbids_flag` | Bandera que debe estar inactiva/ausente. | Si está activa, el cruce se bloquea. |
+| `death_message` | Consecuencia fatal de un predicado que falla. | Si un predicado falla Y `death_message` está definido → muerte; si no → cruce bloqueado. |
 
 #### Formato YAML de una arista Macro
 
 ```yaml
-# Conexión bidireccional simple (room-01 ↔ room-02)
+# Conexión bidireccional simple (room-01 ↔ room-02) — sin predicados = abierta
 macro_edge_id: "fortaleza-1-edge-01-02"
-connection_type: "open"
-from_room: "fortaleza-1-room-01"
-to_room: "fortaleza-1-room-02"
+from_anchor: "fortaleza-1-room-01"
+to_anchor: "fortaleza-1-room-02"
 direction: "bidirectional"
-door_name: "Puerta principal"
-door_description: "Una pesada puerta de roble."
+passage_name: "Puerta principal"
+passage_description: "Una pesada puerta de roble."
 
 ---
-# Conexión con contraseña
+# Conexión con texto de desbloqueo (antes: password / riddle)
 macro_edge_id: "fortaleza-1-edge-03-05"
-connection_type: "password"
-from_room: "fortaleza-1-room-03"
-to_room: "fortaleza-1-room-05"
+from_anchor: "fortaleza-1-room-03"
+to_anchor: "fortaleza-1-room-05"
 direction: "bidirectional"
-door_name: "Escalera"
-password: "treinta y nueve"
-door_description: "Una escalera de caracol que desciende en la oscuridad."
+passage_name: "Escalera"
+question: "¿Cuántos peldaños tiene la escalera?"   # narración, no se evalúa
+requires_text: "treinta y nueve"
+open: false
+passage_description: "Una escalera de caracol que desciende en la oscuridad."
 
 ---
-# DangerLink: necesita ítem para no morir
+# Peligro: necesita ítem para no morir (antes: danger)
 macro_edge_id: "fortaleza-1-edge-18-19"
-connection_type: "danger"
-from_room: "fortaleza-1-room-18"
-to_room: "fortaleza-1-room-19"
+from_anchor: "fortaleza-1-room-18"
+to_anchor: "fortaleza-1-room-19"
 direction: "bidirectional"
-door_name: "Tráquea"
+passage_name: "Tráquea"
 requires_item: "Talismán de aire"
-door_description: "Un pasaje estrecho y palpitante."
+passage_description: "Un pasaje estrecho y palpitante."
 death_message: "La Bestia te aplasta con sus pulmones. Has muerto."
 
 ---
-# DangerLink2: muere SI lleva el ítem
+# Peligro inverso: muere SI lleva el ítem (antes: danger_inverse)
 macro_edge_id: "fortaleza-1-edge-27-28b"
-connection_type: "danger_inverse"
-from_room: "fortaleza-1-room-27"
-to_room: "fortaleza-1-room-28"
+from_anchor: "fortaleza-1-room-27"
+to_anchor: "fortaleza-1-room-28"
 direction: "unidirectional"
-door_name: "Puerta"
+passage_name: "Puerta"
 forbids_item: "Espada"
-door_description: "Una puerta de aspecto inofensivo."
+passage_description: "Una puerta de aspecto inofensivo."
 death_message: "Una trampa mortal se activa. La Espada era el detonante."
 
 ---
-# RiddleLink: acertijo
+# Acertijo con pregunta mostrada por el narrador (antes: riddle)
 macro_edge_id: "fortaleza-1-edge-30-22"
-connection_type: "riddle"
-from_room: "fortaleza-1-room-30"
-to_room: "fortaleza-1-room-22"
+from_anchor: "fortaleza-1-room-30"
+to_anchor: "fortaleza-1-room-22"
 direction: "unidirectional"
-door_name: "Puerta dorada"
+passage_name: "Puerta dorada"
 question: "Invente un alfabeto con el que no pueda crearse a la Bestia"
-answer: "cdfghjklmnopqruvwxyz"
-door_description: "Una puerta de oro macizo con inscripciones."
+requires_text: "cdfghjklmnopqruvwxyz"
+open: false
+passage_description: "Una puerta de oro macizo con inscripciones."
 
 ---
-# Condicional: requiere bandera
+# Condicional: requiere bandera (antes: conditional)
 macro_edge_id: "fortaleza-1-edge-07-10"
-connection_type: "conditional"
-from_room: "fortaleza-1-room-07"
-to_room: "fortaleza-1-room-10"
+from_anchor: "fortaleza-1-room-07"
+to_anchor: "fortaleza-1-room-10"
 direction: "bidirectional"
-door_name: "Puerta prohibida"
+passage_name: "Puerta prohibida"
 requires_flag: "knows_lab_password"
-password: "bestia"    # contraseña que se aprendió vía bandera
-door_description: "Una puerta con la inscripción 'Prohibido el paso'."
+passage_description: "Una puerta con la inscripción 'Prohibido el paso'."
 ```
 
 #### Evaluación de predicados al cruzar
 
-Cuando el jugador ejecuta un comando de movimiento (ej: `IR PUERTA PRINCIPAL`), el motor:
+Cuando el jugador ejecuta un comando de movimiento (ej: `IR PUERTA PRINCIPAL`), el motor evalúa los predicados genéricos de la arista de forma uniforme, en este orden:
 
-1. Busca en la room actual una arista Macro cuyo `door_name` matchee el comando del jugador.
-2. Evalúa el `connection_type`:
-   - **`open`**: el cruce se permite sin condiciones.
-   - **`password`**: si la arista está abierta (`open: true`), se permite. Si no, el motor espera que el comando incluya la contraseña (`ABRIR PUERTA PRINCIPAL DICIENDO <contraseña>`). Al recibirla, compara con `password` y abre la arista.
-   - **`riddle`**: similar a password, pero el comando es `ABRIR <puerta> RESPONDIENDO <respuesta>`.
-   - **`danger`**: verifica si `requires_item` está en el inventario del protagonista activo. Si no, emite `FLAG(player_dead)` y `game_over`.
-   - **`danger_inverse`**: verifica si `forbids_item` está en el inventario. Si sí, emite `FLAG(player_dead)` y `game_over`.
-   - **`conditional`**: verifica el estado de `requires_flag` o `forbids_flag`. Si la bandera requerida no está activa, el cruce se rechaza.
-3. Si el cruce es válido, ejecuta `TELEPORT(protagonista, room_actual, room_destino)`.
-4. Emite `room_entered` con la descripción de la nueva room.
+1. Busca en la room actual una arista Macro cuyo `passage_name` matchee el comando del jugador.
+2. **Predicado de texto** (`requires_text`): si la arista está cerrada (`open: false`), el motor espera que el comando incluya el texto (`ABRIR PUERTA PRINCIPAL DICIENDO <texto>`). Si coincide (insensible a mayúsculas y tildes), abre la arista (`open: true`) y permite cruzar. Si no, el cruce se bloquea (o es fatal si hay `death_message`).
+3. **Predicados de ítem** (`requires_item` / `forbids_item`): verifica el inventario del protagonista activo. Si fallan, el cruce se bloquea (o es fatal si hay `death_message`).
+4. **Predicados de bandera** (`requires_flag` / `forbids_flag`): verifica el libro de banderas. Si fallan, el cruce se bloquea (o es fatal si hay `death_message`).
+5. `death_message` es el único discriminador entre **fatal** y **bloqueado**: el motor nunca interpreta nombres de tipos de conexión.
+6. Si todos los predicados pasan, ejecuta `TELEPORT(protagonista, room_actual, room_destino)`.
+7. Emite `entity_entered` con la descripción de la nueva room.
 
 ### 2.3 Grafo Micro (Interacciones de Escena)
 
@@ -401,10 +408,10 @@ Una Hiper-Arista solo se ejecuta si todos los miembros requeridos de la Clique e
 
 | Miembro | Descripción | Validación |
 |---------|-------------|------------|
-| `subject` | Quién ejecuta la acción. Normalmente el protagonista activo. | Debe estar en la misma room que `target`. |
+| `subject` | Quién ejecuta la acción. Normalmente el protagonista activo. | Debe estar en la misma anchor que `target`. |
 | `verb` | El verbo parseado del comando del jugador. | Debe coincidir exactamente. |
-| `target` | La entidad sobre la que se actúa. | Debe estar en la misma room que `subject`, o en el inventario de `subject`. |
-| `instrument` | La herramienta o arma usada. | Si se especifica, debe estar en el inventario de `subject` o en la room. |
+| `target` | La entidad sobre la que se actúa. | Debe estar en la misma anchor que `subject`, o en el inventario de `subject`. |
+| `instrument` | La herramienta o arma usada. | Si se especifica, debe estar en el inventario de `subject` o en la anchor. |
 | `context` | Entidad contextual (ej: una segunda entidad `player_controlled` para puzles cooperativos). | Debe satisfacer la misma regla de presencia que `target`. |
 
 #### Comodín `"*"` para instrument
@@ -556,17 +563,17 @@ Cambia el anclaje espacial de una entidad, moviéndola a otra room.
 ```yaml
 - type: "TELEPORT"
   entity: "fortaleza-2-item-caliz"
-  from_room: "_limbo"
-  to_room: "fortaleza-2-room-46"
+  from_anchor: "_limbo"
+  to_anchor: "fortaleza-2-room-46"
 ```
 
 **Precondiciones**:
 - `entity` existe.
-- `to_room` existe en el Grafo Macro.
+- `to_anchor` existe en el Grafo Macro.
 
 **Postcondiciones**:
-- `entity.spatial_anchor` cambia a `to_room`.
-- Si la entidad es un protagonista, se emite `room_entered` con la descripción de la nueva room, y se marca `visited: true`.
+- `entity.spatial_anchor` cambia a `to_anchor`.
+- Si la entidad es un protagonista, se emite `entity_entered` con la descripción de la nueva room, y se marca `visited: true`.
 - Se emite `entity_teleported`.
 
 **Casos de uso**:
@@ -733,7 +740,7 @@ PASO 11: EVALUAR CONDICIONES DE VICTORIA/DERROTA
       })
       descargar_grafo_actual()
       cargar_grafo(next_episode)
-      TELEPORT(jugador, _limbo, next_episode.start_room)
+      TELEPORT(jugador, _limbo, next_episode.start_anchor)
       EMITIR episode_started({ episode_id: next_episode.id, ... })
     SINO:
       EMITIR game_completed({ world_id, total_turns: turn_number })
@@ -756,7 +763,7 @@ PASO 12: FIN DE TURNO
 
 **Nota sobre el narrador**: El motor no emite texto directamente. Todos los mensajes que el jugador lee son producidos por el narrador, que se suscribe a los eventos del motor:
 
-- `room_entered` → el narrador emite la descripción de la habitación (`room.components.description`)
+- `entity_entered` → el narrador emite la descripción de la habitación (`room.components.description`)
 - `action_output` → el narrador emite el texto del campo `output` de la Hiper-Arista
 - `error_output` → el narrador emite mensajes de error (parser, peso excedido, comandos inválidos)
 - `episode_started`, `episode_completed`, `game_over` → el narrador emite textos narrativos de transición
@@ -860,7 +867,7 @@ description: |
   Primera parte de la aventura. Derrota a la Bestia
   eliminando sus cinco Centros vitales.
 requires: []              # [] = independiente; ["ep-1"] = secuencial
-start_room: "fortaleza-1-room-01"
+start_anchor: "fortaleza-1-room-01"
 goal:
   conditions:
     - type: entity_not_in_room
@@ -919,9 +926,9 @@ episodio_actual.completado
   ├─ cargar grafo del próximo episodio
   │   (nuevas rooms, ítems, NPCs, Hiper-Aristas desde archivos YAML)
   │
-  └─ TELEPORT(jugador, null, start_room del nuevo episodio)
+  └─ TELEPORT(jugador, null, start_anchor del nuevo episodio)
       → emitir episode_started
-      → emitir room_entered con descripción de la nueva room inicial
+      → emitir entity_entered con descripción de la nueva room inicial
 ```
 
 #### Episodios independientes vs secuenciales
@@ -1012,11 +1019,11 @@ Cada concepto del código original (Turbo Pascal 7, `CASTLES.PAS`) se traduce a 
 | `Thing` | `CASTLES.PAS` | Entidad tipo `"item"` | `items/*.yaml` |
 | `Troll` / `Guard` / `TDaugther` | `CASTLES.PAS` | Entidad tipo `"npc"` con `combat_pattern` | `npcs/*.yaml` |
 | `PMan` (jugador) | `CASTLES.PAS` | Entidad tipo `"player"` | `shared/player.yaml` |
-| `PLinking` | `CASTLES.PAS` | Arista Macro `connection_type: "password"` u `"open"` | `macros/*.yaml` |
-| `POpenLink` | `CASTLES.PAS` | Arista Macro `connection_type: "open"` | `macros/*.yaml` |
-| `PDangerLink` | `CASTLES.PAS` | Arista Macro `connection_type: "danger"` con `requires_item` | `macros/*.yaml` |
-| `PDangerLink2` | `CASTLES.PAS` | Arista Macro `connection_type: "danger_inverse"` con `forbids_item` | `macros/*.yaml` |
-| `PRiddleLink` | `CASTLES.PAS` | Arista Macro `connection_type: "riddle"` | `macros/*.yaml` |
+| `PLinking` | `CASTLES.PAS` | Arista Macro con `requires_text` y `open: false`, o sin predicados | `macros/*.yaml` |
+| `POpenLink` | `CASTLES.PAS` | Arista Macro sin predicados (siempre abierta) | `macros/*.yaml` |
+| `PDangerLink` | `CASTLES.PAS` | Arista Macro con `requires_item` (+ `death_message`) | `macros/*.yaml` |
+| `PDangerLink2` | `CASTLES.PAS` | Arista Macro con `forbids_item` (+ `death_message`) | `macros/*.yaml` |
+| `PRiddleLink` | `CASTLES.PAS` | Arista Macro con `question` + `requires_text` + `open: false` | `macros/*.yaml` |
 | `PHidden` | `CASTLES.PAS` | Hiper-Arista con operador COMBINE(herramienta, PHidden) | `actions/*.yaml` |
 | `Castle.Go()` | `CASTLES.PAS:723` | Orquestador de Turnos: validación de arista Macro + TELEPORT | Motor |
 | `Castle.Kill()` | `CASTLES.PAS:586` | Hiper-Aristas de combate con sistema de prioridades | `actions/*.yaml` |
@@ -1063,22 +1070,21 @@ spatial_anchor: null
 ```yaml
 # episode-01/macros/edges-room-01.yaml
 macro_edge_id: "fortaleza-1-edge-01-02-puerta-principal"
-connection_type: "password"
-from_room: "fortaleza-1-room-01"
-to_room: "fortaleza-1-room-02"
+from_anchor: "fortaleza-1-room-01"
+to_anchor: "fortaleza-1-room-02"
 direction: "bidirectional"
-door_name: "Puerta principal"
-door_description: "Una pesada puerta de roble con refuerzos de hierro. Tiene un llamador de bronce."
-password: "ábrete sésamo"
+passage_name: "Puerta principal"
+passage_description: "Una pesada puerta de roble con refuerzos de hierro. Tiene un llamador de bronce."
+requires_text: "ábrete sésamo"
+open: false
 
 ---
 macro_edge_id: "fortaleza-1-edge-01-04-tunel"
-connection_type: "open"
-from_room: "fortaleza-1-room-01"
-to_room: "fortaleza-1-room-04"
+from_anchor: "fortaleza-1-room-01"
+to_anchor: "fortaleza-1-room-04"
 direction: "bidirectional"
-door_name: "Túnel"
-door_description: "Un túnel oscuro que se interna en la montaña."
+passage_name: "Túnel"
+passage_description: "Un túnel oscuro que se interna en la montaña."
 ```
 
 #### Ejemplo 3: Guard con arma letal (Cíclope + Maza)
@@ -1144,13 +1150,12 @@ output: |
 ```yaml
 # episode-01/macros/edges-room-18.yaml
 macro_edge_id: "fortaleza-1-edge-18-19-traquea"
-connection_type: "danger"
-from_room: "fortaleza-1-room-18"
-to_room: "fortaleza-1-room-19"
+from_anchor: "fortaleza-1-room-18"
+to_anchor: "fortaleza-1-room-19"
 direction: "bidirectional"
-door_name: "Tráquea"
+passage_name: "Tráquea"
 requires_item: "fortaleza-1-item-talisman-aire"
-door_description: "Un conducto palpitante y resbaladizo. Las paredes se contraen rítmicamente."
+passage_description: "Un conducto palpitante y resbaladizo. Las paredes se contraen rítmicamente."
 death_message: |
   Intentas cruzar la Tráquea sin la protección adecuada.
   Las paredes se contraen y te aplastan como a un insecto.
@@ -1222,13 +1227,12 @@ output: |
 ```yaml
 # episode-01/macros/edges-room-28.yaml
 macro_edge_id: "fortaleza-1-edge-28-50-puerta-negra"
-connection_type: "conditional"
-from_room: "fortaleza-1-room-28"
-to_room: "fortaleza-1-room-50"
+from_anchor: "fortaleza-1-room-28"
+to_anchor: "fortaleza-1-room-50"
 direction: "unidirectional"
-door_name: "Puerta negra"
+passage_name: "Puerta negra"
 requires_flag: "puerta_madera_rota"
-door_description: "Una puerta negra que antes no estaba allí."
+passage_description: "Una puerta negra que antes no estaba allí."
 ```
 
 Nótese cómo la secuencia es: `columna_cristal_rota` → `puerta_madera_rota` → la arista Macro se desbloquea. Las banderas actúan como "llaves" que cada paso entrega al siguiente.
@@ -1296,13 +1300,13 @@ description: "Una breve descripción de tu mundo."
 
 player_defaults:
   max_weight: 40
-  start_room: "mi-aventura-1-room-01"
+    start_anchor: "mi-aventura-1-room-01"
 
 episodes:
   - id: "episode-01"
     name: "Capítulo 1"
     requires: []
-    start_room: "mi-aventura-1-room-01"
+  start_anchor: "mi-aventura-1-room-01"
     goal:
       conditions:
         - type: entity_dead
@@ -1391,12 +1395,11 @@ spatial_anchor: "mi-aventura-1-room-03"
 ```yaml
 # episode-01/macros/edges-room-01.yaml
 macro_edge_id: "mi-aventura-1-edge-01-02"
-connection_type: "open"
-from_room: "mi-aventura-1-room-01"
-to_room: "mi-aventura-1-room-02"
+from_anchor: "mi-aventura-1-room-01"
+to_anchor: "mi-aventura-1-room-02"
 direction: "bidirectional"
-door_name: "Puerta de piedra"
-door_description: "Una puerta de piedra que se desliza hacia un lado."
+passage_name: "Puerta de piedra"
+passage_description: "Una puerta de piedra que se desliza hacia un lado."
 ```
 
 ### Paso 8: Definir Hiper-Aristas para interacciones
@@ -1447,7 +1450,7 @@ En `episodes/episode-01.yaml`, el campo `goal` define qué debe cumplirse para g
 Una herramienta CLI (`motor validate worlds/mi-aventura/`) verificará:
 
 - Que no haya referencias colgantes (entidades referenciadas que no existen).
-- Que todas las rooms sean alcanzables desde `start_room`.
+- Que todas las rooms sean alcanzables desde `start_anchor`.
 - Que el goal sea alcanzable (no haya condiciones imposibles).
 - Que no haya Hiper-Aristas con la misma `priority` para el mismo `(verb, target)`.
 

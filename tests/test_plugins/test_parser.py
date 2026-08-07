@@ -307,6 +307,79 @@ def test_parse_instrument_always_none(world, parser):
 
 
 # ===================================================================
+# Speech extraction — ABRIR ... DICIENDO / RESPONDIENDO
+# ===================================================================
+
+
+def test_parser_abrir_diciendo_extracts_text(world, parser):
+    """'abrir puerta diciendo treinta y nueve' → target is the door,
+    text is everything after DICIENDO."""
+    result = parser.parse("abrir puerta diciendo treinta y nueve", world)
+    assert result.verb == "abrir"
+    assert result.target == "puerta"
+    assert result.text == "treinta y nueve"
+
+
+def test_parser_abrir_diciendo_multiple_words_door(world, parser):
+    """'abrir puerta principal diciendo treinta y nueve' → target keeps
+    both door words; text captures the full spoken password."""
+    result = parser.parse(
+        "abrir puerta principal diciendo treinta y nueve", world
+    )
+    assert result.verb == "abrir"
+    assert result.target == "puerta principal"
+    assert result.text == "treinta y nueve"
+
+
+def test_parser_abrir_respondiendo_extracts_text(world, parser):
+    """'abrir puerta dorada respondiendo el sol' → text keeps stop words
+    — it is spoken text, not a target."""
+    result = parser.parse("abrir puerta dorada respondiendo el sol", world)
+    assert result.verb == "abrir"
+    assert result.target == "puerta dorada"
+    assert result.text == "el sol"
+
+
+def test_parser_abrir_without_speech(world, parser):
+    """'abrir puerta' → no speech marker, text is None."""
+    result = parser.parse("abrir puerta", world)
+    assert result.verb == "abrir"
+    assert result.target == "puerta"
+    assert result.text is None
+
+
+def test_parser_abrir_diciendo_tilde_normalization_in_text(world, parser):
+    """Spoken text is normalized for comparison (á→a), but keeps stop words."""
+    result = parser.parse("abrir puerta diciendo ábrete sésamo", world)
+    assert result.target == "puerta"
+    assert result.text == "abrete sesamo"
+
+
+def test_parser_decir_verb_standalone(world, parser):
+    """'decir treinta y nueve' → verb='decir', text='treinta y nueve'."""
+    result = parser.parse("decir treinta y nueve", world)
+    assert result.verb == "decir"
+    assert result.target is None
+    assert result.text == "treinta y nueve"
+
+
+def test_parser_responder_verb_standalone(world, parser):
+    """'responder el sol' → verb='responder', text='el sol'."""
+    result = parser.parse("responder el sol", world)
+    assert result.verb == "responder"
+    assert result.target is None
+    assert result.text == "el sol"
+
+
+def test_parser_ir_does_not_capture_text(world, parser):
+    """Non-speech verbs keep text as None (regression)."""
+    result = parser.parse("ir puerta norte", world)
+    assert result.verb == "ir"
+    assert result.target == "puerta norte"
+    assert result.text is None
+
+
+# ===================================================================
 # Known game verbs pass-through
 # ===================================================================
 

@@ -42,6 +42,8 @@ class ParsedCommand:
         target: Entity_id of the target (None when absent).
         context: Optional contextual entity_id (e.g. second protagonist).
         instrument: Entity_id of the instrument (None when absent).
+        text: Free text spoken by the player (e.g. password or riddle
+              answer after DICIENDO/RESPONDIENDO).
     """
 
     subject: str | None
@@ -49,6 +51,7 @@ class ParsedCommand:
     target: str | None
     context: str | None = None
     instrument: str | None = None
+    text: str | None = None
 
 
 @dataclass

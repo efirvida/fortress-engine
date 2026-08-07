@@ -112,12 +112,11 @@ spatial_anchor: "room_01"
         base / "episode-01" / "macros" / "doors.yaml",
         """\
 - macro_edge_id: "door_to_hall"
-  connection_type: "open"
   from_anchor: "room_01"
   to_anchor: "room_02"
   direction: "bidirectional"
-  door_name: "north"
-  door_description: "A heavy iron door."
+  passage_name: "north"
+  passage_description: "A heavy iron door."
 """,
     )
     _write_yaml(
@@ -387,9 +386,73 @@ def test_load_macro_edges(tmp_path):
     edge = edges[0]
     assert isinstance(edge, MacroEdge)
     assert edge.macro_edge_id == "door_to_hall"
-    assert edge.connection_type == "open"
+    assert edge.requires_text is None
     assert edge.from_anchor == "room_01"
     assert edge.to_anchor == "room_02"
+
+
+def test_load_macro_edges_rejects_legacy_connection_type(tmp_path):
+    """A world YAML that still writes connection_type FAILS loudly at load
+    time instead of being silently dropped."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = _minimal_world(tmp_path)
+    _write_yaml(
+        base / "episode-01" / "macros" / "legacy_door.yaml",
+        """\
+- macro_edge_id: "legacy_door"
+  connection_type: "password"
+  from_anchor: "room_01"
+  to_anchor: "room_02"
+  direction: "bidirectional"
+  passage_name: "north"
+  password: "ábrete sésamo"
+  open: false
+""",
+    )
+    loader = EntityLoader(str(base))
+
+    with pytest.raises(ValueError, match="connection_type"):
+        loader.load_macro_edges("episode-01")
+
+
+def test_load_macro_edges_maps_generic_predicates(tmp_path):
+    """MacroEdgeYAML maps the generic predicate fields onto the dataclass."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = _minimal_world(tmp_path)
+    _write_yaml(
+        base / "episode-01" / "macros" / "gated_door.yaml",
+        """\
+- macro_edge_id: "gated_door"
+  from_anchor: "room_01"
+  to_anchor: "room_02"
+  direction: "bidirectional"
+  passage_name: "este"
+  question: "¿Qué es?"
+  requires_text: "el sol"
+  requires_item: "antorcha"
+  forbids_item: "espada"
+  requires_flag: "knows_secret"
+  forbids_flag: "darkness_remains"
+  death_message: "Has muerto."
+  open: false
+""",
+    )
+    loader = EntityLoader(str(base))
+    edges = loader.load_macro_edges("episode-01")
+
+    gated = [e for e in edges if e.macro_edge_id == "gated_door"]
+    assert len(gated) == 1
+    edge = gated[0]
+    assert edge.question == "¿Qué es?"
+    assert edge.requires_text == "el sol"
+    assert edge.requires_item == "antorcha"
+    assert edge.forbids_item == "espada"
+    assert edge.requires_flag == "knows_secret"
+    assert edge.forbids_flag == "darkness_remains"
+    assert edge.death_message == "Has muerto."
+    assert edge.open is False
 
 
 # ===================================================================
@@ -645,11 +708,10 @@ def test_load_single_macro_edge_not_list(tmp_path):
         base / "episode-01" / "macros" / "single_door.yaml",
         """\
 macro_edge_id: "single_door"
-connection_type: "open"
 from_anchor: "room_01"
 to_anchor: "room_03"
 direction: "unidirectional"
-door_name: "up"
+passage_name: "up"
 """,
     )
     loader = EntityLoader(str(base))

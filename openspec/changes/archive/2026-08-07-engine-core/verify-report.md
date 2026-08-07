@@ -14,7 +14,7 @@ Status: **PASS**
 | event-system | PASS — EngineEvent frozen + create, dict round-trip, EventBus sync isolated wildcard |
 | world-state | PASS — methods, flag book, multi-protagonist list invariant |
 | atomic-operators | PASS — 5 pure operators, OperatorResult.events_payload, portable/max_weight, exact Spanish errors |
-| dual-graph | PASS — Clique/HyperEdge/MacroEdge, (verb,target) discrimination, priority, 6 connection types |
+| dual-graph | PASS — Clique/HyperEdge/MacroEdge, (verb,target) discrimination, priority, generic predicate gates (requires_text/item/flag + death_message) with no connection_type |
 | participation-cliques | PASS — all predicates, wildcards, priority fallback |
 | goal-evaluator | PASS — 6 condition types, and/or composition, output/side_effects |
 | turn-orchestrator | PASS — 14-step execute_turn, system commands, single emitter, one turn_ended per turn, player_dead |
