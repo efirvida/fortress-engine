@@ -1,0 +1,52 @@
+[project]
+name = "fortress-engine"
+version = "0.1.0"
+description = "Semantic Graph Engine for Generative Interactive Fiction"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Efirvida"}
+]
+keywords = ["interactive-fiction", "text-adventure", "game-engine", "graph-engine"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment",
+]
+
+dependencies = [
+    "pyyaml>=6.0",
+    "pydantic>=2.0",
+    "sqlalchemy>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "alembic>=1.13",
+]
+
+[project.scripts]
+fortress-engine = "fortress_engine.cli.main:main"
+
+[project.entry-points."fortress_engine.parsers"]
+classic = "fortress_engine.plugins.classic_parser:ClassicParser"
+
+[project.entry-points."fortress_engine.narrators"]
+template = "fortress_engine.plugins.template_narrator:TemplateNarrator"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.coverage.run]
+source = ["src/fortress_engine"]
