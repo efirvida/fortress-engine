@@ -7,6 +7,7 @@ Entity-agnostic: no entity type constants, no type validation.
 from __future__ import annotations
 
 import sys
+import unicodedata
 from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
 
@@ -89,41 +90,49 @@ class HyperEdge:
 class MacroEdge:
     """A traversable connection between two spatial anchors (rooms).
 
-    Supports six connection types (GDD 2.2):
-    ``open``, ``password``, ``riddle``, ``danger``, ``danger_inverse``,
-    and ``conditional``.
+    Gates are GENERIC predicates, evaluated uniformly — there is no
+    connection-type field.  The world creator decides semantics by which
+    predicate fields they set:
+
+    - ``requires_text`` + ``open=False``: a closed edge that unlocks when
+      the player says the right text (e.g. a password or a riddle answer).
+    - ``question``: optional riddle/puzzle text shown by the narrator. It
+      is world data for narration only — never evaluated by the engine.
+    - ``requires_item``/``forbids_item``: item-inventory gates.
+    - ``requires_flag``/``forbids_flag``: world-flag gates.
+    - ``death_message``: makes a failed gate FATAL instead of blocked.
+
+    A plain edge with no predicate fields is always passable.
 
     Entity-agnostic: fields use ``from_anchor`` / ``to_anchor``.
 
     Attributes:
         macro_edge_id: Unique identifier.
-        connection_type: One of the six predicate types.
         from_anchor: Source anchor entity_id.
         to_anchor: Destination anchor entity_id.
         direction: ``"bidirectional"`` or ``"unidirectional"``.
-        door_name: Name the player uses to reference this passage.
-        door_description: Flavour text.
-        password: Required password (``password`` type).
-        question: Riddle question (``riddle`` type).
-        answer: Riddle answer (``riddle`` type).
-        requires_item: Required item for ``danger`` edges.
-        forbids_item: Forbidden item for ``danger_inverse`` edges.
-        requires_flag: Flag that must be ``True`` (``conditional``).
-        forbids_flag: Flag that must be ``False`` (``conditional``).
-        death_message: Death narration for ``danger`` / ``danger_inverse``.
+        passage_name: Name the player uses to reference this passage.
+        passage_description: Flavour text.
+        question: Optional riddle/puzzle text (narration only, not
+            evaluated).
+        requires_text: Text the player must say to unlock a closed edge.
+        requires_item: Item that must be in the protagonist's inventory.
+        forbids_item: Item that must NOT be in the inventory.
+        requires_flag: World flag that must be ``True``.
+        forbids_flag: World flag that must be ``False``/absent.
+        death_message: Fatal consequence; if a gate fails AND this is set,
+            the edge kills instead of blocking.
         open: Mutable — ``True`` means the edge is unlocked.
     """
 
     macro_edge_id: str
-    connection_type: str
     from_anchor: str
     to_anchor: str
     direction: str
-    door_name: str
-    door_description: str = ""
-    password: str | None = None
+    passage_name: str
+    passage_description: str = ""
     question: str | None = None
-    answer: str | None = None
+    requires_text: str | None = None
     requires_item: str | None = None
     forbids_item: str | None = None
     requires_flag: str | None = None
@@ -222,15 +231,15 @@ class DualGraphEngine:
         """Return macro edges originating from *anchor_id*."""
         return list(self._macro_edges.get(anchor_id, []))
 
-    def get_macro_edge_by_door_name(
-        self, anchor_id: str, door_name: str
+    def get_macro_edge_by_passage_name(
+        self, anchor_id: str, passage_name: str
     ) -> MacroEdge | None:
-        """Find a macro edge by door name within an anchor.
+        """Find a macro edge by passage name within an anchor.
 
         Returns ``None`` if no matching edge is found.
         """
         for edge in self._macro_edges.get(anchor_id, []):
-            if edge.door_name == door_name:
+            if edge.passage_name == passage_name:
                 return edge
         return None
 
@@ -422,64 +431,75 @@ class DualGraphEngine:
         return True
 
     def validate_macro_edge(
-        self, edge: MacroEdge, state: WorldState
+        self, edge: MacroEdge, state: WorldState, text: str | None = None
     ) -> tuple[bool, str | None]:
-        """Evaluate *edge* against *state*.
+        """Evaluate *edge*'s gates against *state*.
 
         Returns ``(is_valid, error_or_death_message)``.
 
-        Connection-type rules (GDD 2.2):
-        - ``open``: always valid.
-        - ``password``: valid; orchestrator handles password interaction.
-        - ``riddle``: valid; orchestrator handles riddle interaction.
-        - ``danger``: valid only if ``requires_item`` is in the active
-          protagonist's inventory.
-        - ``danger_inverse``: valid only if ``forbids_item`` is NOT in
-          inventory.
-        - ``conditional``: valid if ``requires_flag`` is ``True`` or
-          ``forbids_flag`` is ``False``/absent.
+        Gates are evaluated uniformly, in order: text gate, item gates,
+        then flag gates.  ``death_message`` decides fatal vs blocked: when
+        a gate fails AND ``edge.death_message`` is set, the returned
+        message IS the death message (fatal); otherwise a Spanish
+        "blocked" message is returned.
+
+        Semantics are decided by which predicates the world creator sets,
+        never by a connection type name.  For example:
+
+        - ``requires_text`` + ``open=False`` = a password or riddle gate;
+          a correct match flips ``edge.open`` to ``True``.
+        - ``requires_item`` + ``death_message`` = a lethal danger gate.
+        - ``forbids_item`` + ``death_message`` = a lethal inverse gate.
+        - ``requires_flag`` / ``forbids_flag`` without ``death_message``
+          = a conditional (blocked) gate.
+
+        A plain edge with no predicates is always passable.
         """
         protagonist_id = state.active_protagonist_id
         inv = set(e.entity_id for e in state.get_player_inventory(protagonist_id))
 
-        ctype = edge.connection_type
+        # Text gate: a closed edge unlocks when the player says the right text.
+        if edge.requires_text is not None and not edge.open:
+            if text is not None and _normalize_text(text) == _normalize_text(
+                edge.requires_text
+            ):
+                edge.open = True
+            else:
+                return False, (
+                    edge.death_message
+                    if edge.death_message is not None
+                    else f"{edge.passage_name} está cerrada."
+                )
 
-        # open — always passable
-        if ctype == "open":
-            return True, None
+        # Item gates.
+        if edge.requires_item is not None and edge.requires_item not in inv:
+            return False, (
+                edge.death_message
+                if edge.death_message is not None
+                else f"No puedes pasar por {edge.passage_name} aún."
+            )
+        if edge.forbids_item is not None and edge.forbids_item in inv:
+            return False, (
+                edge.death_message
+                if edge.death_message is not None
+                else f"{edge.passage_name} está sellada."
+            )
 
-        # password — structurally valid; orchestrator handles open/password
-        if ctype == "password":
-            return True, None
+        # Flag gates.
+        if edge.requires_flag is not None and not state.get_flag(edge.requires_flag):
+            return False, (
+                edge.death_message
+                if edge.death_message is not None
+                else f"No puedes pasar por {edge.passage_name} aún."
+            )
+        if edge.forbids_flag is not None and state.get_flag(edge.forbids_flag):
+            return False, (
+                edge.death_message
+                if edge.death_message is not None
+                else f"{edge.passage_name} está sellada."
+            )
 
-        # riddle — structurally valid; orchestrator handles answer
-        if ctype == "riddle":
-            return True, None
-
-        # danger — death without required item
-        if ctype == "danger":
-            if edge.requires_item and edge.requires_item not in inv:
-                return False, edge.death_message or "Has muerto."
-            return True, None
-
-        # danger_inverse — death if forbidden item IS carried
-        if ctype == "danger_inverse":
-            if edge.forbids_item and edge.forbids_item in inv:
-                return False, edge.death_message or "Has muerto."
-            return True, None
-
-        # conditional — requires/forbids flags
-        if ctype == "conditional":
-            if edge.requires_flag:
-                if not state.get_flag(edge.requires_flag):
-                    return False, (f"No puedes pasar por {edge.door_name} aún.")
-            if edge.forbids_flag:
-                if state.get_flag(edge.forbids_flag):
-                    return False, (f"{edge.door_name} está sellada.")
-            return True, None
-
-        # Unknown connection type — fail safe
-        return False, f"Tipo de conexión desconocido: {ctype}"
+        return True, None
 
     # -------------------------------------------------------------------
     # Special values
@@ -506,6 +526,17 @@ class DualGraphEngine:
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
+
+def _normalize_text(s: str) -> str:
+    """Lowercase and strip diacritics for requires_text comparison.
+
+    Mirrors the parser's normalisation (NFKD + strip combining marks) so
+    YAML requires_text values that keep tildes match normalised player
+    input (á→a, é→e, í→i, ó→o, ú→u, ü→u, ñ→n).
+    """
+    text = unicodedata.normalize("NFKD", s.strip().lower())
+    return "".join(ch for ch in text if not unicodedata.combining(ch))
 
 
 def _is_in_anchor_or_inventory(

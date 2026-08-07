@@ -129,11 +129,10 @@ spatial_anchor: "room_a"
         base / "episode-01" / "macros" / "door.yaml",
         """\
 - macro_edge_id: "door_a_to_b"
-  connection_type: "open"
   from_anchor: "room_a"
   to_anchor: "room_b"
   direction: "bidirectional"
-  door_name: "north"
+  passage_name: "north"
 """,
     )
     _write_yaml(

@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import yaml
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from fortress_engine.entities.entity import (
     CarryOver,
@@ -108,17 +108,23 @@ class HyperEdgeYAML(BaseModel):
 
 
 class MacroEdgeYAML(BaseModel):
-    """Pydantic model for macro edge YAML files."""
+    """Pydantic model for macro edge YAML files.
+
+    Gates are generic predicates — there is no connection-type field.  A
+    world YAML that still writes a legacy connection-type/password/answer
+    field FAILS loudly at load time (``extra="forbid"``) instead of
+    silently dropping it.
+    """
+    model_config = ConfigDict(extra="forbid")
+
     macro_edge_id: str
-    connection_type: str
     from_anchor: str
     to_anchor: str
     direction: str
-    door_name: str
-    door_description: str = ""
-    password: str | None = None
+    passage_name: str
+    passage_description: str = ""
     question: str | None = None
-    answer: str | None = None
+    requires_text: str | None = None
     requires_item: str | None = None
     forbids_item: str | None = None
     requires_flag: str | None = None
@@ -225,15 +231,13 @@ def _hyper_edge_from_model(m: HyperEdgeYAML) -> HyperEdge:
 def _macro_edge_from_model(m: MacroEdgeYAML) -> MacroEdge:
     return MacroEdge(
         macro_edge_id=m.macro_edge_id,
-        connection_type=m.connection_type,
         from_anchor=m.from_anchor,
         to_anchor=m.to_anchor,
         direction=m.direction,
-        door_name=m.door_name,
-        door_description=m.door_description,
-        password=m.password,
+        passage_name=m.passage_name,
+        passage_description=m.passage_description,
         question=m.question,
-        answer=m.answer,
+        requires_text=m.requires_text,
         requires_item=m.requires_item,
         forbids_item=m.forbids_item,
         requires_flag=m.requires_flag,

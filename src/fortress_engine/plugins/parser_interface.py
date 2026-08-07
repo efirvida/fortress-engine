@@ -46,6 +46,14 @@ def _strip_stop_words(tokens: list[str]) -> list[str]:
     return [t for t in tokens if t not in _STOP_WORDS]
 
 
+# Speech markers that separate the door name from spoken text.
+# Ordered so DICIENDO is preferred when both appear (rare edge case).
+_SPEECH_MARKERS: tuple[str, ...] = ("diciendo", "respondiendo")
+
+# Standalone verbs that make everything after them spoken text.
+_SPEECH_VERBS: frozenset[str] = frozenset({"decir", "responder"})
+
+
 class ParserInterface(ABC):
     """Abstract parser that converts raw player text into a ParsedCommand."""
 
@@ -63,6 +71,10 @@ class MinimalParser(ParserInterface):
           (á→a, é→e, í→i, ó→o, ú→u, ü→u, ñ→n).
         - Splits on whitespace; first token is verb, remaining tokens are
           target after stripping known articles and prepositions.
+        - Speech markers ``DICIENDO`` / ``RESPONDIENDO`` split the target
+          from free text: everything after the marker becomes ``text``
+          (kept verbatim, stop words included).  ``DECIR`` / ``RESPONDER``
+          as the verb put the whole remainder into ``text``.
         - Subject is resolved from ``world_state.active_protagonist_id``.
         - Context and instrument are always ``None``.
         - Unknown / gibberish input is never rejected — the returned
@@ -79,15 +91,34 @@ class MinimalParser(ParserInterface):
                 target=None,
             )
 
-        verb = _normalize(tokens[0])
+        normalized = [_normalize(t) for t in tokens]
+        verb = normalized[0]
+
+        # Split speech markers off the target.  Everything after
+        # DICIENDO/RESPONDIENDO is free text (kept as-is, stop words
+        # included — it is spoken content, not a door name).
+        text: str | None = None
+        rest = normalized[1:]
+        for marker in _SPEECH_MARKERS:
+            if marker in rest:
+                marker_idx = rest.index(marker)
+                text = " ".join(rest[marker_idx + 1:]) or None
+                rest = rest[:marker_idx]
+                break
+
+        # Standalone speech verbs: the whole remainder is spoken text.
+        if verb in _SPEECH_VERBS and text is None:
+            text = " ".join(rest) or None
+            rest = []
 
         # Build target from remaining tokens after normalising and
         # stripping stop words.
-        target_tokens = _strip_stop_words([_normalize(t) for t in tokens[1:]])
+        target_tokens = _strip_stop_words(rest)
         target = " ".join(target_tokens) if target_tokens else None
 
         return ParsedCommand(
             subject=world_state.active_protagonist_id,
             verb=verb,
             target=target,
+            text=text,
         )
