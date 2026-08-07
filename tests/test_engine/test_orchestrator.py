@@ -574,6 +574,43 @@ def test_execute_turn_system_grupo(tmp_path):
 # ===================================================================
 
 
+def test_execute_turn_movement_emits_single_turn_ended(tmp_path):
+    """Movement via macro edge must emit exactly ONE turn_ended per turn.
+
+    Regression: _handle_movement already calls _post_action_checks, and
+    execute_turn called it again → duplicate turn_ended (and duplicate
+    game_over when player_dead).
+    """
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="ir", target="north")
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+
+    orch.execute_turn("ir north")
+
+    turn_ended_count = sum(1 for e in received if e.type == TURN_ENDED)
+    assert turn_ended_count == 1, (
+        f"Expected exactly one turn_ended per movement, got {turn_ended_count}"
+    )
+
+
 def test_execute_turn_movement_macro_edge(tmp_path):
     """Movement via macro edge emits entity_teleported + entity_entered."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
@@ -1431,3 +1468,162 @@ def test_execute_turn_cargar_with_repository(tmp_path):
 
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) == 0
+
+
+# ===================================================================
+# Priority fallback — loop back-edge (orchestrator.py 159->158)
+# ===================================================================
+
+
+def test_execute_turn_priority_fallback_back_edge(tmp_path):
+    """When the highest-priority candidate's clique does not form, the
+    orchestrator falls back to the next candidate (loop back-edge 159->158)
+    and resolves the matching lower-priority edge."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    # Two hyper edges for the same verb in room_a: the priority-10 edge
+    # requires flag "has_key" (not set → clique won't form); the priority-0
+    # edge has no constraints (clique forms).
+    high_edge = HyperEdge(
+        hyper_edge_id="open_requires_key",
+        name="Open requiring key",
+        priority=10,
+        clique=Clique(subject="player", verb="abrir", flag="has_key"),
+        operators=[{"type": "FLAG", "flag": "high_ran", "value": True}],
+        output="High priority fired.",
+    )
+    fallback_edge = HyperEdge(
+        hyper_edge_id="open_fallback",
+        name="Open fallback",
+        priority=0,
+        clique=Clique(subject="player", verb="abrir"),
+        operators=[{"type": "FLAG", "flag": "low_ran", "value": True}],
+        output="Fallback fired.",
+    )
+    graph.add_hyper_edge("room_a", high_edge)
+    graph.add_hyper_edge("room_a", fallback_edge)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(ParsedCommand(subject="hero", verb="abrir", target=None))
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+
+    orch.execute_turn("abrir")
+
+    # The selected edge is the priority-0 fallback (per docs/13-event-system.md
+    # §2: action_resolved payload = {hyper_edge_id, operators_executed, has_effects,
+    # protagonist_id}).
+    resolved = [e for e in received if e.type == ACTION_RESOLVED]
+    assert len(resolved) == 1
+    assert resolved[0].payload["hyper_edge_id"] == "open_fallback"
+    assert resolved[0].payload["operators_executed"] == ["FLAG"]
+    assert resolved[0].payload["has_effects"] is True
+
+    # The priority-10 edge was NOT executed.
+    assert state.get_flag("high_ran") is False
+    assert not any(
+        e.type == ACTION_OUTPUT
+        and e.payload.get("text") == "High priority fired."
+        for e in received
+    )
+
+    # The fallback side effect ran and the turn ended.
+    assert state.get_flag("low_ran") is True
+    assert any(e.type == TURN_ENDED for e in received)
+
+
+# ===================================================================
+# System command dispatch — unknown kind ignored (orchestrator.py 607->exit)
+# ===================================================================
+
+
+def test_handle_system_command_unknown_kind_ignored(tmp_path):
+    """An unrecognized system-command kind falls through the dispatcher
+    without emitting events or crashing (covers the grupo guard's False
+    branch, orchestrator.py 607->exit)."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+
+    orch._handle_system_command("GRUPO", "unknown_kind", "hero")
+
+    # No events emitted and no state mutation — the dispatcher is a no-op
+    # for unrecognized kinds.
+    assert received == []
+    assert state.turn_number == 0
+
+
+# ===================================================================
+# player_dead via _post_action_checks (orchestrator.py 640-648)
+# ===================================================================
+
+
+def test_execute_turn_movement_player_dead_post_action_checks(tmp_path):
+    """When player_dead is set, the movement path's _post_action_checks
+    emits game_over with reason player_death (covers orchestrator.py 640-648)."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    # Mark the protagonist dead before moving.
+    state.set_flag("player_dead", True)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="ir", target="north")
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+
+    orch.execute_turn("ir north")
+
+    # Movement succeeded (teleported) and the post-action check then
+    # emitted game_over for the dead protagonist.
+    assert state.get_entity("hero").spatial_anchor == "room_b"
+
+    game_over_events = [e for e in received if e.type == GAME_OVER]
+    assert len(game_over_events) >= 1
+    assert game_over_events[0].payload["reason"] == "player_death"
+
+    assert any(e.type == TURN_ENDED for e in received)
+    assert state.get_flag("player_dead") is True

@@ -147,8 +147,10 @@ class TurnOrchestrator:
         # Check for movement: verb "ir" with a target that matches a door name.
         movement_edge = self._resolve_movement(parsed, anchor_id)
         if movement_edge is not None:
+            # _handle_movement already runs _post_action_checks on every
+            # path (valid move, danger death, blocked door) and emits the
+            # single turn_ended for this turn.
             self._handle_movement(movement_edge, protagonist_id, anchor_id)
-            self._post_action_checks(protagonist_id)
             return
 
         candidates = self._graph.get_hyper_edges_for_verb(anchor_id, parsed.verb)
