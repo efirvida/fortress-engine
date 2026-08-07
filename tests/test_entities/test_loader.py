@@ -513,13 +513,18 @@ carry_over:
     loader = EntityLoader(str(base))
     problems = loader.validate_world()
 
-    assert len(problems) == 1
-    assert "start_anchor" in problems[0].lower()
-    assert "missing_room" in problems[0]
+    assert problems == [
+        "Episode 'ep-01' start_anchor 'missing_room' does not exist"
+    ]
 
 
 def test_validate_world_dangling_spatial_anchor(tmp_path):
-    """validate_world detects entity with spatial_anchor pointing to non-existent entity."""
+    """validate_world reports exactly the dangling spatial_anchor problem.
+
+    The assertion is exact — it must fail if the dangling-reference validator
+    is removed (empty list) or if any unrelated problem is reported alongside
+    the expected one.
+    """
     from fortress_engine.entities.loader import EntityLoader
 
     base = _minimal_world(tmp_path)
@@ -535,18 +540,25 @@ spatial_anchor: "nonexistent_room"
     loader = EntityLoader(str(base))
     problems = loader.validate_world()
 
-    # Should find the dangling reference
-    danglers = [p for p in problems if "spatial_anchor" in p.lower() or "dangling" in p.lower() or "reference" in p.lower() or "floating_item" in p.lower()]
-    assert len(danglers) > 0, f"Expected dangling ref problem, got: {problems}"
+    assert problems == [
+        "Entity 'floating_item' (episode 'episode-01') "
+        "has dangling spatial_anchor 'nonexistent_room'"
+    ]
 
 
 def test_validate_world_duplicate_hyper_edge_priority(tmp_path):
-    """validate_world warns on duplicate (verb, target, priority) hyper edges."""
+    """validate_world reports exactly the duplicate (verb, target, priority) warning.
+
+    The edge file is named ``z_dup_pick.yaml`` so it loads after ``pick_up.yaml``
+    (glob is lexicographically sorted), making the reported edge order
+    deterministic: 'pick_key' first, 'dup_pick' second. The assertion is exact —
+    it must fail if the duplicate detector is removed.
+    """
     from fortress_engine.entities.loader import EntityLoader
 
     base = _minimal_world(tmp_path)
     _write_yaml(
-        base / "episode-01" / "actions" / "dup.yaml",
+        base / "episode-01" / "actions" / "z_dup_pick.yaml",
         """\
 - hyper_edge_id: "dup_pick"
   name: "Duplicate"
@@ -561,8 +573,10 @@ def test_validate_world_duplicate_hyper_edge_priority(tmp_path):
     loader = EntityLoader(str(base))
     problems = loader.validate_world()
 
-    dup_warnings = [p for p in problems if "duplicate" in p.lower() or "priority" in p.lower()]
-    assert len(dup_warnings) > 0, f"Expected duplicate priority warning, got: {problems}"
+    assert problems == [
+        "Duplicate priority 10 for (verb='coger', target='rusty_key') "
+        "in episode 'episode-01': edges 'pick_key' and 'dup_pick'"
+    ]
 
 
 # ===================================================================
@@ -824,3 +838,56 @@ carry_over:
     assert isinstance(cond, GoalCondition)
     assert cond.type == "entity_in_room"
     assert cond.params == {"entity": "hero", "room": "room_01"}
+
+
+def test_load_episodes_with_string_goal_condition(tmp_path):
+    """A bare string entry in goal.conditions is tolerated and skipped.
+
+    ``GoalConditionsYAML.conditions`` allows ``str`` entries (e.g. hand-written
+    comments or placeholders). The conversion loop drops non-dict entries, so
+    the resulting ``GoalConditions`` contains only the dict-derived conditions.
+    """
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = tmp_path / "string_cond_world"
+    _write_yaml(base / "world.yaml", "world_id: test\nname: Test\n")
+    (base / "episodes").mkdir(parents=True)
+    _write_yaml(
+        base / "episodes" / "ep-01.yaml",
+        """\
+id: "ep-01"
+name: "String Condition"
+order: 1
+start_anchor: "room_01"
+goal:
+  conditions:
+    - "just a string"
+    - type: "flag_is_set"
+      params:
+        flag: "escaped"
+  output: "Win!"
+carry_over:
+  inventory: []
+  flags: []
+""",
+    )
+    (base / "shared").mkdir(parents=True)
+    (base / "ep-01").mkdir(parents=True)
+    for d in ["rooms", "items", "npcs", "macros", "actions"]:
+        (base / "ep-01" / d).mkdir(parents=True)
+    _write_yaml(
+        base / "ep-01" / "rooms" / "room_01.yaml",
+        "entity_id: room_01\ntype: room\nname: Start\n",
+    )
+
+    loader = EntityLoader(str(base))
+    episodes = loader.load_episodes()
+
+    assert len(episodes) == 1
+    conds = episodes[0].goal.conditions
+    # The bare string was skipped; only the atomic dict condition survives.
+    assert len(conds) == 1
+    assert isinstance(conds[0], GoalCondition)
+    assert conds[0].type == "flag_is_set"
+    assert conds[0].params == {"flag": "escaped"}
+    assert all(isinstance(c, (GoalCondition, dict)) for c in conds)

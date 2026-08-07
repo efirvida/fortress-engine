@@ -797,6 +797,32 @@ def test_execute_operator_combine_uses_limbo_anchor_for_detached_protagonist():
     assert state.get_entity("dough").spatial_anchor == LIMBO_ROOM_ID
 
 
+def test_execute_operator_combine_uses_protagonist_anchor():
+    """COMBINE dispatch anchors the output in the protagonist's actual room
+    when its spatial_anchor is set (non-limbo branch)."""
+    from fortress_engine.engine.operators import execute_operator
+
+    hero = _make_player("hero", spatial_anchor="room_01")
+    flour = _make_entity("flour", spatial_anchor="room_01")
+    dough = _make_entity("dough", spatial_anchor=None)
+    room = _make_entity("room_01", type_="room")
+    state = WorldState(
+        entities={"hero": hero, "flour": flour, "dough": dough, "room_01": room},
+        player_controlled_entities=["hero"],
+        active_protagonist_id="hero",
+    )
+
+    op_data = {"type": "COMBINE", "input_entities": ["flour"], "output_entity": "dough"}
+    result = execute_operator(state, op_data, "hero", None)
+
+    assert result.success is True
+    assert state.get_entity("dough").spatial_anchor == "room_01"
+    assert result.events_payload == {
+        "input_entity_ids": ["flour"],
+        "output_entity_id": "dough",
+    }
+
+
 # The final `else: Unhandled operator type` branch in execute_operator is
 # unreachable by construction: op_type is validated against _OP_TO_CLASS up
 # front, operator_from_dict always returns one of the five operator classes,

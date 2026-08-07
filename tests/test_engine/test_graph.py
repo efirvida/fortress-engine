@@ -984,7 +984,7 @@ def test_duplicate_priority_does_not_block(capsys):
 
     captured = capsys.readouterr()
     # Warning should have been emitted to stderr or stdout
-    assert "priority" in (captured.out + captured.err).lower()
+    assert "duplicate priority" in (captured.out + captured.err).lower()
 
 
 # ===================================================================
@@ -1292,6 +1292,24 @@ def test_clique_instrument_concrete_rejects_instrument_missing_from_state():
     parsed = ParsedCommand(subject="hero", verb="atacar", target=None)
 
     assert engine.validate_clique(he, parsed, state) is False
+
+
+def test_clique_instrument_not_resolving_to_none_is_skipped():
+    """instrument_not that resolves to None is skipped, not a failure.
+
+    ``"player"`` resolves to ``state.active_protagonist_id``; with an unset
+    protagonist the resolution is ``None``, so the forbidden check is
+    vacuous and the clique must pass.
+    """
+    from fortress_engine.engine.graph import Clique
+
+    state = _make_detached_state()  # active_protagonist_id=None
+
+    clique = Clique(subject="hero", verb="mirar", instrument_not="player")
+    engine, he = _build_engine_and_edge(clique, None)
+    parsed = ParsedCommand(subject="hero", verb="mirar", target=None)
+
+    assert engine.validate_clique(he, parsed, state) is True
 
 
 # ===================================================================
