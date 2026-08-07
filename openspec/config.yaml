@@ -1,0 +1,44 @@
+schema: spec-driven
+
+context: |
+  Python 3.11+ interactive fiction engine (package fortress-engine, src/ layout).
+  Architecture: dataclasses for runtime, Pydantic only for YAML load-time validation.
+  Five atomic operators: TRANSFER, TRANSFORM, COMBINE, FLAG, TELEPORT.
+  All world logic via HyperEdges + Cliques; no if/else game logic.
+  Event Sourcing persistence; synchronous Observer EventBus; plugins via importlib metadata entry_points.
+  Specs: docs/prd.md, docs/gdd.md, docs/tdd.md, docs/13-event-system.md (authoritative, Spanish).
+  Code identifiers English; YAML data + in-game text Spanish; runtime types dataclass.
+  Currently on epic feat/#1-engine-core — entities + events slices implemented with passing tests.
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Delta specs MUST remain traceable to docs/tdd.md task numbering
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+    - Respect hard architecture constants in AGENTS.md (do not violate them)
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - Map tasks to docs/tdd.md roadmap where applicable
+  apply:
+    guidelines:
+      - Follow existing code patterns (dataclasses, not OOP classes)
+    tdd: true
+    test_command: "pytest"
+  verify:
+    test_command: "pytest"
+    build_command: "pip install -e ."
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+
+testing:
+  strict_tdd: true
+  test_command: "pytest"
+  runner: "pytest"
+  coverage: "pytest-cov"

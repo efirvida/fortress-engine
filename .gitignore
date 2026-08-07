@@ -21,3 +21,9 @@ Thumbs.db
 
 # Environment
 .env
+# Local AI runtime state
+.atl/
+
+# Coverage
+.coverage
+htmlcov/
