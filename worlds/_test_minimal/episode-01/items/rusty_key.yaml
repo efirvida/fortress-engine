@@ -1,0 +1,6 @@
+entity_id: "rusty_key"
+type: "item"
+name: "Rusty Key"
+components:
+  weight: 1
+spatial_anchor: "cell"

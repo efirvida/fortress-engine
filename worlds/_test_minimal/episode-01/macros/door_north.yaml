@@ -1,0 +1,7 @@
+- macro_edge_id: "cell_to_hall"
+  connection_type: "open"
+  from_anchor: "cell"
+  to_anchor: "hall"
+  direction: "bidirectional"
+  door_name: "norte"
+  door_description: "A heavy iron door to the north."

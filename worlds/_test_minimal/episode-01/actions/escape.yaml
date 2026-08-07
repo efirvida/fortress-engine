@@ -1,0 +1,12 @@
+- hyper_edge_id: "escape"
+  name: "Escape the cell"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "huir"
+    target: "hall"
+  operators:
+    - type: "FLAG"
+      flag: "escaped"
+      value: true
+  output: "You force your way out and escape!"
