@@ -422,7 +422,7 @@ def execute_operator(
         # the five operator classes this isinstance chain covers.
         # Kept as a defensive fallback; excluded from coverage with
         # justification (AGENTS.md testing hard gate).
-        return OperatorResult(
+        return OperatorResult(  # pragma: no cover
             success=False,
             error_message=f"Unhandled operator type: {op_type!r}",
         )
