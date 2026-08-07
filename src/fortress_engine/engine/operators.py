@@ -417,6 +417,11 @@ def execute_operator(
     elif isinstance(op, TeleportOp):
         return execute_teleport(state, op)
     else:
+        # Unreachable by construction: op_type was validated against
+        # _OP_TO_CLASS above and operator_from_dict returns exactly one of
+        # the five operator classes this isinstance chain covers.
+        # Kept as a defensive fallback; excluded from coverage with
+        # justification (AGENTS.md testing hard gate).
         return OperatorResult(
             success=False,
             error_message=f"Unhandled operator type: {op_type!r}",
