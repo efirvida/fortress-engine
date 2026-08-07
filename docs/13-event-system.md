@@ -47,7 +47,7 @@ Señales que marcan hitos en la vida del mundo: carga, transiciones entre episod
 | Evento | Cuándo se emite | Payload |
 |--------|----------------|---------|
 | `world_loaded` | Al cargar un mundo completo (todos los episodios, entidades, grafos) | `{ world_id, episode_count }` |
-| `episode_started` | Al iniciar un episodio (inicial o por transición) | `{ episode_id, episode_name, start_room_id }` |
+| `episode_started` | Al iniciar un episodio (inicial o por transición) | `{ episode_id, episode_name, start_anchor_id }` |
 | `episode_completed` | Al cumplirse la condición de victoria del episodio | `{ episode_id, victory_text, carry_over: { inventory: [], flags: [] } }` |
 | `episode_transition` | Durante la transición entre episodios (antes de cargar el nuevo grafo) | `{ from_episode_id, to_episode_id, carry_over_applied: { inventory: [], flags: [] } }` |
 | `game_completed` | Al completar el último episodio del mundo | `{ world_id, total_turns }` |
@@ -79,8 +79,8 @@ El ciclo de vida completo de un turno, desde que se inicia hasta que termina.
 | `input_received` | Cuando el parser recibe y valida el texto del jugador | `{ raw_text, protagonist_id }` |
 | `action_attempted` | Cuando una Hiper-Arista es seleccionada para ejecución (antes de aplicar operadores) | `{ hyper_edge_id, clique: { subject, verb, target, instrument, context }, protagonist_id }` |
 | `action_resolved` | Cuando una Hiper-Arista completa su ejecución (todos los operadores aplicados) | `{ hyper_edge_id, operators_executed: [str], has_effects: bool, protagonist_id }` |
-| `npc_turn_started` | Al inicio del turno de NPCs (fase 3 del orquestador) | `{ turn_number }` |
-| `npc_turn_ended` | Al finalizar el turno de todos los NPCs | `{ turn_number, npcs_acted: int }` |
+| `entity_turn_started` | Al inicio del turno de entidades no protagonistas (fase 3 del orquestador) | `{ turn_number }` |
+| `entity_turn_ended` | Al finalizar el turno de todas las entidades | `{ turn_number, entities_acted: int }` |
 | `turn_ended` | Al finalizar completamente el ciclo de turno | `{ turn_number, actions_resolved: int }` |
 
 **Nota**: `action_attempted` y `action_resolved` son eventos separados porque una Hiper-Arista puede fallar durante la validación de la clique (después del parseo) o durante la ejecución de operadores (ej: peso excede capacidad). La UI puede usar `action_attempted` para feedback inmediato ("El jugador intenta atacar...") y `action_resolved` para el resultado final.
@@ -95,7 +95,7 @@ Cada uno de los cinco operadores atómicos emite un evento cuando se ejecuta exi
 | `entity_transformed` | TRANSFORM | `{ entity_id, component_key, old_value, new_value }` |
 | `entity_combined` | COMBINE | `{ input_entity_ids: [str], output_entity_id }` |
 | `flag_set` | FLAG | `{ flag_name, old_value, new_value }` |
-| `entity_teleported` | TELEPORT | `{ entity_id, from_room_id, to_room_id }` |
+| `entity_teleported` | TELEPORT | `{ entity_id, from_anchor_id, to_anchor_id }` |
 
 **Estos eventos son producidos por el State Container, no por las Hiper-Aristas directamente**. Cuando una Hiper-Arista ejecuta `TRANSFER(Antorcha, room_03, player_inventory)`, el State Container aplica el cambio y emite `entity_transferred`. Esto garantiza que el event log refleje fielmente el estado real — si un TRANSFER falla (peso excedido, contenedor inválido), no se emite el evento.
 
@@ -105,9 +105,9 @@ Estos eventos transportan texto que la UI debe mostrar al jugador. Son producido
 
 | Evento | Cuándo se emite | Payload |
 |--------|----------------|---------|
-| `room_entered` | Cuando el protagonista activo cambia de habitación (via TELEPORT o cruce de Arista Macro) | `{ room_id, room_name, description, protagonist_id }` |
-| `room_described` | Cuando el jugador ejecuta un comando explícito de examinar la habitación (LOOK/MIRAR) | `{ room_id, description, protagonist_id }` |
-| `item_examined` | Cuando el jugador examina un ítem (EXAMINE/EXAMINAR) | `{ item_id, item_name, description, protagonist_id }` |
+| `entity_entered` | Cuando cualquier entidad cambia de anchor espacial (el protagonista vía TELEPORT o cruce de Arista Macro; otras entidades por TELEPORT o movimiento autónomo) | `{ entity_id, entity_name, from_anchor_id, to_anchor_id, protagonist_id \| None }` |
+| `entity_described` | Cuando el jugador ejecuta un comando explícito de examinar la habitación (LOOK/MIRAR) | `{ entity_id, entity_name, description, protagonist_id }` |
+| `entity_examined` | Cuando el jugador examina un ítem (EXAMINE/EXAMINAR) | `{ entity_id, entity_name, description, protagonist_id }` |
 | `inventory_listed` | Cuando el jugador consulta su inventario (INVENTORY/INVENTARIO) | `{ protagonist_id, items: [{ id, name, weight }], total_weight, capacity }` |
 | `protagonists_listed` | Cuando el jugador usa el comando GRUPO | `{ protagonists: [{ id, name, location, status }] }` |
 | `action_output` | Texto asociado a la ejecución de una Hiper-Arista (campo `output` en la definición YAML de la acción) | `{ hyper_edge_id, text, protagonist_id }` |
@@ -116,16 +116,17 @@ Estos eventos transportan texto que la UI debe mostrar al jugador. Son producido
 
 **Relación con el Gap #2 (Salida de texto asociada a operadores)**: El campo `output` de las Hiper-Aristas se emite como `action_output`. El narrador por plantillas (V1) usa este texto directamente. El narrador IA (V2) puede usarlo como prompt base y decorarlo.
 
-### 2.5 Eventos de NPC
+### 2.5 Eventos de Entidad
 
-Cuando un NPC ejecuta una acción autónoma (durante la fase 3 del orquestador de turnos), el motor emite estos eventos desde la perspectiva del protagonista activo.
+Cuando una entidad no protagonista ejecuta una acción autónoma (durante la fase 3 del orquestador de turnos), el motor emite estos eventos desde la perspectiva del protagonista activo.
 
 | Evento | Cuándo se emite | Payload |
 |--------|----------------|---------|
-| `npc_acted` | Cuando un NPC completa una acción (Hiper-Arista ejecutada desde su cerebro) | `{ npc_id, npc_name, hyper_edge_id, operators_executed: [str], affects_protagonist: bool }` |
-| `npc_dialogue` | Cuando un NPC produce texto (campo `output` de su Hiper-Arista) | `{ npc_id, npc_name, text }` |
-| `npc_entered` | Cuando un NPC cambia de habitación (por TELEPORT o movimiento autónomo) | `{ npc_id, npc_name, from_room_id, to_room_id }` |
-| `npc_died` | Cuando un NPC es transferido a `null` (destrucción/muerte) | `{ npc_id, npc_name, killed_by_id }` |
+| `entity_acted` | Cuando una entidad completa una acción (Hiper-Arista ejecutada desde su cerebro) | `{ entity_id, entity_name, hyper_edge_id, operators_executed: [str], affects_protagonist: bool }` |
+| `entity_output` | Cuando una entidad produce texto (campo `output` de su Hiper-Arista) | `{ entity_id, entity_name, text }` |
+| `entity_destroyed` | Cuando una entidad es transferida a `null` (destrucción/muerte) | `{ entity_id, entity_name, destroyed_by_id }` |
+
+**Nota**: el cambio de anchor espacial de cualquier entidad — protagónico o no — se emite como `entity_entered` (ver §2.4). El payload distingue el caso protagonista (con `protagonist_id`) del resto (sin él).
 
 ### 2.6 Eventos de Meta-Juego
 
@@ -429,10 +430,10 @@ FASE 1: Turno del Protagonista Activo
              to_container_id: null,
              hyper_edge_id: "atacar_guard_con_espada",
          })
-         emit: npc_died({
-             npc_id: "guard_01",
-             npc_name: "Guardia",
-             killed_by_id: "player_1",
+         emit: entity_destroyed({
+             entity_id: "guard_01",
+             entity_name: "Guardia",
+             destroyed_by_id: "player_1",
          })
 
     07b. StateContainer ejecuta: FLAG("guard_sala_15_muerto", true)
@@ -469,29 +470,29 @@ FASE 3: Turno de NPCs (Escena)
 ═══════════════════════════════════════════════════════════════════════
 
 10. TurnOrchestrator
-    emit: npc_turn_started({ turn_number: 42 })
+    emit: entity_turn_started({ turn_number: 42 })
 
 11. [NPC "troll_03" en room_12 evalúa su cerebro]
     Hiper-Arista disponible: "troll_gritar" (sin precondiciones, siempre ejecutable)
 
 12. GraphEngine
-    emit: npc_acted({
-        npc_id: "troll_03",
-        npc_name: "Troll",
+    emit: entity_acted({
+        entity_id: "troll_03",
+        entity_name: "Troll",
         hyper_edge_id: "troll_gritar",
         operators_executed: [],
         affects_protagonist: false,
     })
-    emit: npc_dialogue({
-        npc_id: "troll_03",
-        npc_name: "Troll",
+    emit: entity_output({
+        entity_id: "troll_03",
+        entity_name: "Troll",
         text: "¡AAAAARRRGGGGG!",
     })
 
 13. TurnOrchestrator
-    emit: npc_turn_ended({
+    emit: entity_turn_ended({
         turn_number: 42,
-        npcs_acted: 1,
+        entities_acted: 1,
     })
 
 ═══════════════════════════════════════════════════════════════════════
@@ -535,7 +536,7 @@ Todo UI, sin importar su naturaleza (terminal, web, IA), DEBE suscribirse y resp
 
 | Evento | Qué debe hacer la UI |
 |--------|---------------------|
-| `room_entered` | Mostrar la descripción de la habitación al jugador |
+| `entity_entered` | Mostrar la descripción de la habitación al jugador |
 | `action_output` | Mostrar el texto de salida de la acción |
 | `error_output` | Mostrar el mensaje de error al jugador |
 | `game_over` | Mostrar pantalla de muerte/derrota y opciones (reiniciar, cargar, salir) |
@@ -550,15 +551,14 @@ Estos eventos son decisiones de presentación. La UI decide si y cómo usarlos.
 
 | Evento | Ejemplo de uso (Web UI) | Terminal UI |
 |--------|------------------------|-------------|
-| `entity_teleported` | Animar transición de habitación (fade out/in, slide) | Ignorar — `room_entered` ya muestra la nueva descripción |
+| `entity_teleported` | Animar transición de habitación (fade out/in, slide) | Ignorar — `entity_entered` ya muestra la nueva descripción |
 | `entity_transferred` | Animar el ítem volando al inventario | Mostrar mensaje simple: "Tomaste la Antorcha." |
 | `entity_transformed` | Partículas o efecto visual de transformación | Ignorar — el cambio se refleja en la descripción |
 | `entity_combined` | Animación de fusión de ítems | Ignorar |
 | `flag_set` | Mostrar notificación toast: "Nuevo conocimiento adquirido" | Ignorar — es información implícita |
-| `npc_acted` | Animar al NPC realizando su acción | Opcional: mostrar en log de eventos |
-| `npc_dialogue` | Mostrar globo de diálogo sobre el NPC | Mostrar texto: "El Troll grita: ¡AAAAARRRGGGGG!" |
-| `npc_entered` | Animar al NPC entrando a la sala | Mostrar mensaje: "El Guardia entra en la sala." |
-| `npc_died` | Animación de muerte del NPC | Mostrar texto ya incluido en `action_output` |
+| `entity_acted` | Animar a la entidad realizando su acción | Opcional: mostrar en log de eventos |
+| `entity_output` | Mostrar globo de diálogo sobre la entidad | Mostrar texto: "El Troll grita: ¡AAAAARRRGGGGG!" |
+| `entity_destroyed` | Animación de destrucción de la entidad | Mostrar texto ya incluido en `action_output` |
 | `turn_started` / `turn_ended` | Actualizar UI chrome (número de turno, indicador de loading) | Ignorar |
 | `action_attempted` / `action_resolved` | Progress indicator durante resolución | Ignorar |
 | `protagonist_switched` | Actualizar HUD con el nuevo protagonista activo | Mostrar mensaje: "Ahora controlas a Faramir." |
@@ -598,7 +598,7 @@ class UIInterface(ABC):
 ```python
 class TerminalUI(UIInterface):
     def initialize(self, event_bus: EventBus) -> None:
-        event_bus.subscribe("room_entered", self._on_room_entered)
+        event_bus.subscribe("entity_entered", self._on_entity_entered)
         event_bus.subscribe("action_output", self._on_action_output)
         event_bus.subscribe("error_output", self._on_error_output)
         event_bus.subscribe("game_over", self._on_game_over)
@@ -606,18 +606,22 @@ class TerminalUI(UIInterface):
         event_bus.subscribe("episode_completed", self._on_episode_completed)
         event_bus.subscribe("input_received", self._on_input_received)
         event_bus.subscribe("system_message", self._on_system_message)
-        event_bus.subscribe("npc_dialogue", self._on_npc_dialogue)
-        event_bus.subscribe("npc_entered", self._on_npc_entered)
+        event_bus.subscribe("entity_output", self._on_entity_output)
+        event_bus.subscribe("entity_described", self._on_entity_described)
         # No se suscribe a entity_teleported, flag_set, etc.
         # — la terminal no necesita animaciones.
 
-    def _on_room_entered(self, event: EngineEvent) -> None:
+    def _on_entity_entered(self, event: EngineEvent) -> None:
         p = event.payload
-        print(f"\n{p['room_name']}")
-        print("-" * len(p['room_name']))
+        print(f"\n{p['entity_name']}")
+
+    def _on_entity_described(self, event: EngineEvent) -> None:
+        p = event.payload
+        print(f"\n{p['entity_name']}")
+        print("-" * len(p['entity_name']))
         print(p['description'])
 
-    def _on_action_output(self, event: EngineEvent) -> None:
+    def _on_entity_output(self, event: EngineEvent) -> None:
         print(event.payload["text"])
 
     def _on_error_output(self, event: EngineEvent) -> None:
@@ -657,8 +661,8 @@ class AINarratorPlugin:
         event_bus.subscribe("entity_transferred", self._decorate_transfer)
         event_bus.subscribe("entity_transformed", self._decorate_transform)
         event_bus.subscribe("entity_combined", self._decorate_combine)
-        event_bus.subscribe("room_entered", self._decorate_room)
-        event_bus.subscribe("npc_acted", self._decorate_npc_action)
+        event_bus.subscribe("entity_entered", self._decorate_entity_entered)
+        event_bus.subscribe("entity_acted", self._decorate_entity_action)
         event_bus.subscribe("flag_set", self._decorate_flag)
 
         # Se suscribe a action_output para reemplazar texto de plantilla
@@ -722,7 +726,7 @@ class TerminalUI(UIInterface):
 La IA decora la realidad — NO la crea. Los eventos de cambio de estado (`entity_transferred`, `flag_set`, etc.) SON la realidad. El narrador IA:
 
 - ✅ PUEDE: embellecer `action_output` con prosa atmosférica
-- ✅ PUEDE: generar descripciones de habitaciones más ricas (reemplazando `room_entered`)
+- ✅ PUEDE: generar descripciones de habitaciones más ricas (reemplazando `entity_entered`)
 - ✅ PUEDE: añadir flavor text a acciones de NPCs
 - ❌ NO PUEDE: crear ítems, cambiar banderas, mover entidades
 - ❌ NO PUEDE: modificar el payload de eventos del motor
@@ -877,19 +881,20 @@ Secuencia de eventos emitidos (en orden):
    payload: {
      entity_id: "player_1",
      entity_name: "Jugador",
-     from_room_id: "room_01",
-     to_room_id: "room_02",
+     from_anchor_id: "room_01",
+     to_anchor_id: "room_02",
    }
 
-5. room_entered
+5. entity_entered
    payload: {
-     room_id: "room_02",
-     room_name: "Pasillo Oscuro",
-     description: "Un pasillo oscuro y húmedo se extiende ante ti. "
-                  "Las paredes de piedra están cubiertas de musgo. "
-                  "Al fondo, una tenue luz parpadea.",
+     entity_id: "player_1",
+     entity_name: "Jugador",
+     from_anchor_id: "room_01",
+     to_anchor_id: "room_02",
      protagonist_id: "player_1",
    }
+   // El narrador (V1: plantillas / V2: IA) reacciona a entity_entered y
+   // renderiza la descripción de la nueva habitación (ver §6.1).
 
 6. action_resolved
    payload: {
@@ -946,11 +951,11 @@ Secuencia de eventos emitidos (en orden):
      hyper_edge_id: "atacar_guard_04_elfica",
    }
 
-5. npc_died
+5. entity_destroyed
    payload: {
-     npc_id: "guard_04",
-     npc_name: "Guardia de la Torre",
-     killed_by_id: "player_1",
+     entity_id: "guard_04",
+     entity_name: "Guardia de la Torre",
+     destroyed_by_id: "player_1",
    }
 
 6. flag_set
@@ -1041,26 +1046,26 @@ Secuencia de eventos emitidos (en orden):
    payload: {
      episode_id: "episode-02",
      episode_name: "La Fortaleza II",
-     start_room_id: "room_01",
+     start_anchor_id: "room_01",
    }
 
 5. entity_teleported
    payload: {
      entity_id: "player_1",
      entity_name: "Jugador",
-     from_room_id: null,            // No existía en el nuevo grafo todavía
-     to_room_id: "room_01",         // Start room de episode-02
+     from_anchor_id: null,            // No existía en el nuevo grafo todavía
+     to_anchor_id: "room_01",         // Start anchor de episode-02
    }
 
-6. room_entered
+6. entity_entered
    payload: {
-     room_id: "room_01",
-     room_name: "Entrada de la Fortaleza",
-     description: "Te encuentras nuevamente en la entrada de la Fortaleza. "
-                  "Algo ha cambiado. El aire es más denso. Las sombras, más profundas. "
-                  "Una nueva amenaza acecha en la oscuridad.",
+     entity_id: "player_1",
+     entity_name: "Jugador",
+     from_anchor_id: null,            // No existía en el nuevo grafo todavía
+     to_anchor_id: "room_01",
      protagonist_id: "player_1",
    }
+   // El narrador renderiza la descripción de la entrada de la Fortaleza.
 
 7. turn_ended (turno se reinicia a 1 para el nuevo episodio)
    payload: { turn_number: 1, actions_resolved: 0 }
