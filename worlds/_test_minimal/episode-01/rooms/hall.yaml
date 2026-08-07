@@ -1,0 +1,5 @@
+entity_id: "hall"
+type: "room"
+name: "A Dim Hallway"
+components:
+  visited: false

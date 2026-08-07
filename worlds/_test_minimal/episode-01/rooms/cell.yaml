@@ -1,0 +1,5 @@
+entity_id: "cell"
+type: "room"
+name: "A Dark Cell"
+components:
+  visited: false

@@ -1,0 +1,16 @@
+id: "episode-01"
+name: "The Cell"
+order: 1
+description: "You awaken in a dark cell."
+requires: []
+start_anchor: "cell"
+goal:
+  conditions:
+    - type: "flag_is_set"
+      params:
+        flag: "escaped"
+  output: "You escaped the cell!"
+  side_effects: []
+carry_over:
+  inventory: []
+  flags: []

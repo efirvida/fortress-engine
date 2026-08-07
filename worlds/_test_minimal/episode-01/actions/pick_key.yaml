@@ -1,0 +1,13 @@
+- hyper_edge_id: "pick_key"
+  name: "Pick up the rusty key"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "coger"
+    target: "rusty_key"
+  operators:
+    - type: "TRANSFER"
+      entity: "rusty_key"
+      from_container: "cell"
+      to_container: "hero"
+  output: "Recoges la llave oxidada del suelo."
