@@ -24,7 +24,7 @@ Coordinate one synchronous active-protagonist turn from input through resolution
 
 ### Requirement: Single active turn and system commands
 
-The orchestrator SHALL treat `player_controlled_entities` as a list while executing only `active_protagonist_id` in v1.0. It SHALL intercept the scoped system commands SAVE, LOAD, QUIT/TERMINAR, SWITCH/CAMBIAR, WAIT/ESPERAR, and GROUP/GRUPO without requiring full parser support.
+The orchestrator SHALL treat `player_controlled_entities` as a list while executing only `active_protagonist_id` in v1.0. It SHALL intercept SAVE/GUARDAR, LOAD/CARGAR, QUIT/TERMINAR, SWITCH/CAMBIAR, WAIT/ESPERAR, and GROUP/GRUPO without requiring full parser support. SAVE and LOAD MUST route through injected `WorldStateRepository` and `EventSourcingSaveSystem`; slot aliases MUST map `guardar`/`save` to `slot_1`, and numbered slots 1–3 to `slot_N`. Invalid slot numbers MUST emit `error_output(error_code="invalid_slot")`. With no repository or save system, the command MUST remain alive and emit the existing `no_repository` error path; it MUST NOT increment `turn_number`.
 
 #### Scenario: Multiple protagonists remain list-shaped
 
@@ -38,8 +38,32 @@ The orchestrator SHALL treat `player_controlled_entities` as a list while execut
 - WHEN `EpisodeManager.transition_to_next()` runs
 - THEN carry-over is applied, the graph is replaced, the player is teleported to start, and `turn_number` is reset to 0
 
+#### Scenario: Save dispatch
+
+- GIVEN injected repository and save system and command `GUARDAR 2`
+- WHEN `execute_turn` runs
+- THEN slot 2 is saved, `game_saved` is emitted, and turn number is unchanged
+
+#### Scenario: Load dispatch
+
+- GIVEN a saved slot and injected repository/save system
+- WHEN `CARGAR 1` runs
+- THEN snapshot plus event-log tail reconstructs state, `game_loaded` is emitted, and turn number is restored
+
+#### Scenario: No repository stays alive
+
+- GIVEN no repository or save system
+- WHEN SAVE or LOAD is executed
+- THEN exact `no_repository` error output is emitted and the orchestrator remains usable for later turns
+
+#### Scenario: Invalid slot
+
+- GIVEN command `GUARDAR 4` or `CARGAR 0`
+- WHEN the command is handled
+- THEN exact `invalid_slot` error output is emitted and no persistence call occurs
+
 ## Contract notes
 
-The constructor SHALL be `TurnOrchestrator(state: WorldState, graph: DualGraphEngine, event_bus: EventBus, parser: ParserInterface, narrator: NarratorInterface, goal_evaluator: GoalEvaluator, episode_manager: EpisodeManager, repository: WorldStateRepository | None = None) -> None`.
+The constructor SHALL be `TurnOrchestrator(state: WorldState, graph: DualGraphEngine, event_bus: EventBus, parser: ParserInterface, narrator: NarratorInterface, goal_evaluator: GoalEvaluator, episode_manager: EpisodeManager, repository: WorldStateRepository | None = None, save_system: EventSourcingSaveSystem | None = None) -> None`.
 
 Operators are invoked without EventBus. The orchestrator is the single emitter of operator-derived state-change events and persists only effectful action records.
