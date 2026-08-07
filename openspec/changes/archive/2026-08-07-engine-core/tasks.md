@@ -49,18 +49,18 @@ Chain strategy: feature-branch-chain
 
 ### Slice E1: Orchestrator + Episodes
 
-- [ ] E1.1 RED `test_engine/test_episode_manager.py`: transition resets turn, carry_over, teleport, graph replace
-- [ ] E1.2 GREEN `engine/episode_manager.py`: constructor + 4 methods
-- [ ] E1.3 RED `test_engine/test_orchestrator.py`: movement event order, fail→error_output, list invariant
-- [ ] E1.4 GREEN `engine/orchestrator.py`: TurnOrchestrator, execute_turn, single emitter from events_payload
+- [x] E1.1 RED `test_engine/test_episode_manager.py`: transition resets turn, carry_over, teleport, graph replace
+- [x] E1.2 GREEN `engine/episode_manager.py`: constructor + 4 methods
+- [x] E1.3 RED `test_engine/test_orchestrator.py`: movement event order, fail→error_output, list invariant
+- [x] E1.4 GREEN `engine/orchestrator.py`: TurnOrchestrator, execute_turn, single emitter from events_payload
 
 ### Slice E2: Plugins
 
-- [ ] E2.1 RED `test_plugins/test_parser.py` + `test_narrator.py`: injection, IR/EXAMINAR/unknown, no-op
-- [ ] E2.2 GREEN `plugins/parser_interface.py`: ParserInterface ABC + MinimalParser
-- [ ] E2.3 GREEN `plugins/narrator_interface.py`: NarratorInterface ABC + MinimalNarrator
+- [x] E2.1 RED `test_plugins/test_parser.py` + `test_narrator.py`: injection, IR/EXAMINAR/unknown, no-op
+- [x] E2.2 GREEN `plugins/parser_interface.py`: ParserInterface ABC + MinimalParser
+- [x] E2.3 GREEN `plugins/narrator_interface.py`: NarratorInterface ABC + MinimalNarrator
 
 ### Slice G: Acceptance
 
-- [ ] G.1 RED `test_integration/test_walkthrough.py`: full cycle, canonical events, episode, list invariant
-- [ ] G.2 GREEN `worlds/_test_minimal/`: 2-room world + fixture; all proposal success criteria
+- [x] G.1 RED `test_integration/test_walkthrough.py`: full cycle, canonical events, episode, list invariant
+- [x] G.2 GREEN `worlds/_test_minimal/`: 2-room world + fixture; all proposal success criteria
