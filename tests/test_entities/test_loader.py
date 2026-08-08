@@ -290,6 +290,51 @@ carry_over:
     assert entities == []
 
 
+def test_load_shared_entities_list_form(tmp_path):
+    """A shared YAML file containing a LIST of entities loads every entry."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = tmp_path / "shared_list_world"
+    _write_yaml(base / "world.yaml", "world_id: test\nname: Test\n")
+    (base / "episodes").mkdir(parents=True)
+    _write_yaml(
+        base / "episodes" / "ep-01.yaml",
+        """\
+id: "ep-01"
+name: "Ep"
+order: 1
+start_anchor: "r1"
+goal:
+  conditions: []
+  output: "Win!"
+carry_over:
+  inventory: []
+  flags: []
+""",
+    )
+    (base / "shared").mkdir(parents=True)
+    _write_yaml(
+        base / "shared" / "npcs.yaml",
+        """\
+- entity_id: "alice"
+  type: "npc"
+  name: "Alice"
+  components: {}
+  spatial_anchor: null
+- entity_id: "bob"
+  type: "npc"
+  name: "Bob"
+  components: {}
+  spatial_anchor: null
+""",
+    )
+    loader = EntityLoader(str(base))
+    entities = loader.load_shared_entities("ep-01")
+    assert [e.entity_id for e in entities] == ["alice", "bob"]
+    assert all(e.type == "npc" for e in entities)
+
+
+
 # ===================================================================
 # load_rooms
 # ===================================================================
