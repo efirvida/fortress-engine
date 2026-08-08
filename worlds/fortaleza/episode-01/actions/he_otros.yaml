@@ -1,0 +1,69 @@
+# INVENTORY, QUIT, INTERROGATE actions
+
+- hyper_edge_id: "he_inventario"
+  name: "Ver inventario"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "inventario"
+    target: "*"
+  operators: []
+  output: ""
+
+- hyper_edge_id: "he_abandonar"
+  name: "Abandonar el juego"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "abandonar"
+    target: "*"
+  operators:
+    - type: "FLAG"
+      flag: "player_dead"
+      value: true
+  output: "Has abandonado. La Bestia te devora."
+
+- hyper_edge_id: "he_terminar"
+  name: "Terminar el juego (alternativa)"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "terminar"
+    target: "*"
+  operators:
+    - type: "FLAG"
+      flag: "player_dead"
+      value: true
+  output: "Has terminado. La Bestia gana."
+
+- hyper_edge_id: "he_interrogar_npc"
+  name: "Interrogar a un NPC"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "interrogar"
+    target: "*"
+  operators: []
+  output: "No tiene nada que decirte... todavía."
+
+- hyper_edge_id: "he_preguntar_npc"
+  name: "Preguntar a un NPC (alternativa)"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "*"
+  operators: []
+  output: "No tiene nada que decirte... todavía."
+
+- hyper_edge_id: "he_pesar_item"
+  name: "Pesar un objeto"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "pesar"
+    target: "*"
+  operators: []
+  output: "Necesitas una balanza para pesar."
+
+

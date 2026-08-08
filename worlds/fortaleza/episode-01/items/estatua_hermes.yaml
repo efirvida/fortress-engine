@@ -1,0 +1,7 @@
+entity_id: "estatua_hermes"
+type: "item"
+name: "estatua de Hermes"
+components:
+  weight: 0
+  description: "Una estatua de Hermes erosionada por la lluvia. Parece querer resguardarse del agua."
+spatial_anchor: "patio_interior"

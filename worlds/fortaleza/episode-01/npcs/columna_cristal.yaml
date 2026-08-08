@@ -1,0 +1,6 @@
+entity_id: "columna_cristal"
+type: "npc"
+name: "columna de cristal"
+components:
+  description: "Una columna de cristal translúcido. En su interior se vislumbra algo atrapado. Necesita el fuego de la antorcha tres veces para romperse."
+spatial_anchor: "sala_del_columna"

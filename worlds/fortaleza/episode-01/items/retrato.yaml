@@ -1,0 +1,7 @@
+entity_id: "retrato"
+type: "item"
+name: "retrato"
+components:
+  weight: 2
+  description: "Un retrato de Alfred Hitchcock. Su mirada le sigue por toda la sala."
+spatial_anchor: "salon_de_recepciones"

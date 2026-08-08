@@ -1,0 +1,7 @@
+entity_id: "vaso_agua"
+type: "item"
+name: "vaso de agua"
+components:
+  weight: 2
+  description: "Un vaso de cristal lleno de agua fresca, olvidado sobre un atril."
+spatial_anchor: "biblioteca"

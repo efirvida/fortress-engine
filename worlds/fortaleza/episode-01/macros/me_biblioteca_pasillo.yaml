@@ -1,0 +1,8 @@
+macro_edge_id: "me_biblioteca_pasillo"
+from_anchor: "biblioteca"
+to_anchor: "pasillo"
+direction: "bidirectional"
+passage_name: "puerta"
+passage_description: "Una puerta para gigantes"
+open: false
+requires_text: "password_key[14]"

@@ -1,0 +1,9 @@
+entity_id: "bailarina"
+type: "npc"
+name: "bailarina"
+components:
+  description: "Una bailarina mecánica que no puede moverse. Sus engranajes necesitan una máquina del tiempo para funcionar."
+  is_troll: true
+  wants_item: "maquina_tiempo"
+  gift_flag: "bailarina_happy"
+spatial_anchor: "sala_de_la_bailarina"

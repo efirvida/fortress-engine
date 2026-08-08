@@ -1,0 +1,7 @@
+macro_edge_id: "me_pasillo_guerrero"
+from_anchor: "pasillo"
+to_anchor: "cuarto_del_guerrero"
+direction: "bidirectional"
+passage_name: "puerta_roja"
+passage_description: "Una puerta roja"
+open: true

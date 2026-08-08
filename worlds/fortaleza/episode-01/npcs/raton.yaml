@@ -1,0 +1,9 @@
+entity_id: "raton"
+type: "npc"
+name: "ratón"
+components:
+  description: "Un ratón de laboratorio con gafas diminutas. Tiembla de frío y añora el calor de la piedra filosofal."
+  is_troll: true
+  wants_item: "piedra_filosofal"
+  gift_flag: "raton_happy"
+spatial_anchor: "cuarto_de_los_vendajes"

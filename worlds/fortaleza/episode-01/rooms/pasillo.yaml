@@ -1,0 +1,7 @@
+entity_id: "pasillo"
+type: "room"
+name: "el pasillo"
+components:
+  description: "Tiene tres puertas al lado y una al final."
+  visited: false
+spatial_anchor: null

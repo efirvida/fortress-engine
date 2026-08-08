@@ -1,0 +1,8 @@
+entity_id: "troll_final"
+type: "npc"
+name: "Troll"
+components:
+  description: "Un troll colosal custodia la cripta final. Su piel pétrea absorbe los golpes sin inmutarse."
+  is_guard: true
+  lethal_weapon: "maza"
+spatial_anchor: "cripta_final"

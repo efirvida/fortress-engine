@@ -1,0 +1,9 @@
+entity_id: "doncella"
+type: "npc"
+name: "doncella"
+components:
+  description: "Una joven doncella con vestido raído. Mira por la ventana con melancolía."
+  is_troll: true
+  wants_item: "rosa"
+  gift_flag: "doncella_happy"
+spatial_anchor: "alcoba_de_la_doncella"

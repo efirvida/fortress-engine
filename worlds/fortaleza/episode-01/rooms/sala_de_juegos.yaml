@@ -1,0 +1,7 @@
+entity_id: "sala_de_juegos"
+type: "room"
+name: "la sala de juegos"
+components:
+  description: "Usted trata de imaginar cómo eran los juegos del salón. Hay doce mesas y cada una tiene doce erizos."
+  visited: false
+spatial_anchor: null

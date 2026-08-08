@@ -1,0 +1,122 @@
+# LOOK actions — player looks around or at objects
+# No operators, just output
+
+- hyper_edge_id: "he_mirar_habitacion"
+  name: "Mirar la habitación"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "mirar"
+    target: "*"
+  operators: []
+  output: ""
+
+- hyper_edge_id: "he_observar_habitacion"
+  name: "Observar la habitación (alternativa)"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "observar"
+    target: "*"
+  operators: []
+  output: ""
+
+- hyper_edge_id: "he_ver_roble"
+  name: "Ver el roble"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "roble"
+  operators: []
+  output: "Las palabras mágicas para abrir la puerta son obvias."
+
+- hyper_edge_id: "he_ver_inscripcion"
+  name: "Ver la inscripción"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "inscripcion"
+  operators: []
+  output: "Cuando hayas llegado casi al final, tendrás que regresar, a no ser que hayas hablado con el murciélago."
+
+- hyper_edge_id: "he_ver_grabado"
+  name: "Ver el grabado"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "grabado"
+  operators: []
+  output: "Muestra al jugador hablando con una muchacha."
+
+- hyper_edge_id: "he_ver_retrato"
+  name: "Ver el retrato"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "retrato"
+  operators: []
+  output: "Es un retrato de Alfred Hitchcock."
+
+- hyper_edge_id: "he_ver_cuadro"
+  name: "Ver el cuadro"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "cuadro"
+  operators: []
+  output: "Un cuadro hermoso. Útil para destruir estatuas."
+
+- hyper_edge_id: "he_ver_cama"
+  name: "Ver la cama"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "cama"
+  operators: []
+  output: "Una cama robusta. Parece rompible."
+
+- hyper_edge_id: "he_ver_espejo_opaco"
+  name: "Ver el espejo opaco"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "espejo_opaco"
+  operators: []
+  output: "Un espejo que no refleja. Esconde algo."
+
+- hyper_edge_id: "he_ver_pared_solaria"
+  name: "Ver la pared solitaria"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "pared_solaria"
+  operators: []
+  output: "Una pared que parece esconder algo."
+
+- hyper_edge_id: "he_leer_item"
+  name: "Leer un objeto (alternativa)"
+  priority: 9
+  clique:
+    subject: "player"
+    verb: "leer"
+    target: "*"
+  operators: []
+  output: "No ves nada especial."
+
+- hyper_edge_id: "he_ver_item"
+  name: "Ver algo genérico"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "*"
+  operators: []
+  output: "No ves nada especial."

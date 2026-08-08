@@ -1,0 +1,9 @@
+entity_id: "arana"
+type: "npc"
+name: "araña"
+components:
+  description: "Una araña gigante que teje sin cesar. Su tela está rota y necesita hilo nuevo urgente."
+  is_troll: true
+  wants_item: "hilo_ariadna"
+  gift_flag: "arana_happy"
+spatial_anchor: "sala_de_la_arana"

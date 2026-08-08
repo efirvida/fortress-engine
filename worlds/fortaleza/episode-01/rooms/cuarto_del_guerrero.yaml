@@ -1,0 +1,7 @@
+entity_id: "cuarto_del_guerrero"
+type: "room"
+name: "el cuarto del guerrero"
+components:
+  description: "El cuarto está muy ordenado. A usted le sorprende que no hayan armas."
+  visited: false
+spatial_anchor: null

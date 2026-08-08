@@ -1,0 +1,7 @@
+entity_id: "maquina_tiempo"
+type: "item"
+name: "máquina del tiempo"
+components:
+  weight: 5
+  description: "Un artefacto de engranajes y esferas capaz de adelantar o retrasar las horas."
+spatial_anchor: "laboratorio_de_la_bestia"

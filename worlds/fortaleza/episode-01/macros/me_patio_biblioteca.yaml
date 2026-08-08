@@ -1,0 +1,7 @@
+macro_edge_id: "me_patio_biblioteca"
+from_anchor: "patio_interior"
+to_anchor: "biblioteca"
+direction: "bidirectional"
+passage_name: "puerta_verde"
+passage_description: "Una puerta verde"
+open: true

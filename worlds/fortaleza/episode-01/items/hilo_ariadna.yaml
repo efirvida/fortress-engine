@@ -1,0 +1,7 @@
+entity_id: "hilo_ariadna"
+type: "item"
+name: "hilo de Ariadna"
+components:
+  weight: 1
+  description: "Un ovillo de hilo interminable. Con él nadie se pierde jamás."
+spatial_anchor: "sala_de_juegos"

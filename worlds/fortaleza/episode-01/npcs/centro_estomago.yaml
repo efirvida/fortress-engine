@@ -1,0 +1,8 @@
+entity_id: "centro_estomago"
+type: "npc"
+name: "centro del estómago"
+components:
+  description: "Un órgano voraz que todo lo devora. Los ácidos gorgotean amenazantes."
+  is_guard: true
+  lethal_weapon: "lanza"
+spatial_anchor: "centro_del_estomago"

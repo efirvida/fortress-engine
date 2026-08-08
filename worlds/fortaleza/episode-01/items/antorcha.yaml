@@ -1,0 +1,7 @@
+entity_id: "antorcha"
+type: "item"
+name: "antorcha"
+components:
+  weight: 2
+  description: "Una antorcha encendida que arde con una llama firme y anaranjada."
+spatial_anchor: "pasillo"

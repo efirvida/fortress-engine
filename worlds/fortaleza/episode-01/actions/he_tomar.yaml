@@ -1,0 +1,419 @@
+# TAKE actions — player picks up items from rooms
+# TRANSFER moves entity from room to hero inventory
+
+- hyper_edge_id: "he_tomar_roble"
+  name: "Tomar el roble"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "roble"
+  operators:
+    - type: "TRANSFORM"
+      entity: "roble"
+      component: "visited"
+      old_value: false
+      new_value: true
+  output: "Examinas el roble. Tiene una inscripción."
+
+- hyper_edge_id: "he_tomar_maza"
+  name: "Tomar la maza"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "maza"
+  operators:
+    - type: "TRANSFER"
+      entity: "maza"
+      from_container: "el_exterior_de_la_fortaleza"
+      to_container: "hero"
+  output: "Tomas la maza. Es muy pesada (39 kg)."
+
+- hyper_edge_id: "he_tomar_pastel_cerezas"
+  name: "Tomar el pastel de cerezas"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "pastel_cerezas"
+  operators:
+    - type: "TRANSFER"
+      entity: "pastel_cerezas"
+      from_container: "el_exterior_de_la_fortaleza"
+      to_container: "hero"
+  output: "Tomas el pastel de cerezas."
+
+- hyper_edge_id: "he_tomar_escoba"
+  name: "Tomar la escoba"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "escoba"
+  operators:
+    - type: "TRANSFER"
+      entity: "escoba"
+      from_container: "sala_de_juegos"
+      to_container: "hero"
+  output: "Tomas la escoba. Dicen que es voladora."
+
+- hyper_edge_id: "he_tomar_hilo_ariadna"
+  name: "Tomar el hilo de Ariadna"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "hilo_ariadna"
+  operators:
+    - type: "TRANSFER"
+      entity: "hilo_ariadna"
+      from_container: "sala_de_juegos"
+      to_container: "hero"
+  output: "Tomas el hilo de Ariadna. Mide varios kilómetros."
+
+- hyper_edge_id: "he_tomar_balanza"
+  name: "Tomar la balanza"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "balanza"
+  operators:
+    - type: "TRANSFER"
+      entity: "balanza"
+      from_container: "patio_interior"
+      to_container: "hero"
+  output: "Tomas la balanza."
+
+- hyper_edge_id: "he_tomar_hueso_gato"
+  name: "Tomar el hueso de gato"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "hueso_gato"
+  operators:
+    - type: "TRANSFER"
+      entity: "hueso_gato"
+      from_container: "cuarto_de_espejos"
+      to_container: "hero"
+  output: "Tomas el hueso de gato."
+
+- hyper_edge_id: "he_tomar_vaso_agua"
+  name: "Tomar el vaso de agua"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "vaso_agua"
+  operators:
+    - type: "TRANSFER"
+      entity: "vaso_agua"
+      from_container: "biblioteca"
+      to_container: "hero"
+  output: "Tomas el vaso de agua. Para el trébol."
+
+- hyper_edge_id: "he_tomar_candelabro"
+  name: "Tomar el candelabro"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "candelabro"
+  operators:
+    - type: "TRANSFER"
+      entity: "candelabro"
+      from_container: "biblioteca"
+      to_container: "hero"
+  output: "Tomas el candelabro. Su llama está inmóvil."
+
+- hyper_edge_id: "he_tomar_antorcha"
+  name: "Tomar la antorcha"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "antorcha"
+  operators:
+    - type: "TRANSFER"
+      entity: "antorcha"
+      from_container: "pasillo"
+      to_container: "hero"
+  output: "Tomas la antorcha."
+
+- hyper_edge_id: "he_tomar_polvo_magico"
+  name: "Tomar el polvo mágico"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "polvo_magico"
+  operators:
+    - type: "TRANSFER"
+      entity: "polvo_magico"
+      from_container: "alcoba_de_la_bruja"
+      to_container: "hero"
+  output: "Tomas el polvo mágico. Hace invisible."
+
+- hyper_edge_id: "he_tomar_pocion_crecer"
+  name: "Tomar la poción para crecer"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "pocion_crecer"
+  operators:
+    - type: "TRANSFER"
+      entity: "pocion_crecer"
+      from_container: "alcoba_de_la_bruja"
+      to_container: "hero"
+  output: "Tomas la poción. Huele fatal."
+
+- hyper_edge_id: "he_tomar_vendajes"
+  name: "Tomar los vendajes"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "vendajes"
+  operators:
+    - type: "TRANSFER"
+      entity: "vendajes"
+      from_container: "cuarto_del_guerrero"
+      to_container: "hero"
+  output: "Tomas los vendajes. Manchados de sangre."
+
+- hyper_edge_id: "he_tomar_piedra_filosofal"
+  name: "Tomar la piedra filosofal"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "piedra_filosofal"
+  operators:
+    - type: "TRANSFER"
+      entity: "piedra_filosofal"
+      from_container: "laboratorio_de_la_bestia"
+      to_container: "hero"
+  output: "Tomas la piedra filosofal. La quinta esencia."
+
+- hyper_edge_id: "he_tomar_maquina_tiempo"
+  name: "Tomar la máquina del tiempo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "maquina_tiempo"
+  operators:
+    - type: "TRANSFER"
+      entity: "maquina_tiempo"
+      from_container: "laboratorio_de_la_bestia"
+      to_container: "hero"
+  output: "Tomas la máquina. Parece una moledora de carne."
+
+- hyper_edge_id: "he_tomar_taza_cafe"
+  name: "Tomar la taza de café"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "taza_cafe"
+  operators:
+    - type: "TRANSFER"
+      entity: "taza_cafe"
+      from_container: "sala_de_infusiones"
+      to_container: "hero"
+  output: "Tomas la taza de café."
+
+- hyper_edge_id: "he_tomar_cigarro"
+  name: "Tomar el cigarro"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "cigarro"
+  operators:
+    - type: "TRANSFER"
+      entity: "cigarro"
+      from_container: "sala_de_infusiones"
+      to_container: "hero"
+  output: "Tomas el cigarro."
+
+- hyper_edge_id: "he_tomar_rosa"
+  name: "Tomar la rosa"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "rosa"
+  operators:
+    - type: "TRANSFER"
+      entity: "rosa"
+      from_container: "jardin"
+      to_container: "hero"
+  output: "Tomas la rosa. Es para la doncella."
+
+- hyper_edge_id: "he_tomar_cuadro"
+  name: "Tomar el cuadro"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "cuadro"
+  operators:
+    - type: "TRANSFER"
+      entity: "cuadro"
+      from_container: "alcoba_de_la_doncella"
+      to_container: "hero"
+  output: "Tomas el cuadro. Útil para destruir estatuas."
+
+- hyper_edge_id: "he_tomar_corazon_unicornio"
+  name: "Tomar el corazón de unicornio"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "corazon_unicornio"
+  operators:
+    - type: "TRANSFER"
+      entity: "corazon_unicornio"
+      from_container: "alcoba_de_la_doncella"
+      to_container: "hero"
+  output: "Tomas el corazón de unicornio. Para la arteria."
+
+- hyper_edge_id: "he_tomar_paraguas"
+  name: "Tomar el paraguas"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "paraguas"
+  operators:
+    - type: "TRANSFER"
+      entity: "paraguas"
+      from_container: "cuarto_del_hechicero"
+      to_container: "hero"
+  output: "Tomas el paraguas. Para Hermes y el esófago."
+
+- hyper_edge_id: "he_tomar_talisman_aire"
+  name: "Tomar el talismán de aire"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "talisman_aire"
+  operators:
+    - type: "TRANSFER"
+      entity: "talisman_aire"
+      from_container: "cuarto_del_hechicero"
+      to_container: "hero"
+  output: "Tomas el talismán de aire. Para la tráquea."
+
+- hyper_edge_id: "he_tomar_martillo"
+  name: "Tomar el martillo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "martillo"
+  operators:
+    - type: "TRANSFER"
+      entity: "martillo"
+      from_container: "sala_de_la_arana"
+      to_container: "hero"
+  output: "Tomas el martillo. Para puertas de madera."
+
+- hyper_edge_id: "he_tomar_hacha"
+  name: "Tomar el hacha"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "hacha"
+  operators:
+    - type: "TRANSFER"
+      entity: "hacha"
+      from_container: "cuarto_de_los_vendajes"
+      to_container: "hero"
+  output: "Tomas el hacha. Para camas y árboles."
+
+- hyper_edge_id: "he_tomar_espada"
+  name: "Tomar la espada"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "espada"
+  operators:
+    - type: "TRANSFER"
+      entity: "espada"
+      from_container: "sala_de_armas"
+      to_container: "hero"
+  output: "Tomas la espada. Arma del Minotauro."
+
+- hyper_edge_id: "he_tomar_lanza"
+  name: "Tomar la lanza"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "lanza"
+  operators:
+    - type: "TRANSFER"
+      entity: "lanza"
+      from_container: "sala_de_armas"
+      to_container: "hero"
+  output: "Tomas la lanza. Para Atenea y el estómago."
+
+- hyper_edge_id: "he_tomar_arco"
+  name: "Tomar el arco"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "arco"
+  operators:
+    - type: "TRANSFER"
+      entity: "arco"
+      from_container: "sala_de_armas"
+      to_container: "hero"
+  output: "Tomas el arco. Para el corazón."
+
+- hyper_edge_id: "he_tomar_daga"
+  name: "Tomar la daga"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "daga"
+  operators:
+    - type: "TRANSFER"
+      entity: "daga"
+      from_container: "sala_de_armas"
+      to_container: "hero"
+  output: "Tomas la daga. Para la Arpía."
+
+- hyper_edge_id: "he_tomar_latigo"
+  name: "Tomar el látigo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "latigo"
+  operators:
+    - type: "TRANSFER"
+      entity: "latigo"
+      from_container: "sala_de_armas"
+      to_container: "hero"
+  output: "Tomas el látigo. Para el lobo."
+
+- hyper_edge_id: "he_coger_item"
+  name: "Coger un objeto (alternativa)"
+  priority: 9
+  clique:
+    subject: "player"
+    verb: "coger"
+    target: "*"
+  operators: []
+  output: "No puedes coger eso."

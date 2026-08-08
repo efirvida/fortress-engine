@@ -1,0 +1,8 @@
+macro_edge_id: "me_pasillo_laboratorio"
+from_anchor: "pasillo"
+to_anchor: "laboratorio_de_la_bestia"
+direction: "bidirectional"
+passage_name: "puerta_prohibida"
+passage_description: "Una puerta prohibida"
+open: false
+requires_text: "password_key[15]"

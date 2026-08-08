@@ -1,0 +1,7 @@
+entity_id: "balanza"
+type: "item"
+name: "balanza"
+components:
+  weight: 3
+  description: "Una balanza de dos platillos, precisa hasta el último gramo."
+spatial_anchor: "patio_interior"

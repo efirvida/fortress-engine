@@ -1,0 +1,7 @@
+macro_edge_id: "me_salon_juegos"
+from_anchor: "salon_de_recepciones"
+to_anchor: "sala_de_juegos"
+direction: "bidirectional"
+passage_name: "puerta_negra"
+passage_description: "Una puerta negra"
+open: true

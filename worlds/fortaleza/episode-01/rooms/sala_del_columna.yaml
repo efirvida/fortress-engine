@@ -1,0 +1,7 @@
+entity_id: "sala_del_columna"
+type: "room"
+name: "la sala de la columna"
+components:
+  description: "Una sala con una columna de cristal gigante."
+  visited: false
+spatial_anchor: null

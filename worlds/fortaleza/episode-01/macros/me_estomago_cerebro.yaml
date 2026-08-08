@@ -1,0 +1,7 @@
+macro_edge_id: "me_estomago_cerebro"
+from_anchor: "centro_del_estomago"
+to_anchor: "centro_del_cerebro"
+direction: "bidirectional"
+passage_name: "conducto"
+passage_description: "Un conducto interno"
+open: true

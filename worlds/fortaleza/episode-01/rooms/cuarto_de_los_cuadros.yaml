@@ -1,0 +1,7 @@
+entity_id: "cuarto_de_los_cuadros"
+type: "room"
+name: "el cuarto de los cuadros"
+components:
+  description: "Un cuarto lleno de cuadros valiosos."
+  visited: false
+spatial_anchor: null

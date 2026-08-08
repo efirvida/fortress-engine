@@ -245,9 +245,9 @@ class TestBuildEngine:
             _build_engine(str(world_dir))
         assert exc_info.value.code == 1
 
-    def test_copy_escape_edges_no_escape_edges(self):
-        """_copy_escape_edges handles no escape edges gracefully."""
-        from fortress_engine.cli.main import _copy_escape_edges
+    def test_copy_hyper_edges_to_all_rooms_no_escape_edges(self):
+        """_copy_hyper_edges_to_all_rooms handles no escape edges gracefully."""
+        from fortress_engine.cli.main import _copy_hyper_edges_to_all_rooms
         from fortress_engine.engine.state import WorldState
         from fortress_engine.entities.entity import Entity
         from fortress_engine.events.event_bus import EventBus
@@ -269,11 +269,11 @@ class TestBuildEngine:
         graph = MockGraph()
 
         # This should not raise an exception
-        _copy_escape_edges(graph, state, [], Path("/tmp"))
+        _copy_hyper_edges_to_all_rooms(graph, state, [], Path("/tmp"))
 
-    def test_copy_escape_edges_with_escape_edges(self, tmp_path):
-        """_copy_escape_edges copies edges to other rooms."""
-        from fortress_engine.cli.main import _copy_escape_edges
+    def test_copy_hyper_edges_to_all_rooms_with_escape_edges(self, tmp_path):
+        """_copy_hyper_edges_to_all_rooms copies edges to other rooms."""
+        from fortress_engine.cli.main import _copy_hyper_edges_to_all_rooms
         from fortress_engine.engine.state import WorldState
         from fortress_engine.entities.entity import Entity
         from fortress_engine.events.event_bus import EventBus
@@ -347,16 +347,16 @@ class TestBuildEngine:
         class MockEpisode:
             id = "episode-01"
 
-        _copy_escape_edges(graph, state, [MockEpisode()], world_dir)
+        _copy_hyper_edges_to_all_rooms(graph, state, [MockEpisode()], world_dir)
 
         # Should have copied edge to hall but not cell
         assert len(graph.added) == 1
         assert graph.added[0][0] == "hall"
         assert graph.added[0][1] is escape_edge
 
-    def test_copy_escape_edges_missing_rooms_dir(self, tmp_path):
-        """_copy_escape_edges handles missing rooms dir for episode with escape edges."""
-        from fortress_engine.cli.main import _copy_escape_edges
+    def test_copy_hyper_edges_to_all_rooms_missing_rooms_dir(self, tmp_path):
+        """_copy_hyper_edges_to_all_rooms handles missing rooms dir for episode with escape edges."""
+        from fortress_engine.cli.main import _copy_hyper_edges_to_all_rooms
         from fortress_engine.engine.state import WorldState
         from fortress_engine.entities.entity import Entity
 
@@ -387,11 +387,11 @@ class TestBuildEngine:
             id = "episode-01"
 
         # rooms dir does NOT exist → line 73 (continue) should be hit
-        _copy_escape_edges(graph, state, [MockEpisode()], world_dir)
+        _copy_hyper_edges_to_all_rooms(graph, state, [MockEpisode()], world_dir)
 
-    def test_copy_escape_edges_exception_handler(self, tmp_path):
-        """_copy_escape_edges handles exceptions gracefully."""
-        from fortress_engine.cli.main import _copy_escape_edges
+    def test_copy_hyper_edges_to_all_rooms_exception_handler(self, tmp_path):
+        """_copy_hyper_edges_to_all_rooms handles exceptions gracefully."""
+        from fortress_engine.cli.main import _copy_hyper_edges_to_all_rooms
         from fortress_engine.engine.state import WorldState
         from fortress_engine.entities.entity import Entity
 
@@ -436,11 +436,11 @@ class TestBuildEngine:
             id = "episode-01"
 
         # Should not raise — exception is caught
-        _copy_escape_edges(graph, state, [MockEpisode()], world_dir)
+        _copy_hyper_edges_to_all_rooms(graph, state, [MockEpisode()], world_dir)
 
-    def test_copy_escape_edges_null_anchor(self):
-        """_copy_escape_edges returns early when start_anchor is None."""
-        from fortress_engine.cli.main import _copy_escape_edges
+    def test_copy_hyper_edges_to_all_rooms_null_anchor(self):
+        """_copy_hyper_edges_to_all_rooms returns early when start_anchor is None."""
+        from fortress_engine.cli.main import _copy_hyper_edges_to_all_rooms
         from fortress_engine.engine.state import WorldState
         from fortress_engine.entities.entity import Entity
 
@@ -454,4 +454,4 @@ class TestBuildEngine:
             pass
 
         # Should return early without error — line 60
-        _copy_escape_edges(MockGraph(), state, [], Path("/tmp"))
+        _copy_hyper_edges_to_all_rooms(MockGraph(), state, [], Path("/tmp"))

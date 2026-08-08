@@ -1,0 +1,8 @@
+macro_edge_id: "me_bruja_doncella"
+from_anchor: "alcoba_de_la_bruja"
+to_anchor: "alcoba_de_la_doncella"
+direction: "bidirectional"
+passage_name: "escaparate"
+passage_description: "Un escaparate peligroso"
+open: false
+requires_item: "candelabro"

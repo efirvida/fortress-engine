@@ -1,0 +1,7 @@
+entity_id: "sala_de_infusiones"
+type: "room"
+name: "la sala de infusiones"
+components:
+  description: "Hay hierbas por todas partes. El olor es dulzón y mareante."
+  visited: false
+spatial_anchor: null

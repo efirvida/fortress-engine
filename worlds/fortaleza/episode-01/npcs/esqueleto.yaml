@@ -1,0 +1,9 @@
+entity_id: "esqueleto"
+type: "npc"
+name: "esqueleto"
+components:
+  description: "Un esqueleto que vivió mejor vida. Se lamenta de que nadie le invite a un café desde hace siglos."
+  is_troll: true
+  wants_item: "taza_cafe"
+  gift_flag: "esqueleto_happy"
+spatial_anchor: "cuarto_del_hechicero"

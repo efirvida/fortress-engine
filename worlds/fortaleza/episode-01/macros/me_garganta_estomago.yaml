@@ -1,0 +1,7 @@
+macro_edge_id: "me_garganta_estomago"
+from_anchor: "garganta"
+to_anchor: "centro_del_estomago"
+direction: "bidirectional"
+passage_name: "esofago"
+passage_description: "El esófago de la Bestia"
+open: true

@@ -1,0 +1,7 @@
+entity_id: "cuadro"
+type: "item"
+name: "cuadro"
+components:
+  weight: 3
+  description: "Un cuadro pesado con un marco macizo. Serviría para golpear algo con fuerza."
+spatial_anchor: "alcoba_de_la_doncella"

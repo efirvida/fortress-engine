@@ -1,0 +1,7 @@
+entity_id: "patio_interior"
+type: "room"
+name: "el patio interior"
+components:
+  description: "El patio tiene forma de caracol. Cada uno o dos pasos se levanta una columna de mármol negro y se confunde en la altura con los árboles. Usted siente el crujido de las hojas secas bajo sus zapatos."
+  visited: false
+spatial_anchor: null

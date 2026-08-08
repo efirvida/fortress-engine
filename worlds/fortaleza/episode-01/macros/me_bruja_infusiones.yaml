@@ -1,0 +1,7 @@
+macro_edge_id: "me_bruja_infusiones"
+from_anchor: "alcoba_de_la_bruja"
+to_anchor: "sala_de_infusiones"
+direction: "bidirectional"
+passage_name: "pasadizo"
+passage_description: "Un pasadizo secreto"
+open: true

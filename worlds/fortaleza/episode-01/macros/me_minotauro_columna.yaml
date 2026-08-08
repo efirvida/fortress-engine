@@ -1,0 +1,7 @@
+macro_edge_id: "me_minotauro_columna"
+from_anchor: "sala_del_minotauro"
+to_anchor: "sala_del_columna"
+direction: "bidirectional"
+passage_name: "salida"
+passage_description: "La salida del laberinto"
+open: true

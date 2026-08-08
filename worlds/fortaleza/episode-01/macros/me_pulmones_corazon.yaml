@@ -1,0 +1,7 @@
+macro_edge_id: "me_pulmones_corazon"
+from_anchor: "centro_de_los_pulmones"
+to_anchor: "centro_del_corazon"
+direction: "bidirectional"
+passage_name: "vena"
+passage_description: "Una vena"
+open: true
