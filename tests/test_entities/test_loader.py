@@ -167,7 +167,12 @@ def test_load_world_config(tmp_path):
     loader = EntityLoader(str(base))
     config = loader.load_world_config()
 
-    assert config == {"world_id": "test_world", "name": "Test World"}
+    assert config["world_id"] == "test_world"
+    assert config["name"] == "Test World"
+    # N3: language/parser/narrator now have defaults
+    assert config["language"] == "es"
+    assert config["parser"] == {"plugin": "classic", "options": {}}
+    assert config["narrator"] == {"plugin": "template", "options": {}}
 
 
 def test_load_world_config_rejects_bad_yaml(tmp_path):

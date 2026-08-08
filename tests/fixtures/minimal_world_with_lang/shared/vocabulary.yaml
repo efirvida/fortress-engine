@@ -1,0 +1,26 @@
+language: es
+verbs:
+  ir: [ATRAVESAR, CRUZAR, PASAR]
+  tomar: [COGER]
+  dejar: [SOLTAR]
+stopwords:
+  - el
+  - la
+  - los
+  - las
+  - un
+  - una
+  - al
+  - del
+  - por
+prepositions:
+  instrument:
+    - con
+  recipient:
+    - a
+speech_markers:
+  - diciendo
+  - respondiendo
+speech_verbs:
+  - decir
+  - responder
