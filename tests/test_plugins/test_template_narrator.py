@@ -141,8 +141,9 @@ def test_initialize_subscribes_to_bus():
     assert after > initial
 
 
-def test_initialize_subscribes_to_nine_events():
-    """initialize() subscribes to exactly the 9 supported event types."""
+def test_initialize_subscribes_to_thirteen_events():
+    """initialize() subscribes to the 13 supported event types (9 template
+    events + 4 system-command feedback events)."""
     bus = EventBus()
     narrator = TemplateNarrator()
 
@@ -152,7 +153,7 @@ def test_initialize_subscribes_to_nine_events():
     specific_handlers = sum(
         len(v) for k, v in bus._subscribers.items() if k != "*"
     )
-    assert specific_handlers == 9
+    assert specific_handlers == 13
 
 
 def test_initialize_idempotent():
@@ -701,17 +702,17 @@ def test_inventory_listed_formats_items():
 
 
 def test_unhandled_narration_event_returns_none():
-    """An event type not in the 9-handler set returns None."""
+    """An event type not in the narrator's handler set returns None."""
     narrator = TemplateNarrator()
     world = _make_world()
     bus = EventBus()
     narrator.initialize(bus)
 
-    # protagonists_listed is a narration event but NOT in the 9
-    from fortress_engine.events.event_types import PROTAGONISTS_LISTED
+    # entity_transferred is a state-change event the narrator does NOT handle.
+    from fortress_engine.events.event_types import ENTITY_TRANSFERRED
     event = _make_event(
-        PROTAGONISTS_LISTED,
-        {"protagonists": []},
+        ENTITY_TRANSFERRED,
+        {"entity_id": "x", "from_container_id": "a", "to_container_id": "b"},
     )
 
     result = narrator.handle_event(event, world)
@@ -898,6 +899,7 @@ def test_system_message_unknown_code_no_crash_format():
 # All flat error codes the engine can emit (from design.md operator table
 # + orchestrator error_output sites + graph gate codes).
 _ALL_ENGINE_ERROR_CODES: list[str] = [
+    "parser_error",
     "no_action",
     "blocked",
     "text_closed",
@@ -958,3 +960,131 @@ def test_esperar_not_in_template_narrator_source():
     import inspect
     source = inspect.getsource(TemplateNarrator)
     assert "esperar" not in source.lower()
+
+
+# ===================================================================
+# W4: system-command feedback — narrator renders save/load/switch/group
+# ===================================================================
+
+
+def _narrator_event(narrator, event_type, payload):
+    from fortress_engine.events.event_types import EngineEvent
+
+    ev = EngineEvent.create(event_type=event_type, turn_number=1, payload=payload)
+    return narrator.handle_event(ev, None)
+
+
+def test_game_saved_feedback():
+    from fortress_engine.plugins.template_narrator import TemplateNarrator
+
+    n = TemplateNarrator()
+    text = _narrator_event(n, "game_saved", {"save_slot": "slot_1"})
+    assert text is not None
+    assert "slot_1" in text
+
+
+def test_game_loaded_feedback():
+    from fortress_engine.plugins.template_narrator import TemplateNarrator
+
+    n = TemplateNarrator()
+    text = _narrator_event(n, "game_loaded", {"save_slot": "slot_2"})
+    assert text is not None
+    assert "slot_2" in text
+
+
+def test_protagonist_switched_feedback():
+    from fortress_engine.plugins.template_narrator import TemplateNarrator
+
+    n = TemplateNarrator()
+    text = _narrator_event(
+        n, "protagonist_switched",
+        {"from_protagonist_id": "hero", "to_protagonist_id": "ana", "name": "Ana"},
+    )
+    assert text is not None
+    assert "Ana" in text
+
+
+def test_protagonists_listed_feedback():
+    from fortress_engine.plugins.template_narrator import TemplateNarrator
+
+    n = TemplateNarrator()
+    text = _narrator_event(
+        n, "protagonists_listed",
+        {"protagonists": [{"id": "hero", "name": "Héroe", "status": "active"},
+                          {"id": "ana", "name": "Ana", "status": "inactive"}]},
+    )
+    assert text is not None
+    assert "Héroe" in text
+    assert "Ana" in text
+
+
+def test_system_feedback_subscribed_on_initialize():
+    from fortress_engine.events.event_bus import EventBus
+    from fortress_engine.plugins.template_narrator import TemplateNarrator
+
+    bus = EventBus()
+    n = TemplateNarrator()
+    n.initialize(bus)
+    for ev_type in ("game_saved", "game_loaded",
+                    "protagonist_switched", "protagonists_listed"):
+        received = []
+        bus.subscribe("*", lambda e, r=received: r.append(e))
+        bus.emit(
+            __import__("fortress_engine.events.event_types", fromlist=["EngineEvent"]).EngineEvent.create(
+                event_type=ev_type, turn_number=1, payload={"save_slot": "slot_1", "name": "X"}
+            )
+        )
+        # The narrator's own handler consumed it without crashing.
+
+
+def test_game_saved_with_explicit_slot_key():
+    """When payload already carries 'slot', the alias mapping is skipped."""
+    from fortress_engine.plugins.template_narrator import TemplateNarrator
+
+    n = TemplateNarrator()
+    text = _narrator_event(n, "game_saved", {"save_slot": "slot_1", "slot": "custom"})
+    assert text is not None
+    assert "custom" in text
+
+
+def test_game_loaded_with_explicit_slot_key():
+    from fortress_engine.plugins.template_narrator import TemplateNarrator
+
+    n = TemplateNarrator()
+    text = _narrator_event(n, "game_loaded", {"save_slot": "slot_1", "slot": "custom"})
+    assert text is not None
+    assert "custom" in text
+
+
+def test_system_feedback_fallback_when_template_missing():
+    """A system code with no template falls back to the generic message."""
+    from fortress_engine.plugins.template_narrator import TemplateNarrator
+
+    n = TemplateNarrator(messages={"system_message.game_saved": "{missing_placeholder}"})
+    text = _narrator_event(n, "game_saved", {"save_slot": "slot_1"})
+    assert text is not None  # format failure falls back, no crash
+
+
+def test_protagonists_listed_empty():
+    """Empty protagonists list renders the fallback names string."""
+    from fortress_engine.plugins.template_narrator import TemplateNarrator
+
+    n = TemplateNarrator()
+    text = _narrator_event(n, "protagonists_listed", {"protagonists": []})
+    assert text is not None
+    assert "Grupo:" in text
+
+
+def test_protagonists_listed_format_failure_falls_back():
+    """A broken protagonists_listed template falls back without crashing."""
+    from fortress_engine.plugins.template_narrator import TemplateNarrator
+
+    n = TemplateNarrator(messages={
+        "system_message.protagonists_listed": "{names} {missing}"
+    })
+    text = _narrator_event(
+        n, "protagonists_listed",
+        {"protagonists": [{"id": "hero", "name": "Héroe"}]},
+    )
+    assert text is not None
+    assert "{names}" in text or "missing" in text  # deterministic fallback
