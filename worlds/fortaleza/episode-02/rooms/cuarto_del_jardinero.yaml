@@ -1,0 +1,7 @@
+entity_id: "cuarto_del_jardinero"
+type: "room"
+name: "el cuarto del jardinero"
+components:
+  description: "Es una habitación muy modesta. A usted le sorprende que los instrumentos no sean de jardinería, sino de fabricar espejos."
+  visited: false
+spatial_anchor: null

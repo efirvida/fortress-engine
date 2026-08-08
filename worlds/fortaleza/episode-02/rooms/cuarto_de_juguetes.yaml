@@ -1,0 +1,7 @@
+entity_id: "cuarto_de_juguetes"
+type: "room"
+name: "el cuarto de juguetes"
+components:
+  description: "Hay miles de juguetes regados por todas partes. Usted siente deseos de volver a ser un niño."
+  visited: false
+spatial_anchor: null

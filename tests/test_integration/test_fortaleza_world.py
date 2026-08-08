@@ -1,7 +1,7 @@
-"""Tests for Fortaleza world data — Episode 1 YAML validation.
+"""Tests for Fortaleza world data — Episode 1 & 2 YAML validation.
 
 Validates that all YAML files load correctly, entity IDs are unique,
-spatial_anchors resolve to existing rooms, and the world integrity
+spatial_anchors resolve to existing anchors, and the world integrity
 check passes.
 """
 
@@ -168,6 +168,157 @@ class TestFortalezaEpisode1NPCs:
         critical = ["ciclope", "minotauro", "centro_cerebro", "llamador_bronce"]
         for cid in critical:
             assert cid in npc_ids, f"Critical NPC '{cid}' missing"
+
+
+class TestFortalezaEpisode2Rooms:
+    """Episode 2 rooms load and validate."""
+
+    def test_episode_02_rooms_load(self):
+        """All 55 room YAML files load without errors."""
+        loader = EntityLoader(_WORLD_PATH)
+        rooms = loader.load_rooms("episode-02")
+        assert len(rooms) == 55, f"Expected 55 rooms, got {len(rooms)}"
+
+    def test_episode_02_room_ids_unique(self):
+        """Episode 2 room entity_ids are unique."""
+        loader = EntityLoader(_WORLD_PATH)
+        rooms = loader.load_rooms("episode-02")
+        ids = [r.entity_id for r in rooms]
+        assert len(ids) == len(set(ids)), f"Duplicate room IDs: {ids}"
+
+    def test_episode_02_start_anchor_exists(self):
+        """Episode 2 start_anchor resolves to a loaded room."""
+        loader = EntityLoader(_WORLD_PATH)
+        rooms = loader.load_rooms("episode-02")
+        room_ids = {r.entity_id for r in rooms}
+        assert "habitacion_para_huespedes" in room_ids
+
+    def test_episode_02_room_components_valid(self):
+        """Episode 2 rooms have required components."""
+        loader = EntityLoader(_WORLD_PATH)
+        rooms = loader.load_rooms("episode-02")
+        for room in rooms:
+            assert room.entity_id
+            assert room.name
+            assert room.type == "room"
+
+
+class TestFortalezaEpisode2Items:
+    """Episode 2 items load and validate."""
+
+    def test_episode_02_items_load(self):
+        """All item YAML files load without errors."""
+        loader = EntityLoader(_WORLD_PATH)
+        items = loader.load_items("episode-02")
+        assert len(items) >= 50, f"Expected >=50 items, got {len(items)}"
+
+    def test_episode_02_item_ids_unique(self):
+        """Episode 2 item entity_ids are unique."""
+        loader = EntityLoader(_WORLD_PATH)
+        items = loader.load_items("episode-02")
+        ids = [i.entity_id for i in items]
+        assert len(ids) == len(set(ids)), f"Duplicate item IDs: {ids}"
+
+    def test_episode_02_items_have_valid_spatial_anchor(self):
+        """All items reference existing rooms."""
+        loader = EntityLoader(_WORLD_PATH)
+        rooms = loader.load_rooms("episode-02")
+        items = loader.load_items("episode-02")
+        room_ids = {r.entity_id for r in rooms}
+        for item in items:
+            if item.spatial_anchor is not None:
+                assert item.spatial_anchor in room_ids, (
+                    f"Item '{item.entity_id}' anchor '{item.spatial_anchor}' not in rooms"
+                )
+
+    def test_episode_02_critical_items_exist(self):
+        """Critical puzzle items exist."""
+        loader = EntityLoader(_WORLD_PATH)
+        items = loader.load_items("episode-02")
+        item_ids = {i.entity_id for i in items}
+        critical = ["marmidosa", "aguja_plata", "cinta_de_moebius", "rosa_diamante"]
+        for cid in critical:
+            assert cid in item_ids, f"Critical item '{cid}' missing"
+
+
+class TestFortalezaEpisode2NPCs:
+    """Episode 2 NPCs load and validate."""
+
+    def test_episode_02_npcs_load(self):
+        """All NPC YAML files load without errors."""
+        loader = EntityLoader(_WORLD_PATH)
+        npcs = loader.load_npcs("episode-02")
+        assert len(npcs) >= 20, f"Expected >=20 NPCs, got {len(npcs)}"
+
+    def test_episode_02_npc_ids_unique(self):
+        """Episode 2 NPC entity_ids are unique."""
+        loader = EntityLoader(_WORLD_PATH)
+        npcs = loader.load_npcs("episode-02")
+        ids = [n.entity_id for n in npcs]
+        assert len(ids) == len(set(ids)), f"Duplicate NPC IDs: {ids}"
+
+    def test_episode_02_npcs_have_valid_spatial_anchor(self):
+        """All NPCs reference existing rooms."""
+        loader = EntityLoader(_WORLD_PATH)
+        rooms = loader.load_rooms("episode-02")
+        npcs = loader.load_npcs("episode-02")
+        room_ids = {r.entity_id for r in rooms}
+        for npc in npcs:
+            if npc.spatial_anchor is not None:
+                assert npc.spatial_anchor in room_ids, (
+                    f"NPC '{npc.entity_id}' anchor '{npc.spatial_anchor}' not in rooms"
+                )
+
+    def test_episode_02_critical_npcs_exist(self):
+        """Critical NPCs exist."""
+        loader = EntityLoader(_WORLD_PATH)
+        npcs = loader.load_npcs("episode-02")
+        npc_ids = {n.entity_id for n in npcs}
+        critical = ["hija_del_hechicero", "hechicero", "grifo", "monstruo"]
+        for cid in critical:
+            assert cid in npc_ids, f"Critical NPC '{cid}' missing"
+
+
+class TestFortalezaEpisode2MacroEdges:
+    """Episode 2 macro-edges load and validate."""
+
+    def test_episode_02_macro_edges_load(self):
+        """All macro-edge YAML files load without errors."""
+        loader = EntityLoader(_WORLD_PATH)
+        edges = loader.load_macro_edges("episode-02")
+        assert len(edges) >= 55, f"Expected >=55 macro-edges, got {len(edges)}"
+
+    def test_episode_02_macro_edge_ids_unique(self):
+        """Episode 2 macro-edge IDs are unique."""
+        loader = EntityLoader(_WORLD_PATH)
+        edges = loader.load_macro_edges("episode-02")
+        ids = [e.macro_edge_id for e in edges]
+        assert len(ids) == len(set(ids)), f"Duplicate macro-edge IDs: {ids}"
+
+    def test_episode_02_macro_edges_reference_valid_rooms(self):
+        """All macro-edges reference existing rooms."""
+        loader = EntityLoader(_WORLD_PATH)
+        rooms = loader.load_rooms("episode-02")
+        edges = loader.load_macro_edges("episode-02")
+        room_ids = {r.entity_id for r in rooms}
+        for edge in edges:
+            assert edge.from_anchor in room_ids, (
+                f"Macro-edge '{edge.macro_edge_id}' from_anchor '{edge.from_anchor}' not in rooms"
+            )
+            assert edge.to_anchor in room_ids, (
+                f"Macro-edge '{edge.macro_edge_id}' to_anchor '{edge.to_anchor}' not in rooms"
+            )
+
+    def test_episode_02_start_room_has_exits(self):
+        """Starting room has at least one macro-edge."""
+        loader = EntityLoader(_WORLD_PATH)
+        edges = loader.load_macro_edges("episode-02")
+        start_exits = [
+            e for e in edges
+            if e.from_anchor == "habitacion_para_huespedes"
+            or e.to_anchor == "habitacion_para_huespedes"
+        ]
+        assert len(start_exits) >= 1, "Start room has no exits"
 
 
 class TestFortalezaEpisode1MacroEdges:

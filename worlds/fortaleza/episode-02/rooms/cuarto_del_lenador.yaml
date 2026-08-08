@@ -1,0 +1,7 @@
+entity_id: "cuarto_del_lenador"
+type: "room"
+name: "el cuarto del Leñador"
+components:
+  description: "Las paredes, el suelo y el techo están hechos de madera. Usted camina con cuidado: hay espinas por todas partes."
+  visited: false
+spatial_anchor: null

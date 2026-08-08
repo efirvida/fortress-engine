@@ -1,0 +1,7 @@
+entity_id: "ruinas"
+type: "room"
+name: "las Ruinas"
+components:
+  description: "Este lugar debe haber sido abandonado hace siglos. Usted trata de imaginar cómo eran las construcciones originalmente, pero no lo consigue. Al sur se extiende un desierto y al oeste se encuentra la casa del Ogro."
+  visited: false
+spatial_anchor: null

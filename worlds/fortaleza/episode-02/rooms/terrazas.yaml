@@ -1,0 +1,7 @@
+entity_id: "terrazas"
+type: "room"
+name: "las Terrazas"
+components:
+  description: "No puede reprimir su asombro: las terrazas están invertidas. Usted se siente muy natural parado cabeza abajo. Se escucha el correr de un río."
+  visited: false
+spatial_anchor: null
