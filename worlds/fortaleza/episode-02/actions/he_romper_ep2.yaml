@@ -1,0 +1,183 @@
+# BREAK actions (episode 2) — TRANSFORM sets the 'broken' component
+
+- hyper_edge_id: "he_romper_ventana"
+  name: "Romper la ventana de la Casa de muñecas"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "ventana"
+    instrument: "corta_cristales"
+  operators:
+    - type: "TRANSFORM"
+      entity: "ventana"
+      component: "broken"
+      old_value: null
+      new_value: true
+    - type: "FLAG"
+      flag: "ventana_rota"
+      value: true
+  output: "El corta-cristales muerde el vidrio. Tras la ventana se abre un pasadizo."
+
+- hyper_edge_id: "he_romper_arbol_de_marfil"
+  name: "Romper el árbol de marfil"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "arbol_de_marfil"
+    instrument: "hacha_lenador"
+  operators:
+    - type: "TRANSFORM"
+      entity: "arbol_de_marfil"
+      component: "broken"
+      old_value: null
+      new_value: true
+    - type: "FLAG"
+      flag: "arbol_marfil_roto"
+      value: true
+  output: "El hacha mohosa parte el marfil. Algo brilla entre las astillas."
+
+- hyper_edge_id: "he_romper_muralla"
+  name: "Romper la primera muralla"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "muralla"
+    instrument: "marmidosa"
+  operators:
+    - type: "TRANSFORM"
+      entity: "muralla"
+      component: "broken"
+      old_value: null
+      new_value: true
+    - type: "FLAG"
+      flag: "muralla_rota"
+      value: true
+  output: "Marmidosa abre una brecha en la muralla. Al otro lado se oye el viento."
+
+- hyper_edge_id: "he_romper_huevo"
+  name: "Romper el huevo del Comedor"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "huevo"
+    instrument: "piedra_comun"
+  operators:
+    - type: "TRANSFORM"
+      entity: "huevo"
+      component: "broken"
+      old_value: null
+      new_value: true
+    - type: "FLAG"
+      flag: "huevo_roto"
+      value: true
+  output: "La piedra rompe el cascarón. Un dinosaurio recién nacido grita: ¡Guaaaaaa!"
+
+- hyper_edge_id: "he_romper_estatua_cristal"
+  name: "Romper la estatua de cristal"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "estatua_cristal"
+    instrument: "corta_cristales"
+  operators:
+    - type: "TRANSFORM"
+      entity: "estatua_cristal"
+      component: "broken"
+      old_value: null
+      new_value: true
+    - type: "FLAG"
+      flag: "estatua_cristal_rota"
+      value: true
+  output: "El cristal estalla y libera al horante encerrado dentro."
+
+- hyper_edge_id: "he_romper_esfera"
+  name: "Romper la esfera de la Torre"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "esfera"
+    instrument: "marmidosa"
+  operators:
+    - type: "TRANSFORM"
+      entity: "esfera"
+      component: "broken"
+      old_value: null
+      new_value: true
+    - type: "FLAG"
+      flag: "esfera_rota"
+      value: true
+  output: "Marmidosa hiende la esfera. Dentro hay una tablilla de madera."
+
+- hyper_edge_id: "he_romper_reja"
+  name: "Romper la reja del Lago"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "reja"
+    instrument: "tenazas"
+  operators:
+    - type: "TRANSFORM"
+      entity: "reja"
+      component: "broken"
+      old_value: null
+      new_value: true
+    - type: "FLAG"
+      flag: "reja_rota"
+      value: true
+  output: "Las tenazas ceden los barrotes. Aparece una escalera hacia la Catedral."
+
+- hyper_edge_id: "he_romper_columna_hielo"
+  name: "Romper la columna de hielo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "columna_hielo"
+    instrument: "antorcha_subterraneos"
+  operators:
+    - type: "TRANSFORM"
+      entity: "columna_hielo"
+      component: "broken"
+      old_value: null
+      new_value: true
+    - type: "FLAG"
+      flag: "columna_hielo_rota"
+      value: true
+  output: "La antorcha derrite la columna. El paso a la Pirámide queda libre."
+
+- hyper_edge_id: "he_romper_muralla_2"
+  name: "Romper la segunda muralla"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "muralla_2"
+    instrument: "piedra_verde"
+  operators:
+    - type: "TRANSFORM"
+      entity: "muralla_2"
+      component: "broken"
+      old_value: null
+      new_value: true
+    - type: "FLAG"
+      flag: "muralla_2_rota"
+      value: true
+  output: "La piedra verde, increíblemente sólida, derriba la segunda muralla."
+
+- hyper_edge_id: "he_romper_generico_ep2"
+  name: "Romper algo sin herramienta adecuada"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "*"
+  operators: []
+  output: "No consigues romperlo. Quizá necesites la herramienta adecuada."
+

@@ -1,0 +1,172 @@
+# EXAMINE actions (episode 2) — reading letters, inscriptions and manuscripts
+
+- hyper_edge_id: "he_ver_carta_aura"
+  name: "Ver la carta de Aura"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "carta_aura"
+  operators: []
+  output: "«¡Dios te salve, mi única esperanza! Mi padre me ha encerrado en la Torre de Cristal...»"
+
+- hyper_edge_id: "he_ver_carta_alcoba"
+  name: "Ver la carta de la Alcoba"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "carta_alcoba"
+  operators: []
+  output: "«¿Por qué has demorado tanto? Mi padre me llevó al Abismo Infranqueable...» El Hechicero exige que esta carta se rompa."
+
+- hyper_edge_id: "he_ver_inscripcion_salon_fumar"
+  name: "Ver la inscripción del Salón de Fumar"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "inscripcion_salon_fumar"
+  operators: []
+  output: "«La muerte es un acto de la vida. Yo, la Bestia, he de morir como he vivido...» Es la profecía de su venganza."
+
+- hyper_edge_id: "he_ver_inscripcion_terrazas"
+  name: "Ver la inscripción de las Terrazas"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "inscripcion_terrazas"
+  operators: []
+  output: "«No todos los dragones merecen la muerte.»"
+
+- hyper_edge_id: "he_ver_inscripcion_inmortal"
+  name: "Ver la inscripción del Inmortal"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "inscripcion_inmortal"
+  operators: []
+  output: "«¿Quién quiere vivir para siempre?»"
+
+- hyper_edge_id: "he_ver_inscripcion_ciudad"
+  name: "Ver la inscripción de la Ciudad Abandonada"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "inscripcion_ciudad"
+  operators: []
+  output: "«Aquí habitaron los horantes hasta que La Bestia ocupó el lugar. Ellos levantaron cada pared de la Fortaleza; solo ellos saben cómo salir.»"
+
+- hyper_edge_id: "he_ver_inscripcion_lago"
+  name: "Ver la inscripción del Fondo del Lago"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "inscripcion_lago"
+  operators: []
+  output: "«Has llegado hasta Marmidosa, la rival de Excalibur. Hazla parte de tu mano y ella será parte de tu andar. Tómala, está detrás de la grieta.»"
+
+- hyper_edge_id: "he_ver_inscripcion_desierto"
+  name: "Ver la inscripción del Desierto"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "inscripcion_desierto"
+  operators: []
+  output: "«El Obispo le recomendó cierto objeto para protegerse a la hora de coger a Marmidosa. ¡No intente cruzar el camino en esta dirección con dicho objeto encima!»"
+
+- hyper_edge_id: "he_ver_inscripcion_calabozo_monstruo"
+  name: "Ver la inscripción del Calabozo del Monstruo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "inscripcion_calabozo_monstruo"
+  operators: []
+  output: "«No alimente al monstruo.»"
+
+- hyper_edge_id: "he_ver_inscripcion_alcoba_ogro"
+  name: "Ver la inscripción de la Alcoba del Ogro"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "inscripcion_alcoba_ogro"
+  operators: []
+  output: "«¡BUUUU!»"
+
+- hyper_edge_id: "he_ver_inscripcion_antesala"
+  name: "Ver la inscripción de la Antesala de la Prueba"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "inscripcion_antesala"
+  operators: []
+  output: "«En este punto comienza la prueba de los anillos. Continúa con el que hayas elegido y deja los demás.»"
+
+- hyper_edge_id: "he_ver_tablilla_de_madera"
+  name: "Ver la tablilla de madera"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "tablilla_de_madera"
+  operators: []
+  output: "Primera mitad del Manuscrito de los Horantes. El texto está codificado: necesitas la Piedra de Roseta."
+
+- hyper_edge_id: "he_ver_piedra_de_roseta"
+  name: "Ver la Piedra de Roseta"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "piedra_de_roseta"
+  operators: []
+  output: "Texto bilingüe: «Fuimos grandes una vez» junto a su versión alterada. Es la clave de los manuscritos."
+
+- hyper_edge_id: "he_ver_caliz"
+  name: "Ver el cáliz"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "caliz"
+  operators: []
+  output: "Grabado en el interior hay un texto codificado: parece la segunda mitad del manuscrito."
+
+- hyper_edge_id: "he_ver_grabado_pintor"
+  name: "Ver el grabado del pintor"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "grabado_pintor"
+  operators: []
+  output: "El grabado te muestra a ti mismo cruzando un puente con el grabado en la mano."
+
+- hyper_edge_id: "he_ver_lienzo"
+  name: "Ver el lienzo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "lienzo"
+  operators: []
+  output: "Tres líneas que se cortan en puntos distintos. Un mapa cifrado de la Puerta Secreta."
+
+- hyper_edge_id: "he_ver_generico_ep2"
+  name: "Ver un objeto cualquiera"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "ver"
+    target: "*"
+  operators: []
+  output: "No hay nada escrito en eso."
+

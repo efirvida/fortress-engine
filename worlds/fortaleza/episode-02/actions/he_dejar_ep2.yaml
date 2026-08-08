@@ -1,0 +1,32 @@
+# DROP actions (episode 2) — generic, works for any carried item
+
+- hyper_edge_id: "he_dejar_item_ep2"
+  name: "Dejar un objeto"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "dejar"
+    target: "*"
+  operators: []
+  output: "Dejas el objeto en el suelo."
+
+- hyper_edge_id: "he_dejar_nada_ep2"
+  name: "Dejar sin objeto indicado"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "dejar"
+    target: null
+  operators: []
+  output: "¿Qué quieres dejar?"
+
+- hyper_edge_id: "he_dejar_todo_ep2"
+  name: "Dejar todo el inventario"
+  priority: 1
+  clique:
+    subject: "player"
+    verb: "dejar"
+    target: "todo"
+  operators: []
+  output: "Vacías tus manos. Todo queda en el suelo."
+

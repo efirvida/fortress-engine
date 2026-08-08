@@ -1,0 +1,72 @@
+# KILL actions (episode 2) — each guard dies only to its lethal weapon
+
+- hyper_edge_id: "he_matar_carcelero"
+  name: "Matar a carcelero"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "carcelero"
+    instrument: "marmidosa"
+  operators:
+    - type: "FLAG"
+      flag: "carcelero_muerto"
+      value: true
+  output: "Marmidosa atraviesa al carcelero. Las llaves de las celdas caen al suelo."
+
+- hyper_edge_id: "he_matar_grifo"
+  name: "Matar a grifo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "grifo"
+    instrument: "daga_dragon"
+  operators:
+    - type: "FLAG"
+      flag: "grifo_muerto"
+      value: true
+  output: "Hundes la daga del dragón en el grifo. Medio león, medio águila, entero muerto."
+
+- hyper_edge_id: "he_matar_hija_del_hechicero"
+  name: "Matar a hija del hechicero"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "hija_del_hechicero"
+    instrument: "aguja_plata"
+  operators:
+    - type: "FLAG"
+      flag: "hija_muerta"
+      value: true
+  output: "Clavas la aguja de plata en la serpiente de tres cabezas. La hija del Hechicero se desvanece y deja un cáliz."
+
+- hyper_edge_id: "he_matar_inmortal"
+  name: "Matar a inmortal"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "inmortal"
+    instrument: "arco_inmortal"
+  operators:
+    - type: "FLAG"
+      flag: "inmortal_muerto"
+      value: true
+  output: "Disparas el arco que mató a Hycrk. ¿Quién quiere vivir para siempre?"
+
+- hyper_edge_id: "he_matar_ogro"
+  name: "Matar a ogro"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "ogro"
+    instrument: "cubo_de_agua"
+  operators:
+    - type: "FLAG"
+      flag: "ogro_muerto"
+      value: true
+  output: "Vacías el cubo de agua sobre el ogro. La criatura se disuelve entre alaridos."
+

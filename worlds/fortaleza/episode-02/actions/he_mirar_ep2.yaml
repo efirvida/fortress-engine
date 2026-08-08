@@ -1,0 +1,22 @@
+# LOOK actions (episode 2) — the narrator renders the room description
+
+- hyper_edge_id: "he_mirar_habitacion_ep2"
+  name: "Mirar la habitación"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "mirar"
+    target: "*"
+  operators: []
+  output: ""
+
+- hyper_edge_id: "he_mirar_alrededor_ep2"
+  name: "Mirar alrededor sin objetivo"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "mirar"
+    target: null
+  operators: []
+  output: ""
+

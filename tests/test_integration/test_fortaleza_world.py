@@ -321,6 +321,64 @@ class TestFortalezaEpisode2MacroEdges:
         assert len(start_exits) >= 1, "Start room has no exits"
 
 
+class TestFortalezaEpisode2HyperEdges:
+    """Episode 2 hyper-edges load and validate."""
+
+    def test_episode_02_hyper_edges_load(self):
+        """All hyper-edge YAML files load without errors."""
+        loader = EntityLoader(_WORLD_PATH)
+        hes = loader.load_hyper_edges("episode-02")
+        assert len(hes) >= 100, f"Expected >=100 hyper-edges, got {len(hes)}"
+
+    def test_episode_02_hyper_edge_ids_unique(self):
+        """Episode 2 hyper-edge IDs are unique."""
+        loader = EntityLoader(_WORLD_PATH)
+        hes = loader.load_hyper_edges("episode-02")
+        ids = [h.hyper_edge_id for h in hes]
+        assert len(ids) == len(set(ids)), f"Duplicate hyper-edge IDs: {ids}"
+
+    def test_episode_02_hyper_edges_have_valid_verbs(self):
+        """All hyper-edges use recognized verbs."""
+        loader = EntityLoader(_WORLD_PATH)
+        hes = loader.load_hyper_edges("episode-02")
+        valid_verbs = {
+            "tomar", "coger", "dejar", "soltar",
+            "abrir", "matar", "asesinar", "destrozar",
+            "romper", "forzar", "preguntar", "interrogar",
+            "dar", "regalar", "ver", "leer", "mirar", "observar",
+            "inventario", "abandonar", "terminar",
+            "huir", "escapar", "ir", "atravesar", "cruzar", "pasar",
+            "pesar", "responder", "diciendo",
+        }
+        for he in hes:
+            assert he.clique.verb in valid_verbs, (
+                f"Hyper-edge '{he.hyper_edge_id}' has unknown verb '{he.clique.verb}'"
+            )
+
+    def test_episode_02_take_edges_exist(self):
+        """Critical take hyper-edges exist."""
+        loader = EntityLoader(_WORLD_PATH)
+        hes = loader.load_hyper_edges("episode-02")
+        he_ids = {h.hyper_edge_id for h in hes}
+        assert "he_tomar_marmidosa" in he_ids
+        assert "he_tomar_aguja_plata" in he_ids
+
+    def test_episode_02_kill_edges_exist(self):
+        """Critical kill hyper-edges exist."""
+        loader = EntityLoader(_WORLD_PATH)
+        hes = loader.load_hyper_edges("episode-02")
+        he_ids = {h.hyper_edge_id for h in hes}
+        assert "he_matar_grifo" in he_ids
+        assert "he_matar_hija_del_hechicero" in he_ids
+
+    def test_episode_02_give_edges_exist(self):
+        """Critical give hyper-edges exist."""
+        loader = EntityLoader(_WORLD_PATH)
+        hes = loader.load_hyper_edges("episode-02")
+        he_ids = {h.hyper_edge_id for h in hes}
+        assert "he_dar_pescado_gato" in he_ids
+
+
 class TestFortalezaEpisode1MacroEdges:
     """Episode 1 macro-edges load and validate."""
 

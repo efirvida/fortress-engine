@@ -1,0 +1,55 @@
+# SYSTEM actions (episode 2) — inventory, quit, weigh, answer, ask
+
+- hyper_edge_id: "he_inventario_ep2"
+  name: "Ver inventario"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "inventario"
+    target: "*"
+  operators: []
+  output: ""
+
+- hyper_edge_id: "he_abandonar_ep2"
+  name: "Abandonar el juego"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "abandonar"
+    target: "*"
+  operators:
+    - type: "FLAG"
+      flag: "player_dead"
+      value: true
+  output: "Has abandonado. El espíritu de la Bestia reclama su venganza."
+
+- hyper_edge_id: "he_pesar_item_ep2"
+  name: "Pesar un objeto"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "pesar"
+    target: "*"
+  operators: []
+  output: "Necesitas una balanza para pesar."
+
+- hyper_edge_id: "he_responder_ep2"
+  name: "Responder a una pregunta"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "responder"
+    target: "*"
+  operators: []
+  output: "Nadie te ha preguntado nada."
+
+- hyper_edge_id: "he_preguntar_npc_ep2"
+  name: "Preguntar a un personaje"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "*"
+  operators: []
+  output: "Guarda un silencio impenetrable."
+
