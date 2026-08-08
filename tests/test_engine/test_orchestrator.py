@@ -57,8 +57,13 @@ from fortress_engine.plugins.narrator_interface import NarratorInterface
 
 class _StubParser(ParserInterface):
     """Parser that returns a pre-configured command."""
-    def __init__(self, command: ParsedCommand):
+    def __init__(self, command: ParsedCommand, language: str = "es"):
+        super().__init__(language)
         self.command = command
+
+    @property
+    def language(self) -> str:
+        return self._language
 
     def parse(self, raw_text: str, world_state: WorldState) -> ParsedCommand:
         return self.command
@@ -66,8 +71,13 @@ class _StubParser(ParserInterface):
 
 class _StubNarrator(NarratorInterface):
     """Narrator that records events instead of producing text."""
-    def __init__(self):
+    def __init__(self, language: str = "es"):
+        super().__init__(language)
         self.events: list[EngineEvent] = []
+
+    @property
+    def language(self) -> str:
+        return self._language
 
     def initialize(self, event_bus: EventBus) -> None:
         event_bus.subscribe("*", lambda e: self.events.append(e))

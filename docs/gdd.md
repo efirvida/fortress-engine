@@ -961,13 +961,13 @@ Fortaleza es el primer mundo que valida el motor. No es el producto — es la pr
 
 ```
 worlds/fortaleza/
-├── world.yaml                    # Metadatos globales, configuración, lista de episodios
+├── world.yaml                    # Metadatos globales, idioma, configuración de plugins, lista de episodios
 ├── episodes/
 │   ├── episode-01.yaml           # Parte I: goal, carry_over, configuración
 │   └── episode-02.yaml           # Parte II: goal, carry_over, configuración
 ├── shared/
 │   ├── player.yaml               # Definición del protagonista (compartido)
-│   └── vocabulary.yaml           # Verbos y sinónimos del parser clásico
+│   └── vocabulary.yaml           # Per-world (worlds/<nombre>/shared/): verbos y sinónimos, stopwords, preposiciones y marcadores de habla del parser
 ├── episode-01/
 │   ├── rooms/
 │   │   ├── room-01.yaml          # "el exterior de la fortaleza"
@@ -1298,6 +1298,13 @@ language: "es"
 author: "Tu Nombre"
 description: "Una breve descripción de tu mundo."
 
+parser:
+  plugin: "classic"
+  options: {}
+narrator:
+  plugin: "template"
+  options: {}
+
 player_defaults:
   max_weight: 40
     start_anchor: "mi-aventura-1-room-01"
@@ -1316,6 +1323,11 @@ episodes:
       inventory: []
       flags: []
 ```
+
+> La forma de objeto (`parser: {plugin: "classic", options: {}}`) y la forma
+> legacy de string (`parser: "classic"`, `narrator: "template"`) son aceptadas;
+> ambas se normalizan a un `PluginConfigYAML`. `language` (default `"es"`) se
+> inyecta en el parser y el narrador al construirlos vía la plugin factory.
 
 ### Paso 3: Definir el protagonista
 

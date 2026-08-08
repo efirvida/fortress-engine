@@ -1383,7 +1383,7 @@ class NarratorInterface(ABC):
 
 ### 4.15 `plugins/classic_parser.py` — Parser Clásico V1
 
-**Responsabilidad**: Implementación del parser clásico que replica el comportamiento del parser original de Fortaleza (Turbo Pascal 7). Reconoce 37 verbos, ~180 sustantivos, con matching parcial, normalización de tildes y filtrado de stopwords.
+**Responsabilidad**: Implementación del parser clásico que replica el comportamiento del parser original de Fortaleza (Turbo Pascal 7). Reconoce 37 verbos (canónicos + grupos de sinónimos, según `docs/07-vocabulary.md`), ~180 sustantivos, con matching parcial, normalización de tildes y filtrado de stopwords V2.
 
 **Dependencias**:
 - `plugins/parser_interface.py` — `ParserInterface`
@@ -1396,32 +1396,77 @@ class ClassicParser(ParserInterface):
     Parser V1: réplica del parser original de Fortaleza (PRD 5, GDD 2.5).
 
     Características:
-    - 37 verbos reconocidos.
+    - 37 verbos reconocidos: inventario ORIGINAL de Fortaleza según
+      docs/07-vocabulary.md (autoritativo), con verbos canónicos + grupos de
+      sinónimos — NO es una lista genérica de aventura textual.
     - ~180 sustantivos (nombres de entidades + sinónimos).
     - Matching parcial de nombres ("Puerta Principal" coincide con "Puerta").
     - Normalización de tildes: áéíóúüñ → aeiouun.
-    - Stopwords: LA, EL, POR, AL.
+    - Stopwords V2: LA, EL, LOS, LAS, UN, UNA, AL, DEL, POR.
     - Sintaxis: VERBO [SUSTANTIVO] [PREPOSICIÓN SUSTANTIVO].
     """
 
-    # Stopwords (PRD 5)
-    STOPWORDS: set[str] = {"LA", "EL", "POR", "AL"}
+    # Stopwords V2 (PRD 5). Desviación documentada del V1 sugerido en
+    # docs/12-engine-gap-analysis.md P7: V2 = {LA, EL, POR, AL} + {UN, UNA, DEL,
+    # LOS, LAS}. Es la lista que ya usa MinimalParser, V1 ⊂ V2 y mejora la UX.
+    STOPWORDS: set[str] = {"LA", "EL", "LOS", "LAS", "UN", "UNA", "AL", "DEL", "POR"}
 
-    # Verbos del parser clásico (PRD 7.1)
+    # Verbos del parser clásico (PRD 7.1, docs/07-vocabulary.md).
+    # Grupos de sinónimos (todos se resuelven al verbo canónico):
+    #   ATRAVESAR/IR/CRUZAR/PASAR → ir      OBSERVAR/MIRAR → mirar
+    #   TOMAR/COGER → tomar                 LEER/VER/EXAMINAR → examinar
+    #   SOLTAR/DEJAR → dejar                ROMPER/FORZAR/DESTROZAR → romper
+    #   PREGUNTAR/INTERROGAR → interrogar   REGALAR/DAR → dar
+    #   MATAR/ASESINAR → matar              ABANDONAR/TERMINAR → terminar
+    #   MIAR/ORINAR → orinar
+    # Formas manejadas sin grupo: INVENTARIO, ABRIR, PESAR, SALVAR, EJECUTAR,
+    # TODO, PORCIENTO, CLS, CON, A, DICIENDO, RESPONDIENDO, ESPERAR.
     VERBS: set[str] = {
-        "IR", "TOMAR", "COGER", "MATAR", "DAR", "ABRIR", "CERRAR",
-        "ROMPER", "INTERROGAR", "EXAMINAR", "MIRAR", "INVENTARIO",
-        "DEJAR", "PONER", "ENCENDER", "APAGAR", "LLENAR", "VACIAR",
-        "EMPUJAR", "TIRAR", "GOLPEAR", "ATACAR", "HABLAR", "DECIR",
-        "GRITAR", "LEER", "COMER", "BEBER", "USAR", "TOCAR",
-        "OLER", "ESCUCHAR", "CAVAR", "SALTAR", "TREPAR", "NADAR",
-        "ESPERAR",
+        "IR", "ATRAVESAR", "CRUZAR", "PASAR",
+        "TOMAR", "COGER",
+        "SOLTAR", "DEJAR",
+        "ABRIR",
+        "MATAR", "ASESINAR",
+        "OBSERVAR", "MIRAR",
+        "LEER", "VER", "EXAMINAR",
+        "ROMPER", "FORZAR", "DESTROZAR",
+        "PREGUNTAR", "INTERROGAR",
+        "INVENTARIO",
+        "REGALAR", "DAR",
+        "CON", "A",
+        "ABANDONAR", "TERMINAR",
+        "RESPONDIENDO", "DICIENDO",
+        "EJECUTAR", "SALVAR",
+        "PORCIENTO", "TODO", "PESAR",
+        "MIAR", "ORINAR",
+        "CLS", "ESPERAR",
+    }
+
+    # Vocabulario por defecto en código: {canónico: [sinónimos]} + stopwords V2.
+    # Fallback del parser cuando no se recibe `vocabulary` y tampoco existe
+    # worlds/<nombre>/shared/vocabulary.yaml (ver GDD 3.1).
+    DEFAULT_SPANISH_VOCABULARY: dict[str, list[str]] = {
+        "IR": ["ATRAVESAR", "CRUZAR", "PASAR"],
+        "TOMAR": ["COGER"],
+        "DEJAR": ["SOLTAR"],
+        "MIRAR": ["OBSERVAR"],
+        "EXAMINAR": ["LEER", "VER"],
+        "ROMPER": ["FORZAR", "DESTROZAR"],
+        "INTERROGAR": ["PREGUNTAR"],
+        "DAR": ["REGALAR"],
+        "MATAR": ["ASESINAR"],
+        "TERMINAR": ["ABANDONAR"],
+        "ORINAR": ["MIAR"],
     }
 
     def __init__(self, vocabulary: dict[str, list[str]] | None = None) -> None:
         """
         vocabulary: diccionario de sinónimos {canónico: [sinónimos]}.
-        Si es None, usa el vocabulario por defecto cargado desde shared/vocabulary.yaml.
+        Resolución de vocabulario en cascada:
+        1. El dict `vocabulary` recibido (si no es None).
+        2. worlds/<nombre>/shared/vocabulary.yaml del mundo (si el archivo existe).
+        3. DEFAULT_SPANISH_VOCABULARY (constante en código, mismo inventario de
+           37 verbos + stopwords V2).
         """
         ...
 
@@ -1514,6 +1559,8 @@ class TemplateNarrator(NarratorInterface):
         """Retorna el mensaje de error."""
         ...
 ```
+
+**Nota (Epic #3 — plugin factory)**: `TemplateNarrator` expone además la propiedad `language` (default `"es"`). La factory de plugins (`create_narrator`) la inyecta desde el `world.yaml` del mundo para que los mensajes de sistema y las plantillas sigan el idioma del mundo (ver §9.2).
 
 ### 4.17 `cli/main.py` — Punto de Entrada CLI
 
@@ -2120,6 +2167,23 @@ class NarratorInterface(ABC):
 
 ### 9.2 Carga de Plugins
 
+> **SUPERSEDED (Epic #3)** — las funciones de carga `load_parser`/`load_narrator`
+> que aparecen abajo quedan **reemplazadas** por la **plugin factory**
+> (`plugins/factory.py`):
+>
+> ```python
+> def create_parser(plugin_config: PluginConfig, world_language: str) -> ParserInterface
+> def create_narrator(plugin_config: PluginConfig, world_language: str) -> NarratorInterface
+> ```
+>
+> `PluginConfig` es un dataclass congelado con `name: str` y
+> `options: dict[str, Any]`. La factory es el **único** código que toca los
+> entry points (arch constant #7 preservada); el resto del motor habla con las
+> interfaces. La factory inyecta `language=world_language` al construir la
+> instancia. El Orquestador recibe las instancias ya construidas por **inyección
+> de constructor**. El bloque de código siguiente es HISTÓRICO — se conserva
+> como referencia pero no debe usarse en implementación nueva.
+
 El motor descubre plugins mediante **Python entry points** definidos en `pyproject.toml`:
 
 ```toml
@@ -2130,13 +2194,13 @@ classic = "fortress_engine.plugins.classic_parser:ClassicParser"
 template = "fortress_engine.plugins.template_narrator:TemplateNarrator"
 ```
 
-Mecanismo de carga en el motor:
+Mecanismo de carga en el motor (HISTÓRICO — pre-factory, conservado solo como referencia):
 
 ```python
 from importlib.metadata import entry_points
 
 def load_parser(name: str) -> ParserInterface:
-    """Carga un parser por nombre desde los entry points."""
+    """Carga un parser por nombre desde los entry points. SUPERSEDED: usar create_parser()."""
     eps = entry_points(group="fortress_engine.parsers")
     for ep in eps:
         if ep.name == name:
@@ -2145,7 +2209,7 @@ def load_parser(name: str) -> ParserInterface:
     raise ValueError(f"Parser '{name}' not found. Available: {[ep.name for ep in eps]}")
 
 def load_narrator(name: str) -> NarratorInterface:
-    """Carga un narrador por nombre desde los entry points."""
+    """Carga un narrador por nombre desde los entry points. SUPERSEDED: usar create_narrator()."""
     eps = entry_points(group="fortress_engine.narrators")
     for ep in eps:
         if ep.name == name:
@@ -2154,14 +2218,22 @@ def load_narrator(name: str) -> NarratorInterface:
     raise ValueError(f"Narrator '{name}' not found. Available: {[ep.name for ep in eps]}")
 ```
 
-El `world.yaml` puede especificar qué parser y narrador usar:
+El `world.yaml` especifica el idioma y qué parser/narrador usar. Se acepta la forma de objeto (`plugin:` + `options: {}`) y la forma legacy de string (`parser: "classic"`), ambas se normalizan a un `PluginConfigYAML`:
 
 ```yaml
 # world.yaml
 world_id: "fortaleza"
-parser: "classic"
-narrator: "template"
+language: "es"
+parser:
+  plugin: "classic"
+  options: {}
+narrator:
+  plugin: "template"
+  options: {}
 ```
+
+> Forma legacy equivalente (aún aceptada y normalizada): `parser: "classic"`,
+> `narrator: "template"`.
 
 ### 9.3 Aislamiento de Errores
 

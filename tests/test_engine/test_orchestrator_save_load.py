@@ -115,11 +115,19 @@ def _build_orchestrator(state, graph, bus, goal_eval, ep_mgr,
     from fortress_engine.plugins.narrator_interface import NarratorInterface
 
     class _StubParser(ParserInterface):
+        @property
+        def language(self) -> str:
+            return self._language
+
         def parse(self, raw_text, ws):
             from fortress_engine.entities.entity import ParsedCommand
             return ParsedCommand(subject="hero", verb="mirar", target=None)
 
     class _StubNarrator(NarratorInterface):
+        @property
+        def language(self) -> str:
+            return self._language
+
         def initialize(self, eb): pass
         def handle_event(self, e, ws): return None
 

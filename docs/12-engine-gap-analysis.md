@@ -546,7 +546,7 @@ Las siguientes decisiones de diseño requieren input humano. Están formuladas e
 
 **P6**: El sistema de "rastro" (save/replay de comandos en texto editable) es una reliquia del original. ¿Querés que lo implementemos **exactamente igual** (archivos de texto con comandos, soporte de comentarios `{ }`, ejecución silenciosa) o preferís un sistema de save/load moderno (JSON del estado completo) y dejamos el rastro como easter egg futuro?
 
-**P7**: El parser original ignora `LA`, `EL`, `POR`, `AL` y normaliza tildes. ¿El parser V1 debe replicar **exactamente** esta lista de palabras ignoradas o podemos expandirla para mejorar la experiencia? (Ej: ignorar también `UN`, `UNA`, `DEL`, `LOS`, `LAS`)
+**P7 — Resuelto**: se adopta la lista V2 expandida (añade `UN`, `UNA`, `DEL`, `LOS`, `LAS` a `LA`, `EL`, `POR`, `AL`) para el parser V1 — consistente con MinimalParser y mejor UX. La lista V1 original queda como subconjunto estricto.
 
 **P8**: La función de matching parcial de nombres (`Equals` en `EQSTRING.PAS`) busca que todas las palabras del input estén en el nombre del objeto. Esto hace que `"Puerta"` coincida con `"Puerta Principal"`. ¿Mantenemos este comportamiento exacto o lo hacemos más estricto (ej: matching por prefijo)?
 

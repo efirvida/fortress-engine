@@ -7,6 +7,8 @@ Verify the narrator ABC contract and minimal narration:
 All tests follow Strict TDD: RED first (this file), then GREEN.
 """
 
+import pytest
+
 from fortress_engine.entities.entity import Entity
 from fortress_engine.engine.state import WorldState
 from fortress_engine.events.event_bus import EventBus
@@ -463,3 +465,84 @@ def test_error_output_text_includes_message(world=None):
 
     text = narrator.handle_event(event, world)
     assert "No puedes" in text
+
+
+# ===================================================================
+# N1 — Language property (specs/plugin-contracts)
+# ===================================================================
+
+
+def test_narrator_language_default_es():
+    """MinimalNarrator() defaults language to 'es'."""
+    n = MinimalNarrator()
+    assert n.language == "es"
+
+
+def test_narrator_language_override_en():
+    """MinimalNarrator(language='en') stores and exposes 'en'."""
+    n = MinimalNarrator(language="en")
+    assert n.language == "en"
+
+
+def test_narrator_language_preserved_on_instance():
+    """Each MinimalNarrator instance keeps its own language value."""
+    n_es = MinimalNarrator()
+    n_en = MinimalNarrator(language="en")
+    assert n_es.language == "es"
+    assert n_en.language == "en"
+
+
+def test_narrator_language_is_read_only():
+    """language is a read-only property — assigning it raises."""
+    n = MinimalNarrator()
+    with pytest.raises(AttributeError):
+        n.language = "fr"  # type: ignore[misc]
+
+
+def test_narrator_abc_has_language_abstract():
+    """NarratorInterface declares an abstract `language` property."""
+    assert hasattr(NarratorInterface, "language")
+    from abc import abstractmethod
+    assert getattr(NarratorInterface.language, "__isabstractmethod__", False) is True
+
+
+def test_narrator_no_arg_backcompat():
+    """MinimalNarrator() with no args retains all existing behavior."""
+    n = MinimalNarrator()
+    bus = EventBus()
+    n.initialize(bus)
+    # initialize idempotent as before
+    n.initialize(bus)
+    assert n.language == "es"
+    # handle_event still works
+    world = _make_world()
+    event = _make_event(
+        ACTION_OUTPUT,
+        {"hyper_edge_id": "h1", "text": "Tomas la llave.", "protagonist_id": "hero"},
+    )
+    result = n.handle_event(event, world)
+    assert result is not None
+    assert "Tomas la llave" in result
+
+
+def test_narrator_language_override_still_works():
+    """MinimalNarrator(language='en') narration behavior unchanged."""
+    n = MinimalNarrator(language="en")
+    assert n.language == "en"
+    bus = EventBus()
+    n.initialize(bus)
+    world = _make_world()
+    event = _make_event(
+        ENTITY_ENTERED,
+        {
+            "entity_id": "hero",
+            "entity_name": "Hero",
+            "from_anchor_id": "room_a",
+            "to_anchor_id": "room_b",
+            "protagonist_id": "hero",
+        },
+    )
+    result = n.handle_event(event, world)
+    assert result is not None
+    assert isinstance(result, str)
+    assert len(result) > 0
