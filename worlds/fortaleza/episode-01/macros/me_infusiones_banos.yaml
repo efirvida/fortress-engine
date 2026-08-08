@@ -1,0 +1,7 @@
+macro_edge_id: "me_infusiones_banos"
+from_anchor: "sala_de_infusiones"
+to_anchor: "sala_de_banos"
+direction: "bidirectional"
+passage_name: "puerta_blanca"
+passage_description: "Una puerta blanca"
+open: true

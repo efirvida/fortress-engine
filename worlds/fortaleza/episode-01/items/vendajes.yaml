@@ -1,0 +1,7 @@
+entity_id: "vendajes"
+type: "item"
+name: "vendajes"
+components:
+  weight: 1
+  description: "Un rollo de vendajes limpios, listos para curar una herida."
+spatial_anchor: "cuarto_del_guerrero"

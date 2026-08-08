@@ -1,0 +1,7 @@
+entity_id: "cuarto_del_hechicero"
+type: "room"
+name: "el cuarto del hechicero"
+components:
+  description: "Un cuarto oscuro con pociones y libros de magia."
+  visited: false
+spatial_anchor: null

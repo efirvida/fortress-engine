@@ -1,0 +1,8 @@
+macro_edge_id: "me_arana_satanas"
+from_anchor: "sala_de_la_arana"
+to_anchor: "sala_de_la_arana"
+direction: "bidirectional"
+passage_name: "estatua_satanas"
+passage_description: "La estatua de Satanás"
+open: false
+requires_flag: "satanas_roto"

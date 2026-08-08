@@ -1,0 +1,155 @@
+# BREAK actions — player breaks hidden objects with tools
+# TRANSFORM changes component values (hidden → broken)
+
+- hyper_edge_id: "he_romper_monolito"
+  name: "Romper el monolito de mármol"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "monolito_marmol"
+    instrument: "maza"
+  operators:
+    - type: "TRANSFORM"
+      entity: "monolito_marmol"
+      component: "broken"
+      old_value: false
+      new_value: true
+    - type: "FLAG"
+      flag: "monolito_roto"
+      value: true
+  output: "El monolito se rompe revelando un trébol."
+
+- hyper_edge_id: "he_romper_espejo_opaco"
+  name: "Romper el espejo opaco"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "espejo_opaco"
+    instrument: "maza"
+  operators:
+    - type: "TRANSFORM"
+      entity: "espejo_opaco"
+      component: "broken"
+      old_value: false
+      new_value: true
+    - type: "FLAG"
+      flag: "espejo_roto"
+      value: true
+  output: "El espejo se rompe. Hay una puerta oculta detrás."
+
+- hyper_edge_id: "he_romper_cama"
+  name: "Romper la cama"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "cama"
+    instrument: "hacha"
+  operators:
+    - type: "TRANSFORM"
+      entity: "cama"
+      component: "broken"
+      old_value: false
+      new_value: true
+    - type: "FLAG"
+      flag: "cama_rota"
+      value: true
+  output: "La cama se rompe. Hay una puerta al suelo."
+
+- hyper_edge_id: "he_romper_pared_solaria"
+  name: "Romper la pared solitaria"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "pared_solaria"
+    instrument: "antorcha"
+  operators:
+    - type: "TRANSFORM"
+      entity: "pared_solaria"
+      component: "broken"
+      old_value: false
+      new_value: true
+    - type: "FLAG"
+      flag: "pared_rota"
+      value: true
+  output: "La pared se derrite. Hay un túnel secreto."
+
+- hyper_edge_id: "he_romper_estatua_satanas"
+  name: "Romper la estatua de Satanás"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "estatua_satanas"
+    instrument: "cuadro"
+  operators:
+    - type: "TRANSFORM"
+      entity: "estatua_satanas"
+      component: "broken"
+      old_value: false
+      new_value: true
+    - type: "FLAG"
+      flag: "satanas_roto"
+      value: true
+  output: "La estatua se rompe con el cuadro. Hay una puerta."
+
+- hyper_edge_id: "he_romper_columna_cristal"
+  name: "Romper la columna de cristal"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "columna_cristal"
+    instrument: "antorcha_3"
+  operators:
+    - type: "TRANSFORM"
+      entity: "columna_cristal"
+      component: "broken"
+      old_value: false
+      new_value: true
+    - type: "FLAG"
+      flag: "columna_rota"
+      value: true
+  output: "La columna de cristal se derrite."
+
+- hyper_edge_id: "he_romper_puerta_madera"
+  name: "Romper la puerta de madera"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "romper"
+    target: "puerta_madera"
+    instrument: "martillo"
+  operators:
+    - type: "TRANSFORM"
+      entity: "puerta_madera"
+      component: "broken"
+      old_value: false
+      new_value: true
+    - type: "FLAG"
+      flag: "madera_rota"
+      value: true
+  output: "La puerta de madera se rompe."
+
+- hyper_edge_id: "he_forzar_item"
+  name: "Forzar algo (alternativa)"
+  priority: 9
+  clique:
+    subject: "player"
+    verb: "forzar"
+    target: "*"
+  operators: []
+  output: "No puedes forzar eso."
+
+- hyper_edge_id: "he_destrozar_item"
+  name: "Destrozar algo (alternativa)"
+  priority: 9
+  clique:
+    subject: "player"
+    verb: "destrozar"
+    target: "*"
+  operators: []
+  output: "No puedes destrozar eso."

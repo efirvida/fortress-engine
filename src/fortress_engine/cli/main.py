@@ -46,41 +46,6 @@ class EngineBundle:
 # ---------------------------------------------------------------------------
 
 
-def _copy_escape_edges(graph, state, episodes, path):
-    """Copy escape edges from start_anchor to all other rooms.
-
-    This mirrors the _OrchFixture pattern from test_walkthrough.py.
-    Episode manager registers all hyper edges under the start_anchor.
-    Escape edges must also be reachable from other rooms.
-    """
-    import yaml
-
-    start_anchor = state.get_entity("hero").spatial_anchor
-    if not start_anchor:
-        return
-
-    for verb in ["huir", "escapar", "fuir"]:
-        try:
-            escape_edges = graph.get_hyper_edges_for_verb(start_anchor, verb)
-            if not escape_edges:
-                continue
-
-            # Copy to all rooms in all episodes
-            for ep in episodes:
-                ep_num = ep.id.split("-")[-1]
-                rooms_path = path / f"episode-{ep_num}" / "rooms"
-                if not rooms_path.is_dir():
-                    continue
-
-                for room_file in rooms_path.glob("*.yaml"):
-                    with open(room_file) as f:
-                        room_data = yaml.safe_load(f)
-                    if room_data and room_data.get("entity_id") != start_anchor:
-                        graph.add_hyper_edge(room_data["entity_id"], escape_edges[0])
-        except Exception:
-            pass  # Ignore if verb doesn't exist
-
-
 def _build_engine(
     world_path: str,
     parser_name: str = "classic",
@@ -144,13 +109,14 @@ def _build_engine(
             turn_number=0,
         )
 
-        # Start episode
+        # Start episode.
+        # EpisodeManager.distribute_hyper_edges_to_anchors() copies all
+        # hyper edges from start_anchor to every spatial_anchor in the
+        # episode, so actions work regardless of protagonist position.
+        # The engine is entity-agnostic: no "rooms", no hardcoded verbs.
         ep_mgr = EpisodeManager(episodes, str(path), bus)
         graph = ep_mgr.start_episode("episode-01", state)
-
-        # Copy escape edges from start_anchor to all other rooms.
-        # This mirrors the _OrchFixture pattern from test_walkthrough.py.
-        _copy_escape_edges(graph, state, episodes, path)
+        ep_mgr.distribute_hyper_edges_to_anchors(graph, state, "episode-01")
 
         # Build goal evaluator
         episode = episodes[0]

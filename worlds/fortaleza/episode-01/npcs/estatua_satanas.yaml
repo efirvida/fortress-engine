@@ -1,0 +1,6 @@
+entity_id: "estatua_satanas"
+type: "npc"
+name: "estatua de Satanás"
+components:
+  description: "Una estatua oculta de Satanás. Solo aparece tras romper el cuadro. Sus ojos rojos te observan con interés malsano."
+spatial_anchor: "sala_de_la_arana"

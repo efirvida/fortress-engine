@@ -1,0 +1,7 @@
+macro_edge_id: "me_armas_pasillo"
+from_anchor: "sala_de_armas"
+to_anchor: "pasillo"
+direction: "bidirectional"
+passage_name: "pasillo_armas"
+passage_description: "Un pasillo"
+open: true

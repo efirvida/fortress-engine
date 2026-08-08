@@ -1,0 +1,7 @@
+macro_edge_id: "me_garganta_pulmones"
+from_anchor: "garganta"
+to_anchor: "centro_de_los_pulmones"
+direction: "bidirectional"
+passage_name: "traquea"
+passage_description: "La tráquea de la Bestia"
+open: true

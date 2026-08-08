@@ -1,0 +1,7 @@
+entity_id: "escoba"
+type: "item"
+name: "escoba"
+components:
+  weight: 3
+  description: "Una escoba de madera vieja que flota unos centímetros sobre el suelo."
+spatial_anchor: "sala_de_juegos"

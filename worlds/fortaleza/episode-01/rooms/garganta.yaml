@@ -1,0 +1,7 @@
+entity_id: "garganta"
+type: "room"
+name: "la garganta de la Bestia"
+components:
+  description: "Estás dentro de la Bestia. Todo es carne y líquido."
+  visited: false
+spatial_anchor: null

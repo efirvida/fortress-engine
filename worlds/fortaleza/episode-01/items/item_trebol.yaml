@@ -1,0 +1,7 @@
+entity_id: "item_trebol"
+type: "item"
+name: "trébol"
+components:
+  weight: 0
+  description: "Un trébol mágico que estaba oculto en el monolito."
+spatial_anchor: "salon_de_recepciones"

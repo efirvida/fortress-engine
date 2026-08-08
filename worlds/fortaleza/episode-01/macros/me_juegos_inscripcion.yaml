@@ -1,0 +1,7 @@
+macro_edge_id: "me_juegos_inscripcion"
+from_anchor: "sala_de_juegos"
+to_anchor: "sala_de_juegos"
+direction: "bidirectional"
+passage_name: "inscripcion"
+passage_description: "Una inscripción en la pared"
+open: true

@@ -1,0 +1,9 @@
+entity_id: "crunch"
+type: "npc"
+name: "Crunch"
+components:
+  description: "Un ogro llamado Crunch que devora todo a su paso. Tiene antojo de un pastel de cerezas."
+  is_troll: true
+  wants_item: "pastel_cerezas"
+  gift_flag: "crunch_happy"
+spatial_anchor: "sala_del_columna"

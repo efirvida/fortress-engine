@@ -1,0 +1,7 @@
+macro_edge_id: "me_infusiones_hechicero"
+from_anchor: "sala_de_infusiones"
+to_anchor: "cuarto_del_hechicero"
+direction: "bidirectional"
+passage_name: "puerta_amarilla"
+passage_description: "Una puerta amarilla"
+open: true

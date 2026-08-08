@@ -1,0 +1,8 @@
+macro_edge_id: "me_bailarina_enigma"
+from_anchor: "sala_de_la_bailarina"
+to_anchor: "sala_del_enigma"
+direction: "bidirectional"
+passage_name: "puerta_cristal"
+passage_description: "Una puerta de cristal"
+open: false
+requires_text: "key[42]"

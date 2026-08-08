@@ -1,0 +1,7 @@
+macro_edge_id: "me_pasillo_bruja"
+from_anchor: "pasillo"
+to_anchor: "alcoba_de_la_bruja"
+direction: "bidirectional"
+passage_name: "puerta_vieja"
+passage_description: "Una puerta vieja"
+open: true

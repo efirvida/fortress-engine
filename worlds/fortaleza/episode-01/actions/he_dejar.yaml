@@ -1,0 +1,21 @@
+# DROP actions — player drops items (generic, works for any item)
+
+- hyper_edge_id: "he_dejar_item"
+  name: "Dejar un objeto"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "dejar"
+    target: "*"
+  operators: []
+  output: "Dejas el objeto en el suelo."
+
+- hyper_edge_id: "he_soltar_item"
+  name: "Soltar un objeto (alternativa)"
+  priority: 0
+  clique:
+    subject: "player"
+    verb: "soltar"
+    target: "*"
+  operators: []
+  output: "Sueltas el objeto."

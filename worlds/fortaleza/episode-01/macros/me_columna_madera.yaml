@@ -1,0 +1,8 @@
+macro_edge_id: "me_columna_madera"
+from_anchor: "sala_del_columna"
+to_anchor: "laberinto_1"
+direction: "bidirectional"
+passage_name: "puerta_madera"
+passage_description: "Una puerta de madera"
+open: false
+requires_flag: "madera_rota"

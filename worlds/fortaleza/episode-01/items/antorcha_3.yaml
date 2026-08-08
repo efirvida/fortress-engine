@@ -1,0 +1,7 @@
+entity_id: "antorcha_3"
+type: "item"
+name: "antorcha 3"
+components:
+  weight: 2
+  description: "Una tercera antorcha, de llama azulada y extrañamente fría."
+spatial_anchor: "centro_del_cerebro"

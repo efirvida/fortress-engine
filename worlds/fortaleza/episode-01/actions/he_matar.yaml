@@ -1,0 +1,138 @@
+# KILL actions — player kills guards/trolls with specific weapons
+# FLAG marks entity as dead
+
+- hyper_edge_id: "he_matar_ciclope"
+  name: "Matar al Cíclope"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "ciclope"
+    instrument: "maza"
+  operators:
+    - type: "FLAG"
+      flag: "ciclope_muerto"
+      value: true
+  output: "¡Arrrggghhhh! El Cíclope cae. Revela una contraseña."
+
+- hyper_edge_id: "he_matar_arpia"
+  name: "Matar a la Arpía"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "arpia"
+    instrument: "daga"
+  operators:
+    - type: "FLAG"
+      flag: "arpia_muerta"
+      value: true
+  output: "¡La Arpía cae con un grito!"
+
+- hyper_edge_id: "he_matar_lobo"
+  name: "Matar al lobo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "lobo"
+    instrument: "latigo"
+  operators:
+    - type: "FLAG"
+      flag: "lobo_muerto"
+      value: true
+  output: "¡El lobo cae bajo tu látigo!"
+
+- hyper_edge_id: "he_matar_centro_pulmones"
+  name: "Matar al centro de los pulmones"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "centro_pulmones"
+    instrument: "maza"
+  operators:
+    - type: "FLAG"
+      flag: "centro_pulmones_dead"
+      value: true
+  output: "¡Has destruido el centro de los pulmones de la Bestia!"
+
+- hyper_edge_id: "he_matar_centro_estomago"
+  name: "Matar al centro del estómago"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "centro_estomago"
+    instrument: "lanza"
+  operators:
+    - type: "FLAG"
+      flag: "centro_estomago_dead"
+      value: true
+  output: "¡Has destruido el centro del estómago!"
+
+- hyper_edge_id: "he_matar_centro_corazon"
+  name: "Matar al centro del corazón"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "centro_corazon"
+    instrument: "arco"
+  operators:
+    - type: "FLAG"
+      flag: "centro_corazon_dead"
+      value: true
+  output: "¡Has destruido el centro del corazón!"
+
+- hyper_edge_id: "he_matar_centro_cerebro"
+  name: "Matar al centro del cerebro"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "centro_cerebro"
+    instrument: "antorcha"
+  operators:
+    - type: "FLAG"
+      flag: "centro_cerebro_dead"
+      value: true
+  output: "¡XVBCZXV XBVCZX BVZXC!!!!! Has destruido el cerebro."
+
+- hyper_edge_id: "he_matar_minotauro"
+  name: "Matar al Minotauro"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "minotauro"
+    instrument: "espada"
+  operators:
+    - type: "FLAG"
+      flag: "minotauro_muerto"
+      value: true
+  output: "¡Me has matado! Coge la antorcha del número divino..."
+
+- hyper_edge_id: "he_matar_troll_final"
+  name: "Matar al Troll final"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "matar"
+    target: "troll_final"
+    instrument: "maza"
+  operators:
+    - type: "FLAG"
+      flag: "troll_muerto"
+      value: true
+  output: "¡El Troll cae! Has completado tu misión."
+
+- hyper_edge_id: "he_asesinar_item"
+  name: "Asesinar algo (alternativa)"
+  priority: 9
+  clique:
+    subject: "player"
+    verb: "asesinar"
+    target: "*"
+  operators: []
+  output: "No puedes asesinar a eso."

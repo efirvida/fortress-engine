@@ -1,0 +1,7 @@
+entity_id: "corazon_unicornio"
+type: "item"
+name: "corazón de unicornio"
+components:
+  weight: 2
+  description: "Un corazón de unicornio que aún late débilmente, guardado en un cofrecillo."
+spatial_anchor: "alcoba_de_la_doncella"

@@ -1,0 +1,7 @@
+entity_id: "rosa_oculta"
+type: "item"
+name: "rosa oculta"
+components:
+  weight: 1
+  description: "Una rosa escondida entre los vendajes, intacta y perfumada."
+spatial_anchor: "cuarto_de_los_vendajes"

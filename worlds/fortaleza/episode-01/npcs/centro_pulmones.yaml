@@ -1,0 +1,8 @@
+entity_id: "centro_pulmones"
+type: "npc"
+name: "centro de los pulmones"
+components:
+  description: "Una masa pulsante que controla la respiración de la bestia. Se agita violentamente."
+  is_guard: true
+  lethal_weapon: "maza"
+spatial_anchor: "centro_de_los_pulmones"

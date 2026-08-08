@@ -1,0 +1,8 @@
+entity_id: "lobo"
+type: "npc"
+name: "lobo"
+components:
+  description: "Un lobo feroz con ojos como brasas. Gruñe y muestra los colmillos al verte."
+  is_guard: true
+  lethal_weapon: "latigo"
+spatial_anchor: "sala_de_lobos"

@@ -1,0 +1,9 @@
+entity_id: "hermes"
+type: "npc"
+name: "estatua de Hermes"
+components:
+  description: "Una estatua de Hermes con alas en los talones. Parece estar buscando algo para cubrirse."
+  is_troll: true
+  wants_item: "paraguas"
+  gift_flag: "hermes_happy"
+spatial_anchor: "patio_interior"

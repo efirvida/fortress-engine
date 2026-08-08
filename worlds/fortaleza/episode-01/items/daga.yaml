@@ -1,0 +1,7 @@
+entity_id: "daga"
+type: "item"
+name: "daga"
+components:
+  weight: 2
+  description: "Una daga corta y ligera, ideal para un golpe rápido."
+spatial_anchor: "sala_de_armas"

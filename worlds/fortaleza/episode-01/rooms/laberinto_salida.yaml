@@ -1,0 +1,7 @@
+entity_id: "laberinto_salida"
+type: "room"
+name: "salida del laberinto"
+components:
+  description: "La salida del laberinto."
+  visited: false
+spatial_anchor: null

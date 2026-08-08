@@ -1,0 +1,10 @@
+world_id: "fortaleza"
+name: "La Fortaleza"
+language: "es"
+description: "Aventura conversacional original de Miguel Enrique Cepero (1995). Dos partes: En las entrañas de la Bestia y La venganza de la Bestia."
+parser:
+  plugin: "classic"
+  options: {}
+narrator:
+  plugin: "template"
+  options: {}

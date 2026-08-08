@@ -1,0 +1,7 @@
+macro_edge_id: "me_juegos_patio"
+from_anchor: "sala_de_juegos"
+to_anchor: "patio_interior"
+direction: "bidirectional"
+passage_name: "puerta_azul"
+passage_description: "Una puerta azul"
+open: true

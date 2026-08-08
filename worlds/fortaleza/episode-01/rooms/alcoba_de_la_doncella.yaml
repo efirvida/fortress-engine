@@ -1,0 +1,7 @@
+entity_id: "alcoba_de_la_doncella"
+type: "room"
+name: "la alcoba de la doncella"
+components:
+  description: "Un cuarto delicado con cortinas de seda."
+  visited: false
+spatial_anchor: null

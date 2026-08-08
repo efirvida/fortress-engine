@@ -1,0 +1,7 @@
+entity_id: "centro_del_corazon"
+type: "room"
+name: "el centro del corazón"
+components:
+  description: "El centro vital del corazón de la Bestia."
+  visited: false
+spatial_anchor: null

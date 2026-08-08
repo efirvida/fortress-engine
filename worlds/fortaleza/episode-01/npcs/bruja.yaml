@@ -1,0 +1,9 @@
+entity_id: "bruja"
+type: "npc"
+name: "bruja"
+components:
+  description: "Una vieja bruja de nariz ganchuda. Masculla algo entre dientes y mira con desconfianza."
+  is_troll: true
+  wants_item: "escoba"
+  gift_flag: "bruja_happy"
+spatial_anchor: "alcoba_de_la_bruja"

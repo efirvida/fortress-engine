@@ -1,0 +1,7 @@
+entity_id: "latigo"
+type: "item"
+name: "látigo"
+components:
+  weight: 3
+  description: "Un látigo de cuero trenzado que chasquea en el aire."
+spatial_anchor: "sala_de_armas"

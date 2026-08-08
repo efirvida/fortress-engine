@@ -1,0 +1,7 @@
+macro_edge_id: "me_pasillo_infusiones"
+from_anchor: "pasillo"
+to_anchor: "sala_de_infusiones"
+direction: "bidirectional"
+passage_name: "puerta_gris"
+passage_description: "Una puerta gris"
+open: true

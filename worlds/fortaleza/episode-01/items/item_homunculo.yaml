@@ -1,0 +1,7 @@
+entity_id: "item_homunculo"
+type: "item"
+name: "homúnculo"
+components:
+  weight: 0
+  description: "Un homúnculo pequeño que quiere crecer."
+spatial_anchor: "laboratorio_de_la_bestia"

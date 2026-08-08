@@ -463,11 +463,26 @@ class EntityLoader:
     # -------------------------------------------------------------------
 
     def load_shared_entities(self, episode_id: str) -> list[Entity]:
-        """Load entities from ``shared/`` (player, vocabulary, etc.)."""
+        """Load entities from ``shared/`` (player, vocabulary, etc.).
+
+        Skips ``vocabulary.yaml`` — it's loaded separately by
+        :meth:`load_vocabulary` and would fail Pydantic validation as an
+        entity.
+        """
         shared_dir = self._world_path / "shared"
         if not shared_dir.is_dir():
             return []
-        return self._load_entities_from_dir(shared_dir)
+        result: list[Entity] = []
+        for path in _glob_yaml(shared_dir):
+            if path.name == "vocabulary.yaml":
+                continue
+            raw = _load_yaml(path)
+            models = _validate_pydantic(EntityYAML, raw, path, "entity")
+            if isinstance(models, list):
+                result.extend(_entity_from_model(m) for m in models)
+            else:
+                result.append(_entity_from_model(models))
+        return result
 
     # -------------------------------------------------------------------
     # Rooms / items / NPCs

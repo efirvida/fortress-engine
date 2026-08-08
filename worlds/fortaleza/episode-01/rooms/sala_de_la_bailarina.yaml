@@ -1,0 +1,7 @@
+entity_id: "sala_de_la_bailarina"
+type: "room"
+name: "la sala de la bailarina"
+components:
+  description: "Una sala con espejos y una bailarina."
+  visited: false
+spatial_anchor: null

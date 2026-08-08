@@ -1,0 +1,7 @@
+macro_edge_id: "me_banos_biblioteca"
+from_anchor: "sala_de_banos"
+to_anchor: "biblioteca"
+direction: "bidirectional"
+passage_name: "tunel_banos"
+passage_description: "Un túnel desde los baños"
+open: true

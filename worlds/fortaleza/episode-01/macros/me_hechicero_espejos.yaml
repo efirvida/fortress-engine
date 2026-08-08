@@ -1,0 +1,7 @@
+macro_edge_id: "me_hechicero_espejos"
+from_anchor: "cuarto_del_hechicero"
+to_anchor: "torre_oscura"
+direction: "bidirectional"
+passage_name: "escalera_madera"
+passage_description: "Una escalera de madera"
+open: true

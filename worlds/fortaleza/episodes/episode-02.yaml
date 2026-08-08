@@ -1,0 +1,49 @@
+id: "episode-02"
+name: "La venganza de la Bestia"
+order: 2
+description: "La Bestia ha muerto, pero su espíritu se vengará. Debes escapar de la Fortaleza colocando 7 objetos sagrados."
+requires: ["episode-01"]
+start_anchor: "cuarto_huespedes"
+goal:
+  conditions:
+    - type: "and"
+      conditions:
+        - type: "entity_in_room"
+          params:
+            entity: "antorcha"
+            room: "cuarto_huespedes"
+        - type: "entity_in_room"
+          params:
+            entity: "pendulo"
+            room: "salon_de_fumar"
+        - type: "entity_in_room"
+          params:
+            entity: "espejo"
+            room: "cuarto_de_aura"
+        - type: "entity_in_room"
+          params:
+            entity: "bote"
+            room: "orilla_2_rio_negro"
+        - type: "entity_in_room"
+          params:
+            entity: "rosa_diamante"
+            room: "fondo_del_lago"
+        - type: "entity_in_room"
+          params:
+            entity: "escudo_de_aquiles"
+            room: "ciudad_abandonada"
+        - type: "entity_in_room"
+          params:
+            entity: "cinta_de_moebius"
+            room: "torre_de_cristal_exterior"
+        - type: "flag_is_set"
+          params:
+            flag: "monstruo_muerto"
+        - type: "flag_is_set"
+          params:
+            flag: "hija_muerta"
+  output: "¡Has completado el ritual! Los siete objetos sagrados están en su lugar. El espíritu de la Bestia se desvanece. ¡Has escapado!"
+  side_effects: []
+carry_over:
+  inventory: []
+  flags: []

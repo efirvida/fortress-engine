@@ -1,0 +1,7 @@
+macro_edge_id: "me_biblioteca_jardin"
+from_anchor: "biblioteca"
+to_anchor: "jardin"
+direction: "bidirectional"
+passage_name: "libro"
+passage_description: "Un libro mágico"
+open: true

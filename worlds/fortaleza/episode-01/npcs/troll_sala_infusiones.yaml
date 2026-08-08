@@ -1,0 +1,9 @@
+entity_id: "troll_sala_infusiones"
+type: "npc"
+name: "troll"
+components:
+  description: "Un troll corpulento custodia la sala de infusiones. Gruñe suavemente mientras observa las hierbas secarse."
+  is_troll: true
+  wants_item: "polvo_magico"
+  gift_flag: "troll_infusiones_happy"
+spatial_anchor: "sala_de_infusiones"

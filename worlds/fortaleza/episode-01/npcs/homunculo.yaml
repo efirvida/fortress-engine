@@ -1,0 +1,9 @@
+entity_id: "homunculo"
+type: "npc"
+name: "homúnculo"
+components:
+  description: "Un pequeño ser artificial que apenas llega a la rodilla. Tiembla de frío en un rincón del laboratorio."
+  is_troll: true
+  wants_item: "pocion_crecer"
+  gift_flag: "homunculo_happy"
+spatial_anchor: "laboratorio_de_la_bestia"

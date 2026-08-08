@@ -1,0 +1,9 @@
+entity_id: "dedalo"
+type: "npc"
+name: "Dédalo"
+components:
+  description: "El inventor Dédalo, anciano y astuto. Sus manos están heridas y necesita vendas con urgencia."
+  is_troll: true
+  wants_item: "vendajes"
+  gift_flag: "dedalo_happy"
+spatial_anchor: "sala_del_columna"

@@ -1,0 +1,7 @@
+macro_edge_id: "me_garganta_corazon"
+from_anchor: "garganta"
+to_anchor: "centro_del_corazon"
+direction: "bidirectional"
+passage_name: "arteria_principal"
+passage_description: "La arteria principal"
+open: true

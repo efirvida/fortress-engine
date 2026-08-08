@@ -1,0 +1,7 @@
+macro_edge_id: "me_columna_cripta"
+from_anchor: "sala_del_columna"
+to_anchor: "cripta_final"
+direction: "bidirectional"
+passage_name: "cripta"
+passage_description: "Una cripta antigua"
+open: true

@@ -1,0 +1,7 @@
+entity_id: "espada"
+type: "item"
+name: "espada"
+components:
+  weight: 8
+  description: "Una espada larga de doble filo, pesada pero perfectamente equilibrada."
+spatial_anchor: "sala_de_armas"
