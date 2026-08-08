@@ -1,0 +1,7 @@
+macro_edge_id: "me_ruinas_oasis"
+from_anchor: "ruinas"
+to_anchor: "oasis"
+direction: "bidirectional"
+passage_name: "desierto"
+passage_description: "El desierto largo y abrasador"
+open: true

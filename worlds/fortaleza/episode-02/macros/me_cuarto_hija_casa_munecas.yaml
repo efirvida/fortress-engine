@@ -1,0 +1,7 @@
+macro_edge_id: "me_cuarto_hija_casa_munecas"
+from_anchor: "cuarto_de_la_hija_del_hechicero"
+to_anchor: "casa_de_munecas"
+direction: "bidirectional"
+passage_name: "agujero"
+passage_description: "Un agujero que conduce a la Casa de Muñecas"
+open: true

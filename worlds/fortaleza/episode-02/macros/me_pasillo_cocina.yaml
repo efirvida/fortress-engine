@@ -1,0 +1,9 @@
+macro_edge_id: "me_pasillo_cocina"
+from_anchor: "pasillo"
+to_anchor: "cocina"
+direction: "bidirectional"
+passage_name: "puerta_metal"
+passage_description: "La Puerta de Metal que protege la cocina"
+open: false
+requires_item: "panuelo"
+death_message: "El metal al rojo vivo te quema vivo. Sin protección, la muerte es inevitable."

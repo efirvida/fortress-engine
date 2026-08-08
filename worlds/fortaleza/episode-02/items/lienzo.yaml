@@ -1,0 +1,7 @@
+entity_id: "lienzo"
+type: "item"
+name: "Lienzo"
+components:
+  weight: 8
+  description: "Tres líneas que se cortan en puntos distintos. Protección para la Puerta Secreta en la Alcoba de Aura."
+spatial_anchor: "cuarto_de_un_pintor"

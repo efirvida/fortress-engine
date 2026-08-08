@@ -1,0 +1,9 @@
+entity_id: "labrador"
+type: "npc"
+name: "labrador"
+components:
+  description: "Un hombre robusto y maltratado quejándose del cansancio. Demasiada tierra para una sola persona."
+  is_troll: true
+  wants_item: "bolsa_de_semillas"
+  gift_flag: "labrador_happy"
+spatial_anchor: "campo_cultivado"

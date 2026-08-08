@@ -1,0 +1,9 @@
+entity_id: "horante"
+type: "npc"
+name: "horante"
+components:
+  description: "Una criatura encerrada dentro de una estatua de cristal. Se queja de un dolor insoportable en la pierna."
+  is_troll: true
+  wants_item: "muneco_diabolico"
+  gift_flag: "horante_happy"
+spatial_anchor: "ciudad_abandonada"

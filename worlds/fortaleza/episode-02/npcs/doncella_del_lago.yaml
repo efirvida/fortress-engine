@@ -1,0 +1,9 @@
+entity_id: "doncella_del_lago"
+type: "npc"
+name: "doncella del lago"
+components:
+  description: "Una mujer hermosísima que emerge parcialmente del agua. Mira con cierto aire de complicidad y suspira por la cueva de cristal."
+  is_troll: true
+  wants_item: "talisman_de_nieve"
+  gift_flag: "doncella_lago_happy"
+spatial_anchor: "fondo_del_lago"

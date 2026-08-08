@@ -1,0 +1,7 @@
+entity_id: "habitacion_de_los_tesoros"
+type: "room"
+name: "la habitación de los tesoros"
+components:
+  description: "Nunca había visto tanta riqueza. Las paredes están forradas de láminas de platino y hasta el fuego de las antorchas es de oro. Usted no comprende de dónde viene la luz."
+  visited: false
+spatial_anchor: null

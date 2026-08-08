@@ -1,0 +1,9 @@
+macro_edge_id: "me_salon_verde_salon_azul"
+from_anchor: "salon_verde"
+to_anchor: "salon_azul"
+direction: "bidirectional"
+passage_name: "puerta_azul"
+passage_description: "La Puerta Azul de la prueba"
+open: false
+forbids_item: "anillo_de_plata"
+death_message: "El Anillo de plata activa una trampa mortal. Tu cuerpo yace sin vida en el umbral."

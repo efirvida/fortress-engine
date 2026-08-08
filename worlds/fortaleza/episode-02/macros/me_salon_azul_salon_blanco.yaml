@@ -1,0 +1,9 @@
+macro_edge_id: "me_salon_azul_salon_blanco"
+from_anchor: "salon_azul"
+to_anchor: "salon_blanco"
+direction: "bidirectional"
+passage_name: "puerta_blanca"
+passage_description: "La Puerta Blanca de la prueba"
+open: false
+forbids_item: "anillo_de_bronce"
+death_message: "El Anillo de bronce activa una trampa mortal. Tu cuerpo yace sin vida en el umbral."

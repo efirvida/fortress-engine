@@ -1,0 +1,7 @@
+entity_id: "aguja_plata"
+type: "item"
+name: "Aguja"
+components:
+  weight: 1
+  description: "De plata, muy larga. Arma letal contra la Hija del Hechicero."
+spatial_anchor: "sastreria"

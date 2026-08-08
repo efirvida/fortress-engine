@@ -1,0 +1,7 @@
+entity_id: "huevo"
+type: "item"
+name: "Huevo"
+components:
+  description: "Un objeto que puede ser roto."
+  breakable: true
+spatial_anchor: "cuarto_de_juguetes"

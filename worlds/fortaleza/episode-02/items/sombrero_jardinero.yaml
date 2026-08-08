@@ -1,0 +1,7 @@
+entity_id: "sombrero_jardinero"
+type: "item"
+name: "Sombrero"
+components:
+  weight: 2
+  description: "Muy grande. Útil para dar al Guardián en los Límites de la Fortaleza."
+spatial_anchor: "cuarto_del_jardinero"

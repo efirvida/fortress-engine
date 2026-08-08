@@ -1,0 +1,9 @@
+macro_edge_id: "me_fondo_lago_orilla_lago"
+from_anchor: "fondo_del_lago"
+to_anchor: "orilla_del_lago"
+direction: "bidirectional"
+passage_name: "sendero_dorado"
+passage_description: "El Sendero Dorado que emerge del lago"
+open: false
+forbids_item: "marmidosa"
+death_message: "Marmidosa brilla con luz propia y el lago te rechaza. El agua te ahoga por llevar la espada prohibida."

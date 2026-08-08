@@ -1,0 +1,7 @@
+macro_edge_id: "me_cataratas_fondo_lago"
+from_anchor: "comienzo_de_las_cataratas"
+to_anchor: "fondo_del_lago"
+direction: "bidirectional"
+passage_name: "catarata"
+passage_description: "Salto al vacío de la catarata"
+open: true

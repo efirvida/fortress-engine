@@ -1,0 +1,7 @@
+entity_id: "tablilla_de_madera"
+type: "item"
+name: "Tablilla de Madera"
+components:
+  weight: 2
+  description: "Primera mitad del Manuscrito de los Horantes, con texto codificado."
+spatial_anchor: "punta_de_la_torre_de_cristal"

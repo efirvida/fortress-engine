@@ -1,0 +1,7 @@
+entity_id: "muneco_diabolico"
+type: "item"
+name: "Muñeco diabólico"
+components:
+  weight: 2
+  description: "Artefacto de brujería, alfiler en la pierna. Útil para dar al Horante en la Ciudad."
+spatial_anchor: "sastreria"

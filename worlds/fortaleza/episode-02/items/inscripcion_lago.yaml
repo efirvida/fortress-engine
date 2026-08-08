@@ -1,0 +1,7 @@
+entity_id: "inscripcion_lago"
+type: "item"
+name: "Inscripción del Fondo del Lago"
+components:
+  weight: 1
+  description: "Has llegado hasta Marmidosa, la rival de Excalibur. Hazla parte de tu mano y ella será parte de tu andar. Tómala, está detrás de la grieta."
+spatial_anchor: "fondo_del_lago"

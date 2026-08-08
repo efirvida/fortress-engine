@@ -1,0 +1,7 @@
+entity_id: "botella_de_vino"
+type: "item"
+name: "Botella de vino"
+components:
+  weight: 3
+  description: "Parece agua sucia. Útil para dar al Camello en el Valle."
+spatial_anchor: "cuarto_del_lenador"

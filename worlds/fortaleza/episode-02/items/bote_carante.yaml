@@ -1,0 +1,7 @@
+entity_id: "bote_carante"
+type: "item"
+name: "Bote"
+components:
+  weight: 39
+  description: "El célebre bote de Caronte. Debe colocarse en la Orilla 2 — condición de victoria."
+spatial_anchor: "orilla_del_rio_negro"

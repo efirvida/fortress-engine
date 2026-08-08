@@ -1,0 +1,330 @@
+# GIVE actions (episode 2) — player gives the wanted item to each troll
+# TRANSFER sends the item to limbo, FLAG marks the troll as satisfied
+
+- hyper_edge_id: "he_dar_botella_de_vino_camello"
+  name: "Dar botella de vino a camello"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "camello"
+    instrument: "botella_de_vino"
+  operators:
+    - type: "TRANSFER"
+      entity: "botella_de_vino"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "camello_happy"
+      value: true
+  output: "El camello bebe el vino de un trago y resopla satisfecho. Ya no te cierra el paso."
+
+- hyper_edge_id: "he_dar_reloj_de_arena_caronte"
+  name: "Dar reloj de arena a caronte"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "caronte"
+    instrument: "reloj_de_arena"
+  operators:
+    - type: "TRANSFER"
+      entity: "reloj_de_arena"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "caronte_happy"
+      value: true
+  output: "Caronte recibe el reloj de arena con su mano descarnada. El bote queda libre."
+
+- hyper_edge_id: "he_dar_sonajero_dinosaurio"
+  name: "Dar sonajero a dinosaurio"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "dinosaurio"
+    instrument: "sonajero"
+  operators:
+    - type: "TRANSFER"
+      entity: "sonajero"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "dinosaurio_happy"
+      value: true
+  output: "El pequeño dinosaurio agita el sonajero y ríe: ¡Guaaaaaa!"
+
+- hyper_edge_id: "he_dar_talisman_de_nieve_doncella_del_lago"
+  name: "Dar talisman de nieve a doncella del lago"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "doncella_del_lago"
+    instrument: "talisman_de_nieve"
+  operators:
+    - type: "TRANSFER"
+      entity: "talisman_de_nieve"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "doncella_lago_happy"
+      value: true
+  output: "La doncella acaricia el talismán y sonríe. La grieta ya no te teme."
+
+- hyper_edge_id: "he_dar_daga_dragon_dragon"
+  name: "Dar daga dragon a dragón"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "dragon"
+    instrument: "daga_dragon"
+  operators:
+    - type: "TRANSFER"
+      entity: "daga_dragon"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "dragon_happy"
+      value: true
+  output: "El dragón acepta la daga con reverencia. No todos los dragones merecen la muerte."
+
+- hyper_edge_id: "he_dar_receta_encapuchado"
+  name: "Dar receta a encapuchado"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "encapuchado"
+    instrument: "receta"
+  operators:
+    - type: "TRANSFER"
+      entity: "receta"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "encapuchado_happy"
+      value: true
+  output: "El encapuchado lee la receta con sus siete dedos y desaparece entre risas."
+
+- hyper_edge_id: "he_dar_pescado_gato"
+  name: "Dar pescado a gato"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "gato"
+    instrument: "pescado"
+  operators:
+    - type: "TRANSFER"
+      entity: "pescado"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "gato_happy"
+      value: true
+  output: "El gato devora el pescado y ronronea. 'Miau.'"
+
+- hyper_edge_id: "he_dar_sombrero_jardinero_guardian"
+  name: "Dar sombrero jardinero a guardián"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "guardian"
+    instrument: "sombrero_jardinero"
+  operators:
+    - type: "TRANSFER"
+      entity: "sombrero_jardinero"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "guardian_happy"
+      value: true
+  output: "El guardián se cala el sombrero y bendice tu nombre. Al fin, sombra."
+
+- hyper_edge_id: "he_dar_marmidosa_hechicero"
+  name: "Dar marmidosa a hechicero"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "hechicero"
+    instrument: "marmidosa"
+  operators:
+    - type: "TRANSFER"
+      entity: "marmidosa"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "hechicero_happy"
+      value: true
+  output: "El Hechicero toma a Marmidosa y rompe su silencio impenetrable."
+
+- hyper_edge_id: "he_dar_muneco_diabolico_horante"
+  name: "Dar muneco diabolico a horante"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "horante"
+    instrument: "muneco_diabolico"
+  operators:
+    - type: "TRANSFER"
+      entity: "muneco_diabolico"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "horante_happy"
+      value: true
+  output: "El horante recibe el muñeco y arranca el alfiler de la pierna. Su dolor cesa."
+
+- hyper_edge_id: "he_dar_hacha_lenador_jardinero"
+  name: "Dar hacha lenador a jardinero"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "jardinero"
+    instrument: "hacha_lenador"
+  operators:
+    - type: "TRANSFER"
+      entity: "hacha_lenador"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "jardinero_happy"
+      value: true
+  output: "El jardinero abandona la navaja y empuña el hacha con alegría."
+
+- hyper_edge_id: "he_dar_arpa_juglar"
+  name: "Dar arpa a juglar"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "juglar"
+    instrument: "arpa"
+  operators:
+    - type: "TRANSFER"
+      entity: "arpa"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "juglar_happy"
+      value: true
+  output: "El juglar acaricia las dieciocho cuerdas del arpa y su tristeza se disuelve."
+
+- hyper_edge_id: "he_dar_bolsa_de_semillas_labrador"
+  name: "Dar bolsa de semillas a labrador"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "labrador"
+    instrument: "bolsa_de_semillas"
+  operators:
+    - type: "TRANSFER"
+      entity: "bolsa_de_semillas"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "labrador_happy"
+      value: true
+  output: "El labrador recibe las semillas. Ahora la tierra tiene sentido."
+
+- hyper_edge_id: "he_dar_rosario_monje"
+  name: "Dar rosario a monje"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "monje"
+    instrument: "rosario"
+  operators:
+    - type: "TRANSFER"
+      entity: "rosario"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "monje_happy"
+      value: true
+  output: "El monje engarza el rosario y por fin te mira a los ojos."
+
+- hyper_edge_id: "he_dar_muslo_de_carnero_monstruo"
+  name: "Dar muslo de carnero a monstruo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "monstruo"
+    instrument: "muslo_de_carnero"
+  operators:
+    - type: "TRANSFER"
+      entity: "muslo_de_carnero"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "monstruo_happy"
+      value: true
+    - type: "FLAG"
+      flag: "monstruo_muerto"
+      value: true
+  output: "El monstruo devora el muslo de carnero con ansia... y se desploma. La inscripción lo advertía: no alimente al monstruo."
+
+- hyper_edge_id: "he_dar_silla_terrazas_obispo"
+  name: "Dar silla terrazas a obispo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "obispo"
+    instrument: "silla_terrazas"
+  operators:
+    - type: "TRANSFER"
+      entity: "silla_terrazas"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "obispo_happy"
+      value: true
+  output: "El obispo se sienta en la silla con un suspiro de alivio."
+
+- hyper_edge_id: "he_dar_bolsa_oro_pordiosero"
+  name: "Dar bolsa oro a pordiosero"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "pordiosero"
+    instrument: "bolsa_oro"
+  operators:
+    - type: "TRANSFER"
+      entity: "bolsa_oro"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "pordiosero_happy"
+      value: true
+  output: "El pordiosero abre la bolsa de oro y su mano deja de temblar."
+
+- hyper_edge_id: "he_dar_esqueleto_de_murcielago_sabio"
+  name: "Dar esqueleto de murcielago a sabio"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "sabio"
+    instrument: "esqueleto_de_murcielago"
+  operators:
+    - type: "TRANSFER"
+      entity: "esqueleto_de_murcielago"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "sabio_happy"
+      value: true
+  output: "El sabio examina el esqueleto de murciélago, fascinado, y suelta su anillo de papel."
+

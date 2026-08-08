@@ -1,0 +1,7 @@
+entity_id: "arbol_de_marfil"
+type: "item"
+name: "Arbol De Marfil"
+components:
+  description: "Un objeto que puede ser roto."
+  breakable: true
+spatial_anchor: "jardines_del_hechicero"

@@ -1,0 +1,7 @@
+entity_id: "carta_aura"
+type: "item"
+name: "Carta"
+components:
+  weight: 1
+  description: "¡Dios te salve, mi única esperanza! Mi padre me ha encerrado en la Torre de Cristal... Pista sobre la Torre de Cristal."
+spatial_anchor: "cuarto_de_la_hija_del_hechicero"

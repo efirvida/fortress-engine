@@ -1,0 +1,7 @@
+entity_id: "cima_del_pico_negro"
+type: "room"
+name: "la cima del Pico Negro"
+components:
+  description: "Nunca antes había estado a tanta altura. Usted se pregunta por qué la montaña es llamada 'El Pico Negro' si en realidad está cubierta de nieve."
+  visited: false
+spatial_anchor: null

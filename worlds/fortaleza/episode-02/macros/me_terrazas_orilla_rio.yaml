@@ -1,0 +1,7 @@
+macro_edge_id: "me_terrazas_orilla_rio"
+from_anchor: "terrazas"
+to_anchor: "orilla_del_rio_negro"
+direction: "bidirectional"
+passage_name: "escalera_caracol"
+passage_description: "Escalera de caracol que desciende a la orilla del río"
+open: true

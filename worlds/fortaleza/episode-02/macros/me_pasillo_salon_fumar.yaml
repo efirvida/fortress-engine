@@ -1,0 +1,7 @@
+macro_edge_id: "me_pasillo_salon_fumar"
+from_anchor: "pasillo"
+to_anchor: "salon_de_fumar"
+direction: "bidirectional"
+passage_name: "puerta_negra"
+passage_description: "La Puerta Negra del pasillo"
+open: true

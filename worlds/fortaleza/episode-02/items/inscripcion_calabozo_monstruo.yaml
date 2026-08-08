@@ -1,0 +1,7 @@
+entity_id: "inscripcion_calabozo_monstruo"
+type: "item"
+name: "Inscripción del Calabozo del Monstruo"
+components:
+  weight: 1
+  description: "No alimente al monstruo."
+spatial_anchor: "calabozo_del_monstruo"

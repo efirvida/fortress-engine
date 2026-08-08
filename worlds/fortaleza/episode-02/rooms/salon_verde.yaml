@@ -1,0 +1,7 @@
+entity_id: "salon_verde"
+type: "room"
+name: "el Salón Verde"
+components:
+  description: "Es un salón de pruebas tradicional. Este tipo de salón fue usado ampliamente por los horantes para educar a sus hijos."
+  visited: false
+spatial_anchor: null

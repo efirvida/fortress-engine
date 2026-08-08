@@ -1,0 +1,7 @@
+macro_edge_id: "me_pasillo_terrazas"
+from_anchor: "pasillo"
+to_anchor: "terrazas"
+direction: "bidirectional"
+passage_name: "puerta_oro"
+passage_description: "La Puerta de Oro"
+open: true

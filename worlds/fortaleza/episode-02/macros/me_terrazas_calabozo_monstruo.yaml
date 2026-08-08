@@ -1,0 +1,7 @@
+macro_edge_id: "me_terrazas_calabozo_monstruo"
+from_anchor: "terrazas"
+to_anchor: "calabozo_del_monstruo"
+direction: "bidirectional"
+passage_name: "escalera_caracol"
+passage_description: "Escalera de caracol que desciende al calabozo"
+open: true

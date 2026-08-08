@@ -1,0 +1,9 @@
+entity_id: "obispo"
+type: "npc"
+name: "obispo"
+components:
+  description: "Un anciano venerable que fuerza una sonrisa. Está muy cansado para conversar y busca dónde sentarse."
+  is_troll: true
+  wants_item: "silla_terrazas"
+  gift_flag: "obispo_happy"
+spatial_anchor: "catedral"

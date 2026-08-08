@@ -1,0 +1,7 @@
+entity_id: "piedra_comun"
+type: "item"
+name: "Piedra"
+components:
+  weight: 5
+  description: "Común y corriente. Útil para romper el Huevo en el Comedor."
+spatial_anchor: "jardines_del_hechicero"

@@ -1,0 +1,7 @@
+entity_id: "cubo_de_agua"
+type: "item"
+name: "Cubo de agua"
+components:
+  weight: 4
+  description: "Balde lleno. Arma letal contra el Ogro."
+spatial_anchor: "oasis"

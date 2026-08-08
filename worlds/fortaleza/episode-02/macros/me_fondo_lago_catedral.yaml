@@ -1,0 +1,8 @@
+macro_edge_id: "me_fondo_lago_catedral"
+from_anchor: "fondo_del_lago"
+to_anchor: "catedral"
+direction: "bidirectional"
+passage_name: "reja"
+passage_description: "La reja oculta que esconde la escalera a la Catedral"
+open: false
+requires_item: "tenazas"

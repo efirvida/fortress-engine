@@ -1,0 +1,8 @@
+entity_id: "ogro"
+type: "npc"
+name: "ogro"
+components:
+  description: "Una criatura repulsiva, mezcla de hombre, cerdo y buitre. El aire a su alrededor es casi irrespirable."
+  is_guard: true
+  lethal_weapon: "cubo_de_agua"
+spatial_anchor: "alcoba_del_ogro"

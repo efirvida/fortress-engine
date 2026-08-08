@@ -1,0 +1,9 @@
+entity_id: "camello"
+type: "npc"
+name: "camello"
+components:
+  description: "Un camello viejo y maltratado que mira con ojos suplicantes. Pide más y más sin saciarse."
+  is_troll: true
+  wants_item: "botella_de_vino"
+  gift_flag: "camello_happy"
+spatial_anchor: "extenso_valle"

@@ -1,0 +1,7 @@
+entity_id: "escudo_de_aquiles"
+type: "item"
+name: "Escudo de Aquiles"
+components:
+  weight: 10
+  description: "Escudo forjado por Hefestos. Protección para Escaleras y Túneles subterráneos. Debe colocarse en la Ciudad — condición de victoria."
+spatial_anchor: "desierto"

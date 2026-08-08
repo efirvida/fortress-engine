@@ -1,0 +1,9 @@
+macro_edge_id: "me_juglar_catacumbas"
+from_anchor: "habitaciones_del_juglar"
+to_anchor: "catacumbas"
+direction: "bidirectional"
+passage_name: "escalera"
+passage_description: "Escalera peligrosa a las Catacumbas"
+open: false
+requires_item: "escudo_de_aquiles"
+death_message: "Sin protección, los fuegos de las catacumbas te consumen vivo."

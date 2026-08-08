@@ -1,0 +1,7 @@
+entity_id: "piedra_de_roseta"
+type: "item"
+name: "Piedra de Roseta"
+components:
+  weight: 5
+  description: "Texto bilingüe codificado: 'Fuimos grandes una vez' ↔ texto alterado. Clave para descifrar los manuscritos."
+spatial_anchor: "salon_de_fumar"

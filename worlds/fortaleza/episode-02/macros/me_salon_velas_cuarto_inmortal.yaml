@@ -1,0 +1,7 @@
+macro_edge_id: "me_salon_velas_cuarto_inmortal"
+from_anchor: "salon_de_las_velas"
+to_anchor: "cuarto_del_inmortal"
+direction: "bidirectional"
+passage_name: "escalera"
+passage_description: "Escalera que desciende al cuarto del Inmortal"
+open: true

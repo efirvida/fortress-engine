@@ -1,0 +1,7 @@
+macro_edge_id: "me_jardines_cuarto_jardinero"
+from_anchor: "jardines_del_hechicero"
+to_anchor: "cuarto_del_jardinero"
+direction: "bidirectional"
+passage_name: "puerta_verde"
+passage_description: "La Puerta Verde"
+open: true

@@ -1,0 +1,9 @@
+entity_id: "monstruo"
+type: "npc"
+name: "monstruo"
+components:
+  description: "Un monstruo enorme y feo, encadenado al techo del calabozo. Sus ojos brillan en la oscuridad con hambre feroz."
+  is_troll: true
+  wants_item: "muslo_de_carnero"
+  gift_flag: "monstruo_happy"
+spatial_anchor: "calabozo_del_monstruo"
