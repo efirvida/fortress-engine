@@ -4,4 +4,4 @@ name: "antorcha 3"
 components:
   weight: 2
   description: "Una tercera antorcha, de llama azulada y extrañamente fría."
-spatial_anchor: "centro_del_cerebro"
+spatial_anchor: "sala_del_minotauro"

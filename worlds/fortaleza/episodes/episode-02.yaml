@@ -6,42 +6,40 @@ requires: ["episode-01"]
 start_anchor: "habitacion_para_huespedes"
 goal:
   conditions:
-    - type: "and"
-      conditions:
-        - type: "entity_in_room"
-          params:
-            entity: "antorcha_subterraneos"
-            room: "habitacion_para_huespedes"
-        - type: "entity_in_room"
-          params:
-            entity: "pendulo"
-            room: "salon_de_fumar"
-        - type: "entity_in_room"
-          params:
-            entity: "espejo_roto"
-            room: "cuarto_de_la_hija_del_hechicero"
-        - type: "entity_in_room"
-          params:
-            entity: "bote_carante"
-            room: "otra_orilla_del_rio_negro"
-        - type: "entity_in_room"
-          params:
-            entity: "rosa_diamante"
-            room: "fondo_del_lago"
-        - type: "entity_in_room"
-          params:
-            entity: "escudo_de_aquiles"
-            room: "ciudad_abandonada"
-        - type: "entity_in_room"
-          params:
-            entity: "cinta_de_moebius"
-            room: "exterior_de_la_torre_de_cristal"
-        - type: "flag_is_set"
-          params:
-            flag: "monstruo_muerto"
-        - type: "flag_is_set"
-          params:
-            flag: "hija_muerta"
+    - type: "entity_in_room"
+      params:
+        entity: "antorcha_subterraneos"
+        room: "habitacion_para_huespedes"
+    - type: "entity_in_room"
+      params:
+        entity: "pendulo"
+        room: "salon_de_fumar"
+    - type: "entity_in_room"
+      params:
+        entity: "espejo_roto"
+        room: "cuarto_de_la_hija_del_hechicero"
+    - type: "entity_in_room"
+      params:
+        entity: "bote_carante"
+        room: "otra_orilla_del_rio_negro"
+    - type: "entity_in_room"
+      params:
+        entity: "rosa_diamante"
+        room: "fondo_del_lago"
+    - type: "entity_in_room"
+      params:
+        entity: "escudo_de_aquiles"
+        room: "ciudad_abandonada"
+    - type: "entity_in_room"
+      params:
+        entity: "cinta_de_moebius"
+        room: "exterior_de_la_torre_de_cristal"
+    - type: "flag_is_set"
+      params:
+        flag: "monstruo_muerto"
+    - type: "flag_is_set"
+      params:
+        flag: "hija_muerta"
   output: "¡Has completado el ritual! Los siete objetos sagrados están en su lugar. El espíritu de la Bestia se desvanece. ¡Has escapado!"
   side_effects: []
 carry_over:

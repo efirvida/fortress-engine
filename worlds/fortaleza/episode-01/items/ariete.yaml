@@ -1,0 +1,7 @@
+entity_id: "ariete"
+type: "item"
+name: "ariete"
+components:
+  weight: 30
+  description: "Un ariete de hierro, pesado y contundente. Sirve para derribar la pared solitaria."
+spatial_anchor: "sala_de_armas"

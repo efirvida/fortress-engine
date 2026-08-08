@@ -142,6 +142,20 @@
       to_container: "hero"
   output: "Tomas la antorcha."
 
+- hyper_edge_id: "he_tomar_antorcha_3"
+  name: "Tomar la antorcha 3"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "antorcha_3"
+  operators:
+    - type: "TRANSFER"
+      entity: "antorcha_3"
+      from_container: "sala_del_minotauro"
+      to_container: "hero"
+  output: "Tomas la antorcha de llama azulada y fría."
+
 - hyper_edge_id: "he_tomar_polvo_magico"
   name: "Tomar el polvo mágico"
   priority: 10
@@ -365,6 +379,20 @@
       from_container: "sala_de_armas"
       to_container: "hero"
   output: "Tomas la lanza. Para Atenea y el estómago."
+
+- hyper_edge_id: "he_tomar_ariete"
+  name: "Tomar el ariete"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "ariete"
+  operators:
+    - type: "TRANSFER"
+      entity: "ariete"
+      from_container: "sala_de_armas"
+      to_container: "hero"
+  output: "Tomas el ariete de hierro. Sirve para derribar la pared solitaria."
 
 - hyper_edge_id: "he_tomar_arco"
   name: "Tomar el arco"
