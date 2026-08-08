@@ -1,0 +1,9 @@
+entity_id: "encapuchado"
+type: "npc"
+name: "encapuchado"
+components:
+  description: "Una criatura regida por el número 7: tiene 7 brazos, 7 pies y 7 dedos en cada extremidad. Pide algo que le pertenece."
+  is_troll: true
+  wants_item: "receta"
+  gift_flag: "encapuchado_happy"
+spatial_anchor: "celda"

@@ -1,0 +1,8 @@
+entity_id: "carcelero"
+type: "npc"
+name: "carcelero"
+components:
+  description: "Un hombre rudo que custodia las celdas de los calabozos. Su mirada es suspicaz y desconfiada."
+  is_guard: true
+  lethal_weapon: "marmidosa"
+spatial_anchor: "calabozos"

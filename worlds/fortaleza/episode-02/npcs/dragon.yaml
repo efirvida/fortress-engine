@@ -1,0 +1,9 @@
+entity_id: "dragon"
+type: "npc"
+name: "dragón"
+components:
+  description: "Un dragón hermoso y terrible que guarda silencio en medio de un círculo vacío, rodeado de miles de velas."
+  is_troll: true
+  wants_item: "daga"
+  gift_flag: "dragon_happy"
+spatial_anchor: "salon_de_las_velas"

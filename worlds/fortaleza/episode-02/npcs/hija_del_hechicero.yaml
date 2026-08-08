@@ -1,0 +1,8 @@
+entity_id: "hija_del_hechicero"
+type: "npc"
+name: "hija del hechicero"
+components:
+  description: "Usted está a punto de desmayarse. La hija del Hechicero no es exactamente como usted esperaba. En realidad se parece más a una serpiente de quince metros y tres cabezas, con la piel llena de gruesas escamas."
+  is_guard: true
+  lethal_weapon: "aguja"
+spatial_anchor: "alcoba_secreta"

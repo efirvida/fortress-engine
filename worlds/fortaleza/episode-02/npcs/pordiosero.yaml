@@ -1,0 +1,9 @@
+entity_id: "pordiosero"
+type: "npc"
+name: "pordiosero"
+components:
+  description: "Un hombre harapiento que guarda silencio y extiende su mano pidiendo una limosna en medio del oasis."
+  is_troll: true
+  wants_item: "bolsa"
+  gift_flag: "pordiosero_happy"
+spatial_anchor: "oasis"

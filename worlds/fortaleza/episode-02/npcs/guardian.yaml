@@ -1,0 +1,9 @@
+entity_id: "guardian"
+type: "npc"
+name: "guardián"
+components:
+  description: "Un viejo quemado por el sol que vigila los límites de la Fortaleza. Se queja implacablemente del calor."
+  is_troll: true
+  wants_item: "sombrero"
+  gift_flag: "guardian_happy"
+spatial_anchor: "limites_de_la_fortaleza"
