@@ -526,35 +526,35 @@ En Fortaleza original, **nada** se transfiere entre partes (inventario vacío, s
 
 ## 6. Preguntas para el Usuario
 
-Las siguientes decisiones de diseño requieren input humano. Están formuladas en español y ordenadas por prioridad:
+Las siguientes decisiones de diseño requirieron input humano. La mayoría quedaron resueltas por la implementación (marcadas "Resuelto"); se conservan como registro de la decisión.
 
 ### 6.1 Sobre el combate
 
-**P1**: ¿Preferís la opción de **múltiples Hiper-Aristas con prioridad** (más limpia, sin nuevos operadores, pero requiere 2 Hiper-Aristas por enemigo) o un **nuevo operador COND** (más compacto, una sola Hiper-Arista por enemigo, pero introduce branching en la secuencia de operadores)?
+**P1 — Resuelto**: se adoptó la opción de **múltiples Hiper-Aristas con prioridad** (sin operador COND). El grafo evalúa candidatos por prioridad descendente y el clique extendido (`instrument_not`, `instrument_any`, `component`, `flag`, `flag_not`) cubre los casos que COND habría resuelto.
 
-**P2**: La Hija del Hechicero tiene una mecánica única: si la atacás sin la Aguja, **vos** morís. Esto es distinto a todos los demás enemigos. ¿Querés que el motor tenga un concepto explícito de "enemigo que contraataca letalmente" (tipo `TDaugther`) o lo resolvemos con la misma mecánica de Hiper-Aristas catch-all que proponemos para los Guards?
+**P2 — Resuelto**: la Hija del Hechicero se resuelve con la mecánica de Hiper-Aristas catch-all (Recomendación A del análisis) — patrón `FLAG(player_dead)` + `instrument_not`, sin concepto explícito `TDaugther`.
 
 ### 6.2 Sobre los episodios
 
-**P3**: En el original, Fortaleza 1 y 2 son programas separados. No comparten nada. ¿Querés que en tu implementación **compartan algún estado** (inventario, conocimiento de contraseñas, alguna bandera narrativa) o preferís mantener la separación total?
+**P3 — Resuelto**: los episodios comparten estado vía `carry_over` (inventario y banderas declaradas en el YAML del episodio).
 
-**P4**: Al terminar la Parte I con el mensaje "Veremos si en la próxima versión de La Fortaleza tiene igual suerte", ¿querés una transición **directa** a la Parte II (el jugador sigue jugando, se carga el nuevo mapa) o una pausa con pantalla de "Fin de la Parte I — Presioná ENTER para continuar"?
+**P4 — Resuelto**: transición **directa** entre episodios (el motor carga el nuevo episodio y sigue el ciclo de turnos).
 
-**P5**: ¿Las 88 habitaciones van en un solo mundo (`worlds/fortaleza/`) con dos episodios, o preferís dos mundos separados (`worlds/fortaleza-1/` y `worlds/fortaleza-2/`) que el motor pueda encadenar?
+**P5 — Resuelto**: un solo mundo (`worlds/<nombre>/`) con episodios en `episodes/` — el motor encadena episodios dentro del mismo mundo.
 
 ### 6.3 Sobre la fidelidad con el original
 
-**P6**: El sistema de "rastro" (save/replay de comandos en texto editable) es una reliquia del original. ¿Querés que lo implementemos **exactamente igual** (archivos de texto con comandos, soporte de comentarios `{ }`, ejecución silenciosa) o preferís un sistema de save/load moderno (JSON del estado completo) y dejamos el rastro como easter egg futuro?
+**P6 — Resuelto**: sistema de save/load moderno (Event Sourcing + SQLite, snapshot como cache de performance). El "rastro" del original no se implementa.
 
 **P7 — Resuelto**: se adopta la lista V2 expandida (añade `UN`, `UNA`, `DEL`, `LOS`, `LAS` a `LA`, `EL`, `POR`, `AL`) para el parser V1 — consistente con MinimalParser y mejor UX. La lista V1 original queda como subconjunto estricto.
 
-**P8**: La función de matching parcial de nombres (`Equals` en `EQSTRING.PAS`) busca que todas las palabras del input estén en el nombre del objeto. Esto hace que `"Puerta"` coincida con `"Puerta Principal"`. ¿Mantenemos este comportamiento exacto o lo hacemos más estricto (ej: matching por prefijo)?
+**P8 — Resuelto**: se mantiene el matching parcial estilo `Equals` (todas las palabras del input deben estar en el nombre), con exact-match primero y shortest-name-wins entre parciales; empates devuelven la frase sin resolver.
 
 ### 6.4 Sobre el motor
 
-**P9**: El PRD define soporte multi-protagonista (varios `player_controlled`). Esto agrega complejidad al Orquestador de Turnos y a las Cliques. ¿Es **necesario para el MVP** o podemos moverlo a v1.1? (Fortaleza solo usa un protagonista.)
+**P9 — Resuelto**: multi-protagonista desde el día uno — `player_controlled_entities` siempre es lista; `CAMBIAR A`, `GRUPO` y `ESPERAR` están implementados como comandos de sistema.
 
-**P10**: El PRD menciona SQLite como capa de persistencia. Para el MVP de un motor de ficción interactiva single-player, ¿es suficiente con serialización a JSON en archivo (sin base de datos) o necesitás SQLite desde el día uno?
+**P10 — Resuelto**: SQLite desde el día uno (repositorio Event Sourcing + snapshots; Alembic instalado para migraciones futuras).
 
 ---
 

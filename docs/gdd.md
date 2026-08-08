@@ -465,8 +465,8 @@ Mueve una entidad de un contenedor a otro.
 **Precondiciones**:
 - `entity` existe en `from`.
 - Si `to` es un inventario (`player_controlled`), se valida el peso:
-  - Si `entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `"Usted no puede cargar con eso."`.
-  - Si `sum(inventory_items.weight) + entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `"Sería demasiado peso."`.
+- Si `entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `error_code="not_portable"` + `data`; el texto español vive en el narrador (`DEFAULT_SPANISH_MESSAGES["error_output.not_portable"]`).
+- Si `sum(inventory_items.weight) + entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `error_code="too_heavy"` + `data`; el texto español vive en el narrador (`DEFAULT_SPANISH_MESSAGES["error_output.too_heavy"]`).
 - Si `entity.portable == false` y `to` es un inventario: la acción falla.
 
 **Postcondiciones**:
@@ -618,6 +618,12 @@ PASO 2: ENTRADA DEL JUGADOR
       active_protagonist = nuevo protagonista
       RETORNAR
 
+  // Los comandos de sistema y los verbos de movimiento NO están hardcodeados
+  // en el orquestador: provienen del Vocabulary del mundo (secciones
+  // `movement_verbs` y `system_commands` de `shared/vocabulary.yaml`). Los
+  // defaults en código (`DEFAULT_MOVEMENT_VERBS={"ir","abrir"}`,
+  // `DEFAULT_SYSTEM_COMMANDS`) solo aplican cuando el mundo no los declara.
+
 PASO 3: PARSEO
   parsed = parser.parse(raw_text, world_state)
   // parsed = { subject, verb, target, context, instrument }
@@ -641,7 +647,7 @@ PASO 4: BÚSQUEDA DE HIPER-ARISTAS
   )
 
   SI candidates está vacío:
-    EMITIR error_output({ message: "No puedes hacer eso aquí." })
+    EMITIR error_output({ error_code: "no_action", data: { verb, protagonist_id } })
     IR A PASO 10
 
   // Ordenar por prioridad descendente
@@ -661,7 +667,7 @@ PASO 5: VALIDACIÓN DE CLIQUES
       ROMPER
 
   SI ninguna clique se formó:
-    EMITIR error_output({ message: "No puedes hacer eso." })
+    EMITIR error_output({ error_code: "no_action", data: { verb, protagonist_id } })
     IR A PASO 10
 
 PASO 6: EJECUCIÓN DE OPERADORES
@@ -677,7 +683,7 @@ PASO 6: EJECUCIÓN DE OPERADORES
     SINO:
       // El operador falló (ej: peso excedido)
       // NO se emite evento de cambio de estado
-      EMITIR error_output({ message: resultado.error_message })
+      EMITIR error_output({ error_code: resultado.code, data: resultado.data })
       ROMPER  // no ejecutar más operadores de esta Hiper-Arista
 
 PASO 7: EMITIR OUTPUT DE LA HIPER-ARISTA
@@ -967,7 +973,7 @@ worlds/fortaleza/
 │   └── episode-02.yaml           # Parte II: goal, carry_over, configuración
 ├── shared/
 │   ├── player.yaml               # Definición del protagonista (compartido)
-│   └── vocabulary.yaml           # Per-world (worlds/<nombre>/shared/): verbos y sinónimos, stopwords, preposiciones y marcadores de habla del parser
+│   └── vocabulary.yaml           # Per-world (worlds/<nombre>/shared/): verbos y sinónimos, stopwords, preposiciones y marcadores de habla del parser; opcionalmente: messages (texto del narrador por error_code), movement_verbs y system_commands
 ├── episode-01/
 │   ├── rooms/
 │   │   ├── room-01.yaml          # "el exterior de la fortaleza"
@@ -1307,13 +1313,13 @@ narrator:
 
 player_defaults:
   max_weight: 40
-    start_anchor: "mi-aventura-1-room-01"
+  start_anchor: "mi-aventura-1-room-01"
 
 episodes:
   - id: "episode-01"
     name: "Capítulo 1"
     requires: []
-  start_anchor: "mi-aventura-1-room-01"
+    start_anchor: "mi-aventura-1-room-01"
     goal:
       conditions:
         - type: entity_dead

@@ -8,7 +8,7 @@ Give `OperatorResult` a structured failure contract: a flat `code` plus `data`, 
 
 ### Requirement: Structured operator failure
 
-`OperatorResult` SHALL gain `code: str | None` and `data: dict[str, object]` fields. The `error_message` field SHALL be removed immediately (user decision — no staged removal). The `_MSG_NOT_PORTABLE` and `_MSG_TOO_HEAVY` module constants SHALL be removed. The five operators SHALL emit flat codes instead of strings: `not_portable`, `too_heavy`, `entity_not_found`, `container_not_found`, `transform_component_missing`, `combine_inputs_missing`, `flag_readonly`, `teleport_entity_not_found`, `teleport_anchor_not_found`, `unknown_operator`, `unhandled_operator`, `protagonist_not_found`. English dev diagnostics (e.g. `"Entity 'X' not found"`) SHALL NOT be used as player-visible text.
+`OperatorResult` SHALL gain `code: str | None` and `data: dict[str, object]` fields. The `error_message` field SHALL be removed immediately (user decision — no staged removal). The `_MSG_NOT_PORTABLE` and `_MSG_TOO_HEAVY` module constants SHALL be removed. The five operators SHALL emit flat codes instead of strings: `not_portable`, `too_heavy`, `entity_not_found`, `entity_not_in_container`, `container_not_found`, `transform_component_missing`, `combine_inputs_missing`, `teleport_entity_not_found`, `teleport_anchor_not_found`, `unknown_operator`, `unhandled_operator`, `protagonist_not_found`. English dev diagnostics (e.g. `"Entity 'X' not found"`) SHALL NOT be used as player-visible text. (`flag_readonly` is intentionally absent — the FLAG operator always succeeds and has no failure path.)
 
 ```python
 @dataclass(frozen=True)

@@ -364,17 +364,13 @@ Réplica exacta del parser original de Fortaleza:
 - **~180 sustantivos** entre objetos, puertas, NPCs y ubicaciones
 - Matching parcial de nombres (`"Puerta Principal"` coincide con `"Puerta"`)
 - Normalización de tildes (`áéíóúüñ → aeiounN`)
-- Ignora artículos (`LA`, `EL`) y la preposición `POR`
-- Ignora la preposición `AL`
+- **Stopwords V2 (9 palabras)**: ignora `LA`, `EL`, `POR`, `AL`, `UN`, `UNA`, `DEL`, `LOS`, `LAS` (decisión documentada en tdd.md §4.15 y gap-analysis P7 — la lista V1 original queda como subconjunto estricto)
 - Sintaxis completa documentada en `docs/07-vocabulary.md`
 - **Idioma declarado en el mundo**: `world.yaml` declara `language: "es"` (default) y los plugins `parser`/`narrator`; la plugin factory inyecta el idioma en la instancia del parser al construirla.
 
-### V2: Parser Clásico Expandido
+### V2: Parser Clásico Expandido (SUPERSEDED — fusionado en V1)
 
-Expande las stopwords del parser original para mejorar la experiencia de usuario:
-- Agrega a las stopwords de V1: `UN`, `UNA`, `DEL`, `LOS`, `LAS`
-- Misma lógica de matching parcial y normalización que V1
-- Compatible hacia atrás: todos los comandos que funcionan en V1 funcionan en V2
+La expansión de stopwords (agrega `UN`, `UNA`, `DEL`, `LOS`, `LAS` a la lista original) fue adoptada directamente en el parser V1. Ya no existe una versión V2 separada del parser clásico — el parser V1 usa la lista expandida de 9 stopwords. Esta sección se conserva como registro histórico.
 
 ### V3: Parser Intencional (IA)
 

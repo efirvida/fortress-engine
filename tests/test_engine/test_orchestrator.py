@@ -2458,3 +2458,50 @@ def test_switch_prefix_no_space_not_detected(tmp_path):
     result = orch._detect_system_command("cambiar ana")
     # The save surfaces also don't match as exact, so it returns None
     assert result is None
+
+
+# ===================================================================
+# C1: plugin error isolation — a throwing parser must not crash the engine
+# ===================================================================
+
+
+class _ThrowingParser(ParserInterface):
+    """Parser that always raises — used to verify §9.3 isolation."""
+
+    def __init__(self, language: str = "es"):
+        super().__init__(language)
+
+    @property
+    def language(self) -> str:
+        return self._language
+
+    def parse(self, raw_text: str, world_state: WorldState) -> ParsedCommand:
+        raise RuntimeError("parser exploded")
+
+
+def test_parser_exception_is_isolated(tmp_path):
+    """A throwing parser emits error_output parser_error, does not crash."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    parser = _ThrowingParser()
+    narrator = _StubNarrator()
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+    )
+
+    # Must not raise.
+    orch.execute_turn("mirar puerta")
+
+    errors = [e for e in received if e.type == ERROR_OUTPUT]
+    assert len(errors) == 1
+    assert errors[0].payload["error_code"] == "parser_error"
+    assert errors[0].payload["data"] == {}
+    # The failed turn still emits turn_ended.
+    assert any(e.type == TURN_ENDED for e in received)
