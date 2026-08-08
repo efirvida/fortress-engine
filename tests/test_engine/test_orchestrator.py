@@ -1575,7 +1575,7 @@ class _MockRepository:
 
 
 def test_execute_turn_guardar_with_repository(tmp_path):
-    """GUARDAR with a repository present does NOT emit error."""
+    """GUARDAR with repository and save_system emits game_saved."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -1587,6 +1587,10 @@ def test_execute_turn_guardar_with_repository(tmp_path):
     parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
 
     repo = _MockRepository()
+    # A minimal save_system stub that satisfies the type check.
+    class _StubSaveSystem:
+        pass
+    save_sys = _StubSaveSystem()
 
     orch = TurnOrchestrator(
         state=state,
@@ -1597,17 +1601,23 @@ def test_execute_turn_guardar_with_repository(tmp_path):
         goal_evaluator=goal_eval,
         episode_manager=ep_mgr,
         repository=repo,
+        save_system=save_sys,
     )
 
     orch.execute_turn("GUARDAR 1")
 
-    # No error_output when repository is present
+    # No error when both repository and save_system are present.
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) == 0
 
+    # game_saved emitted.
+    saved_events = [e for e in received if e.type == "game_saved"]
+    assert len(saved_events) == 1
+    assert saved_events[0].payload["save_slot"] == "slot_1"
+
 
 def test_execute_turn_cargar_with_repository(tmp_path):
-    """CARGAR with a repository present does NOT emit error."""
+    """CARGAR with repository, save_system, and a snapshot emits game_loaded."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -1618,7 +1628,20 @@ def test_execute_turn_cargar_with_repository(tmp_path):
 
     parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
 
-    repo = _MockRepository()
+    # A mock repo that has a snapshot so the slot "exists".
+    class _MockRepoWithSnapshot:
+        def load_latest_snapshot(self, save_slot):
+            return (WorldState(turn_number=3), 3)
+        def get_event_log(self, since_turn=0):
+            return []
+
+    repo = _MockRepoWithSnapshot()
+
+    class _StubSaveSystem:
+        def replay_state(self, st, slot, graph=None):
+            return st
+
+    save_sys = _StubSaveSystem()
 
     orch = TurnOrchestrator(
         state=state,
@@ -1629,12 +1652,19 @@ def test_execute_turn_cargar_with_repository(tmp_path):
         goal_evaluator=goal_eval,
         episode_manager=ep_mgr,
         repository=repo,
+        save_system=save_sys,
     )
 
     orch.execute_turn("CARGAR 1")
 
+    # No error when both are present and snapshot exists.
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) == 0
+
+    # game_loaded emitted.
+    loaded_events = [e for e in received if e.type == "game_loaded"]
+    assert len(loaded_events) == 1
+    assert loaded_events[0].payload["save_slot"] == "slot_1"
 
 
 # ===================================================================

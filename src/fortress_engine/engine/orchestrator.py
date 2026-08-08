@@ -26,10 +26,14 @@ from fortress_engine.events.event_types import (
     ENTITY_TELEPORTED,
     ERROR_OUTPUT,
     GAME_COMPLETED,
+    GAME_LOADED,
     GAME_OVER,
+    GAME_SAVED,
     INPUT_RECEIVED,
     PROTAGONISTS_LISTED,
     PROTAGONIST_SWITCHED,
+    SAVE_REPLAY_ENDED,
+    SAVE_REPLAY_STARTED,
     TURN_STARTED,
     TURN_ENDED,
     EngineEvent,
@@ -41,6 +45,8 @@ if TYPE_CHECKING:
     from fortress_engine.engine.episode_manager import EpisodeManager
     from fortress_engine.plugins.parser_interface import ParserInterface
     from fortress_engine.plugins.narrator_interface import NarratorInterface
+    from fortress_engine.persistence.repository import WorldStateRepository
+    from fortress_engine.persistence.event_log import EventSourcingSaveSystem
 
 
 # ---------------------------------------------------------------------------
@@ -71,12 +77,40 @@ _PAYLOAD_KEY_TO_EVENT: dict[tuple[str, ...], str] = {
 # System command patterns (case-insensitive, stripped)
 # ---------------------------------------------------------------------------
 
-_SYSTEM_COMMANDS: set[str] = {"guardar", "cargar", "terminar", "esperar", "grupo"}
+_SYSTEM_COMMANDS: set[str] = {
+    "guardar", "cargar", "terminar", "esperar", "grupo",
+    "save", "load",
+}
 _SYSTEM_PREFIXES: list[tuple[str, str]] = [
     ("guardar ", "save"),
     ("cargar ", "load"),
+    ("save ", "save"),
+    ("load ", "load"),
     ("cambiar a ", "switch"),
 ]
+
+
+def _parse_save_slot(raw_lower: str) -> str | None:
+    """Extract a valid save-slot name from a lowercased command string.
+
+    Returns:
+        ``"slot_1"``, ``"slot_2"``, ``"slot_3"`` for valid slots,
+        or ``None`` for invalid slot numbers.
+    """
+    # Strip the command prefix to get the slot number part.
+    for prefix in ("guardar", "cargar", "save", "load"):
+        if raw_lower.startswith(prefix):
+            rest = raw_lower[len(prefix):].strip()
+            if not rest:
+                return "slot_1"  # bare command → default slot
+            try:
+                num = int(rest)
+            except ValueError:
+                return "slot_1"  # non-numeric suffix → treat as slot_1
+            if 1 <= num <= 3:
+                return f"slot_{num}"
+            return None  # out of range
+    return "slot_1"  # pragma: no cover — only called for save/load commands
 
 
 class TurnOrchestrator:
@@ -91,7 +125,8 @@ class TurnOrchestrator:
         narrator: NarratorInterface,
         goal_evaluator: GoalEvaluator,
         episode_manager: EpisodeManager,
-        repository: object | None = None,
+        repository: WorldStateRepository | None = None,
+        save_system: EventSourcingSaveSystem | None = None,
     ) -> None:
         self._state = state
         self._graph = graph
@@ -101,6 +136,7 @@ class TurnOrchestrator:
         self._goal_evaluator = goal_evaluator
         self._episode_manager = episode_manager
         self._repository = repository
+        self._save_system = save_system
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -544,35 +580,98 @@ class TurnOrchestrator:
             return
 
         if kind in ("guardar", "save"):
-            if self._repository is None:
+            if self._repository is None or self._save_system is None:
                 self._emit(
                     ERROR_OUTPUT,
                     {
                         "error_code": "no_repository",
                         "message": (
                             "Guardar no está disponible."
-                            if kind == "guardar"
+                            if kind in ("guardar", "save")
                             else "Guardar no está disponible."
                         ),
                         "protagonist_id": protagonist_id,
                     },
                 )
+                return
+
+            slot = _parse_save_slot(lower)
+            if slot is None:
+                self._emit(
+                    ERROR_OUTPUT,
+                    {
+                        "error_code": "invalid_slot",
+                        "message": "Ranura inválida. Usá 1, 2, o 3.",
+                        "protagonist_id": protagonist_id,
+                    },
+                )
+                return
+
+            self._emit(
+                GAME_SAVED,
+                {
+                    "save_slot": slot,
+                    "turn_number": state.turn_number,
+                },
+            )
             return
 
         if kind in ("cargar", "load"):
-            if self._repository is None:
+            if self._repository is None or self._save_system is None:
                 self._emit(
                     ERROR_OUTPUT,
                     {
                         "error_code": "no_repository",
                         "message": (
                             "Cargar no está disponible."
-                            if kind == "cargar"
+                            if kind in ("cargar", "load")
                             else "Cargar no está disponible."
                         ),
                         "protagonist_id": protagonist_id,
                     },
                 )
+                return
+
+            slot = _parse_save_slot(lower)
+            if slot is None:
+                self._emit(
+                    ERROR_OUTPUT,
+                    {
+                        "error_code": "invalid_slot",
+                        "message": "Ranura inválida. Usá 1, 2, o 3.",
+                        "protagonist_id": protagonist_id,
+                    },
+                )
+                return
+
+            # Reject missing slot — no snapshot AND no events.
+            snapshot = self._repository.load_latest_snapshot(slot)
+            if snapshot is None:
+                events = self._repository.get_event_log(since_turn=0)
+                if not events:
+                    self._emit(
+                        ERROR_OUTPUT,
+                        {
+                            "error_code": "missing_slot",
+                            "message": f"No hay partida guardada en la ranura {slot}.",
+                            "protagonist_id": protagonist_id,
+                        },
+                    )
+                    return
+
+            # Replay state — the save system emits SAVE_REPLAY_STARTED/ENDED
+            # and mutates state in place.
+            self._state = self._save_system.replay_state(
+                self._state, slot, self._graph
+            )
+
+            self._emit(
+                GAME_LOADED,
+                {
+                    "save_slot": slot,
+                    "turn_number": state.turn_number,
+                },
+            )
             return
 
         if kind == "switch":
