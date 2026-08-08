@@ -232,19 +232,20 @@ class EpisodeManager:
         ``start_anchor`` only.  Because the engine resolves hyper edges by
         anchor, edges defined at the start anchor would be unreachable from
         any other anchor.  This copies every registered hyper edge to every
-        spatial_anchor present in the episode's entities so actions work
-        regardless of the protagonist's current anchor.
+        anchor in the graph so actions work regardless of the protagonist's
+        current anchor.
 
-        The engine is entity-agnostic: this method iterates over
-        ``spatial_anchor`` values in ``state.entities`` — it does NOT
-        reference "rooms", "items", "npcs", or any world-level vocabulary.
+        The engine is entity-agnostic: it operates on ``graph._anchors``
+        (the macro-graph node index), not on world-level concepts like
+        "rooms" or "items".
 
         Args:
             graph: The graph built by ``start_episode()``.
-            state: Current world state (contains all entities).
+            state: Current world state (unused, kept for API symmetry).
             episode_id: The active episode ID (unused, kept for symmetry
                 with ``start_episode`` and future per-episode filtering).
         """
+        _ = state  # reserved for future filtering
         _ = episode_id  # reserved for future per-episode filtering
 
         start_anchor = self._episodes[episode_id].start_anchor
@@ -257,16 +258,16 @@ class EpisodeManager:
         if not start_edges:
             return
 
-        # Collect all unique spatial_anchors from entities in state.
-        target_anchors: set[str] = set()
-        for entity in state.entities.values():
-            if entity.spatial_anchor is not None:
-                target_anchors.add(entity.spatial_anchor)
+        # Collect all anchors from the graph (entity-agnostic).
+        target_anchors: set[str] = set(graph._anchors.keys())
 
         # Distribute: copy every edge from start_anchor to every other anchor.
+        # Skip anchors that already have hyper edges registered (avoid duplicates).
         for anchor_id in target_anchors:
             if anchor_id == start_anchor:
                 continue
+            if graph._hyper_edges.get(anchor_id):
+                continue  # anchor already has edges; don't duplicate
             for edge in start_edges:
                 graph.add_hyper_edge(anchor_id, edge)
 

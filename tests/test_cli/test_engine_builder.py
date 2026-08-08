@@ -288,6 +288,7 @@ class TestBuildEngine:
 
         class MockGraph:
             def __init__(self):
+                self._anchors = {"anchor_a": None, "anchor_b": None, "anchor_c": None}
                 self._hyper_edges = {"anchor_a": {"verb1": [MockEdge("e1")]}}
                 self.added = []
 
