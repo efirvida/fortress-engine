@@ -8,7 +8,7 @@ Keep parsing and narration replaceable while supplying only the minimal engine-c
 
 ### Requirement: Stable parser and narrator ABCs
 
-`ParserInterface` SHALL be an ABC exposing `parse(raw_text: str, world_state: WorldState) -> ParsedCommand`. `NarratorInterface` SHALL be an ABC exposing `narrate(result: Any, world_state: WorldState) -> str`. Implementations SHALL be swappable without engine changes and SHALL be discoverable through plugin entry points rather than hardcoded world imports.
+`ParserInterface` SHALL be an ABC exposing `parse(raw_text: str, world_state: WorldState) -> ParsedCommand` and an abstract `language: str` property. `NarratorInterface` SHALL be an ABC exposing `initialize(event_bus)`, `handle_event(event, world_state) -> str | None`, and an abstract `language: str` property. Both interfaces SHALL accept `__init__(language: str = "es")`; implementations SHALL be swappable without engine changes and discoverable through plugin entry points rather than hardcoded world imports.
 
 #### Scenario: Custom parser substitution
 
@@ -16,9 +16,15 @@ Keep parsing and narration replaceable while supplying only the minimal engine-c
 - WHEN it is injected into `TurnOrchestrator`
 - THEN the orchestrator uses it without depending on a concrete parser class
 
-### Requirement: Minimal stubs
+#### Scenario: Language default and override
 
-The minimal parser stub SHALL parse `IR <door>` into movement intent and `EXAMINAR <target>` into examination intent, and SHALL return graceful `error_output` data for unknown input. The narrator stub SHALL be a no-op/minimal implementation that does not encode template mappings.
+- GIVEN a minimal parser or narrator
+- WHEN it is constructed with no language or with `language="en"`
+- THEN it exposes `language == "es"` by default or `language == "en"` when overridden
+
+### Requirement: Backward-compatible minimal stubs
+
+The minimal parser stub SHALL parse `IR <door>` into movement intent and `EXAMINAR <target>` into examination intent, and SHALL return graceful `error_output` data for unknown input. The narrator stub SHALL be a no-op/minimal implementation that does not encode template mappings. Both stubs MUST accept `language: str = "es"`, expose the selected language, and remain valid no-argument constructions.
 
 #### Scenario: Supported parser inputs
 
@@ -32,6 +38,12 @@ The minimal parser stub SHALL parse `IR <door>` into movement intent and `EXAMIN
 - WHEN the stub parser parses it
 - THEN it returns a structured error result suitable for `error_output` and does not raise an uncaught exception
 
+#### Scenario: Existing no-argument construction and language override
+
+- GIVEN existing engine code constructing either minimal stub without arguments
+- WHEN the stub is used, or is constructed with `language="en"`
+- THEN prior behavior continues, with `language == "es"` by default or `language == "en"` when overridden
+
 ## Contract notes
 
-`ParsedCommand` is a dataclass with `subject`, `verb`, `target`, `context=None`, and `instrument=None`. Full 37-verb parsing and template narration are out of scope.
+`ParsedCommand` is a dataclass with `subject`, `verb`, `target`, `context=None`, `instrument=None`, and `text=None`. Full 37-verb parsing and template narration live in the dedicated parser-classic-v1 / narrator-template-v1 specs.
