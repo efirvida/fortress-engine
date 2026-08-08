@@ -576,19 +576,157 @@ def test_get_hyper_edges_for_verb_empty():
 
 
 # ===================================================================
-# MacroEdge validation — generic predicates
+# MacroEdge validation — MacroGateResult (L4)
 # ===================================================================
 
+import pytest
+from fortress_engine.engine.graph import MacroEdge, DualGraphEngine, MacroGateResult
 
-def test_macro_edge_no_predicates_always_passable():
-    """A plain edge with no predicates is always passable."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
 
+# -------------------------------------------------------------------
+# 10 parametrized gate codes (5 gates × fatal / non-fatal)
+# -------------------------------------------------------------------
+
+_PARAM_GATES = [
+    # text_closed — non-fatal
+    pytest.param(
+        {"requires_text": "abracadabra", "open": False, "death_message": None},
+        "text_closed", False, None, "Puerta Magica",
+        id="text_closed-nonfatal",
+    ),
+    # text_closed — fatal
+    pytest.param(
+        {"requires_text": "abracadabra", "open": False,
+         "death_message": "The door devours you!"},
+        "text_closed", True, "The door devours you!", "Puerta Magica",
+        id="text_closed-fatal",
+    ),
+    # requires_item — non-fatal
+    pytest.param(
+        {"requires_item": "amulet", "death_message": None},
+        "requires_item", False, None, "Tunel Oscuro",
+        id="requires_item-nonfatal",
+    ),
+    # requires_item — fatal
+    pytest.param(
+        {"requires_item": "amulet",
+         "death_message": "Crushed by the walls!"},
+        "requires_item", True, "Crushed by the walls!", "Tunel Oscuro",
+        id="requires_item-fatal",
+    ),
+    # forbids_item — non-fatal
+    pytest.param(
+        {"forbids_item": "sword", "death_message": None},
+        "forbids_item", False, None, "Entrada Sagrada",
+        id="forbids_item-nonfatal",
+    ),
+    # forbids_item — fatal
+    pytest.param(
+        {"forbids_item": "sword",
+         "death_message": "The temple strikes you down!"},
+        "forbids_item", True, "The temple strikes you down!", "Entrada Sagrada",
+        id="forbids_item-fatal",
+    ),
+    # requires_flag — non-fatal
+    pytest.param(
+        {"requires_flag": "knows_secret", "death_message": None},
+        "requires_flag", False, None, "Puerta Oculta",
+        id="requires_flag-nonfatal",
+    ),
+    # requires_flag — fatal
+    pytest.param(
+        {"requires_flag": "knows_secret",
+         "death_message": "The floor vanishes!"},
+        "requires_flag", True, "The floor vanishes!", "Puerta Oculta",
+        id="requires_flag-fatal",
+    ),
+    # forbids_flag — non-fatal
+    pytest.param(
+        {"forbids_flag": "cursed", "death_message": None},
+        "forbids_flag", False, None, "Pasaje Sellado",
+        id="forbids_flag-nonfatal",
+    ),
+    # forbids_flag — fatal
+    pytest.param(
+        {"forbids_flag": "cursed",
+         "death_message": "The curse consumes you!"},
+        "forbids_flag", True, "The curse consumes you!", "Pasaje Sellado",
+        id="forbids_flag-fatal",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "gate_attrs,expected_code,expected_fatal,expected_death,passage_name",
+    _PARAM_GATES,
+)
+def test_macro_edge_parametrized_gates(
+    gate_attrs, expected_code, expected_fatal, expected_death, passage_name,
+):
+    """Every gate code returns MacroGateResult with correct is_valid, is_fatal,
+    gate_code, and data fields."""
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
+    state = _minimal_state(hero, room)
 
+    # For forbids_flag / forbids_item, set the flag / item first so the gate
+    # actually triggers.
+    if "forbids_flag" in gate_attrs:
+        state.set_flag(gate_attrs["forbids_flag"], True)
+    if "forbids_item" in gate_attrs:
+        item = _make_entity(
+            gate_attrs["forbids_item"], type_="item",
+            spatial_anchor="hero", components={"portable": True},
+        )
+        state.entities[gate_attrs["forbids_item"]] = item
+
+    edge = MacroEdge(
+        macro_edge_id="param-edge",
+        from_anchor="room_01",
+        to_anchor="room_02",
+        direction="bidirectional",
+        passage_name=passage_name,
+        passage_description="A test passage",
+        **gate_attrs,
+    )
+
+    result = engine.validate_macro_edge(edge, state, text="wrong")
+    assert isinstance(result, MacroGateResult)
+    assert result.is_valid is False
+    assert result.is_fatal == expected_fatal
+    assert result.gate_code == expected_code
+    assert result.data.get("passage_name") == passage_name
+
+    # Verify relevant data keys
+    if "requires_text" in gate_attrs:
+        assert result.data.get("required_text") == gate_attrs["requires_text"]
+    if "requires_item" in gate_attrs:
+        assert result.data.get("required_item") == gate_attrs["requires_item"]
+    if "forbids_item" in gate_attrs:
+        assert result.data.get("forbids_item") == gate_attrs["forbids_item"]
+    if "requires_flag" in gate_attrs:
+        assert result.data.get("required_flag") == gate_attrs["requires_flag"]
+    if "forbids_flag" in gate_attrs:
+        assert result.data.get("forbids_flag") == gate_attrs["forbids_flag"]
+
+    # Fatal edges carry death_message in data
+    if expected_death is not None:
+        assert result.data.get("death_message") == expected_death
+
+
+# -------------------------------------------------------------------
+# Plain edge (no predicates) — always passable
+# -------------------------------------------------------------------
+
+
+def test_macro_edge_no_predicates_always_passable():
+    """A plain edge with no predicates is always passable."""
+    engine = DualGraphEngine()
+    hero = _make_player("hero", spatial_anchor="room_01")
+    room = _make_entity("room_01", type_="room")
+    engine.add_anchor(room)
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -600,20 +738,24 @@ def test_macro_edge_no_predicates_always_passable():
         passage_description="A simple door",
     )
 
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is True
-    assert msg is None
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is True
+    assert result.is_fatal is False
+    assert result.gate_code == ""
+    assert result.data["passage_name"] == "Puerta"
+
+
+# -------------------------------------------------------------------
+# Text gate
+# -------------------------------------------------------------------
 
 
 def test_macro_edge_requires_text_closed_without_text():
-    """Text gate, closed (open=False), no text → blocked, stays closed."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
+    """Text gate, closed, no text → blocked, not fatal."""
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -627,21 +769,21 @@ def test_macro_edge_requires_text_closed_without_text():
         open=False,
     )
 
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is False
-    assert msg == "Puerta está cerrada."
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is False
+    assert result.is_fatal is False
+    assert result.gate_code == "text_closed"
+    assert result.data["passage_name"] == "Puerta"
+    assert result.data["required_text"] == "ábrete sésamo"
     assert edge.open is False
 
 
 def test_macro_edge_requires_text_wrong_text():
-    """Text gate, closed, wrong text → blocked, stays closed."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
+    """Text gate, closed, wrong text → blocked, not fatal."""
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -655,21 +797,19 @@ def test_macro_edge_requires_text_wrong_text():
         open=False,
     )
 
-    valid, msg = engine.validate_macro_edge(edge, state, text="abracadabra")
-    assert valid is False
-    assert msg == "Puerta está cerrada."
+    result = engine.validate_macro_edge(edge, state, text="abracadabra")
+    assert result.is_valid is False
+    assert result.is_fatal is False
+    assert result.gate_code == "text_closed"
     assert edge.open is False
 
 
 def test_macro_edge_requires_text_wrong_text_with_death_message():
-    """Text gate, wrong text + death_message → fatal message, not blocked."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
+    """Text gate, wrong text + death_message → fatal."""
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -684,21 +824,20 @@ def test_macro_edge_requires_text_wrong_text_with_death_message():
         open=False,
     )
 
-    valid, msg = engine.validate_macro_edge(edge, state, text="equivocada")
-    assert valid is False
-    assert msg == "La puerta te consume."
+    result = engine.validate_macro_edge(edge, state, text="equivocada")
+    assert result.is_valid is False
+    assert result.is_fatal is True
+    assert result.gate_code == "text_closed"
+    assert result.data["death_message"] == "La puerta te consume."
     assert edge.open is False
 
 
 def test_macro_edge_requires_text_correct_text_opens():
-    """Text gate, correct text → valid and the edge opens (open=True)."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
+    """Text gate, correct text → valid and the edge opens."""
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -712,27 +851,25 @@ def test_macro_edge_requires_text_correct_text_opens():
         open=False,
     )
 
-    valid, msg = engine.validate_macro_edge(edge, state, text="abrete sesamo")
-    assert valid is True
-    assert msg is None
-    # The ONLY mutable field, per spec: a successful unlock opens the edge.
+    result = engine.validate_macro_edge(edge, state, text="abrete sesamo")
+    assert result.is_valid is True
+    assert result.is_fatal is False
+    assert result.gate_code == ""
     assert edge.open is True
 
     # Once open, a later pass (even without text) is allowed.
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is True
-    assert msg is None
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is True
+    assert result.is_fatal is False
+    assert result.gate_code == ""
 
 
 def test_macro_edge_requires_text_open_allows_pass():
     """Text gate already open → always passable, no text required."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -746,27 +883,20 @@ def test_macro_edge_requires_text_open_allows_pass():
         open=True,
     )
 
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is True
-    assert msg is None
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is True
+    assert result.is_fatal is False
+    assert result.gate_code == ""
 
 
 def test_macro_edge_requires_text_comparison_is_tilde_insensitive():
-    """Text comparison normalises tildes on BOTH sides.
-
-    The parser normalises player input (á→a); the YAML requires_text may
-    keep tildes. Normalised comparison must still match.
-    """
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
+    """Text comparison normalises tildes on BOTH sides."""
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
-    # requires_text stored WITH tildes; player text normalised (no tildes).
     edge = MacroEdge(
         macro_edge_id="text-1",
         from_anchor="room_01",
@@ -778,11 +908,10 @@ def test_macro_edge_requires_text_comparison_is_tilde_insensitive():
         open=False,
     )
 
-    valid, msg = engine.validate_macro_edge(edge, state, text="abrete sesamo")
-    assert valid is True
+    result = engine.validate_macro_edge(edge, state, text="abrete sesamo")
+    assert result.is_valid is True
     assert edge.open is True
 
-    # Reverse: stored requires_text WITHOUT tildes, player text WITH tildes.
     edge2 = MacroEdge(
         macro_edge_id="text-2",
         from_anchor="room_01",
@@ -793,20 +922,22 @@ def test_macro_edge_requires_text_comparison_is_tilde_insensitive():
         requires_text="treinta y nueve",
         open=False,
     )
-    valid, msg = engine.validate_macro_edge(edge2, state, text="treinta y nueve")
-    assert valid is True
+    result = engine.validate_macro_edge(edge2, state, text="treinta y nueve")
+    assert result.is_valid is True
     assert edge2.open is True
+
+
+# -------------------------------------------------------------------
+# Item gates
+# -------------------------------------------------------------------
 
 
 def test_macro_edge_requires_item_blocks_without_item():
     """Item gate without death_message: missing item → blocked, not death."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -814,25 +945,24 @@ def test_macro_edge_requires_item_blocks_without_item():
         from_anchor="room_01",
         to_anchor="room_02",
         direction="bidirectional",
-        passage_name="Tráquea",
+        passage_name="Traquea",
         passage_description="Pulsating passage",
         requires_item="talisman",
     )
 
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is False
-    assert msg == "No puedes pasar por Tráquea aún."
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is False
+    assert result.is_fatal is False
+    assert result.gate_code == "requires_item"
+    assert result.data["required_item"] == "talisman"
 
 
 def test_macro_edge_requires_item_kills_without_item():
-    """Item gate with death_message: missing item → death message returned."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
+    """Item gate with death_message: missing item → death."""
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -840,34 +970,37 @@ def test_macro_edge_requires_item_kills_without_item():
         from_anchor="room_01",
         to_anchor="room_02",
         direction="bidirectional",
-        passage_name="Tráquea",
+        passage_name="Traquea",
         passage_description="Pulsating passage",
         requires_item="talisman",
         death_message="You are crushed!",
     )
 
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is False
-    assert msg == "You are crushed!"
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is False
+    assert result.is_fatal is True
+    assert result.gate_code == "requires_item"
+    assert result.data["death_message"] == "You are crushed!"
 
     # Give the talisman → should pass
-    talisman = _make_entity("talisman", type_="item", spatial_anchor="hero", components={"portable": True})
+    talisman = _make_entity(
+        "talisman", type_="item", spatial_anchor="hero",
+        components={"portable": True},
+    )
     state.entities["talisman"] = talisman
 
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is True
-    assert msg is None
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is True
+    assert result.is_fatal is False
+    assert result.gate_code == ""
 
 
 def test_macro_edge_forbids_item_blocks_with_item():
     """Forbids-item gate without death_message: item carried → blocked."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -881,28 +1014,31 @@ def test_macro_edge_forbids_item_blocks_with_item():
     )
 
     # No sword → pass
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is True
-    assert msg is None
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is True
+    assert result.is_fatal is False
+    assert result.gate_code == ""
 
-    # Carry sword → blocked (no death_message)
-    sword = _make_entity("sword", type_="item", spatial_anchor="hero", components={"portable": True})
+    # Carry sword → blocked
+    sword = _make_entity(
+        "sword", type_="item", spatial_anchor="hero",
+        components={"portable": True},
+    )
     state.entities["sword"] = sword
 
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is False
-    assert msg == "Puerta está sellada."
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is False
+    assert result.is_fatal is False
+    assert result.gate_code == "forbids_item"
+    assert result.data["forbids_item"] == "sword"
 
 
 def test_macro_edge_forbids_item_kills_with_item():
-    """Forbids-item gate with death_message: item carried → death message."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
+    """Forbids-item gate with death_message: item carried → death."""
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -917,28 +1053,36 @@ def test_macro_edge_forbids_item_kills_with_item():
     )
 
     # No sword → safe
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is True
-    assert msg is None
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is True
+    assert result.is_fatal is False
+    assert result.gate_code == ""
 
     # Carry sword → death
-    sword = _make_entity("sword", type_="item", spatial_anchor="hero", components={"portable": True})
+    sword = _make_entity(
+        "sword", type_="item", spatial_anchor="hero",
+        components={"portable": True},
+    )
     state.entities["sword"] = sword
 
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is False
-    assert msg == "The trap activates!"
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is False
+    assert result.is_fatal is True
+    assert result.gate_code == "forbids_item"
+    assert result.data["death_message"] == "The trap activates!"
+
+
+# -------------------------------------------------------------------
+# Flag gates
+# -------------------------------------------------------------------
 
 
 def test_macro_edge_requires_flag_blocks_without_flag():
     """Flag gate: requires_flag not set → blocked (no death_message)."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -951,27 +1095,26 @@ def test_macro_edge_requires_flag_blocks_without_flag():
         requires_flag="knows_password",
     )
 
-    # Flag not set → fail
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is False
-    assert msg == "No puedes pasar por Puerta secreta aún."
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is False
+    assert result.is_fatal is False
+    assert result.gate_code == "requires_flag"
+    assert result.data["required_flag"] == "knows_password"
 
     # Set flag → pass
     state.set_flag("knows_password", True)
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is True
-    assert msg is None
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is True
+    assert result.is_fatal is False
+    assert result.gate_code == ""
 
 
 def test_macro_edge_requires_flag_kills_without_flag():
-    """Flag gate with death_message: flag not set → death message."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
+    """Flag gate with death_message: flag not set → death."""
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -985,20 +1128,19 @@ def test_macro_edge_requires_flag_kills_without_flag():
         death_message="The floor gives way!",
     )
 
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is False
-    assert msg == "The floor gives way!"
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is False
+    assert result.is_fatal is True
+    assert result.gate_code == "requires_flag"
+    assert result.data["death_message"] == "The floor gives way!"
 
 
 def test_macro_edge_forbids_flag_blocks_with_flag():
     """Flag gate: forbids_flag set → blocked; absent → pass."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -1012,26 +1154,26 @@ def test_macro_edge_forbids_flag_blocks_with_flag():
     )
 
     # Flag not set → pass
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is True
-    assert msg is None
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is True
+    assert result.is_fatal is False
+    assert result.gate_code == ""
 
     # Set flag → fail
     state.set_flag("darkness_remains", True)
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is False
-    assert msg == "Puerta sellada está sellada."
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is False
+    assert result.is_fatal is False
+    assert result.gate_code == "forbids_flag"
+    assert result.data["forbids_flag"] == "darkness_remains"
 
 
 def test_macro_edge_forbids_flag_kills_with_flag():
-    """Flag gate with death_message: forbids_flag set → death message."""
-    from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
-
+    """Flag gate with death_message: forbids_flag set → death."""
     engine = DualGraphEngine()
     hero = _make_player("hero", spatial_anchor="room_01")
     room = _make_entity("room_01", type_="room")
     engine.add_anchor(room)
-
     state = _minimal_state(hero, room)
 
     edge = MacroEdge(
@@ -1046,11 +1188,38 @@ def test_macro_edge_forbids_flag_kills_with_flag():
     )
 
     state.set_flag("darkness_remains", True)
-    valid, msg = engine.validate_macro_edge(edge, state)
-    assert valid is False
-    assert msg == "You dissolve in the dark."
+    result = engine.validate_macro_edge(edge, state)
+    assert result.is_valid is False
+    assert result.is_fatal is True
+    assert result.gate_code == "forbids_flag"
+    assert result.data["death_message"] == "You dissolve in the dark."
 
 
+# -------------------------------------------------------------------
+# MacroGateResult dataclass contract
+# -------------------------------------------------------------------
+
+
+def test_macro_gate_result_is_frozen():
+    """MacroGateResult is a frozen dataclass."""
+    mr = MacroGateResult(
+        is_valid=False, is_fatal=True, gate_code="requires_item",
+        data={"passage_name": "x"},
+    )
+    with pytest.raises(Exception):
+        mr.is_valid = True  # frozen
+
+
+def test_macro_gate_result_valid_defaults():
+    """Valid result has empty gate_code and is_fatal=False."""
+    mr = MacroGateResult(
+        is_valid=True, is_fatal=False, gate_code="",
+        data={"passage_name": "Puerta"},
+    )
+    assert mr.is_valid is True
+    assert mr.is_fatal is False
+    assert mr.gate_code == ""
+    assert mr.data["passage_name"] == "Puerta"
 # ===================================================================
 # resolve_special_values
 # ===================================================================

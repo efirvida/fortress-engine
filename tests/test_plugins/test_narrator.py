@@ -200,7 +200,7 @@ def test_handle_event_entity_examined_returns_text():
 
 
 def test_handle_event_error_output_returns_text():
-    """error_output events produce narration text with the error message."""
+    """error_output events produce narration text with error_code."""
     narrator = MinimalNarrator()
     world = _make_world()
     bus = EventBus()
@@ -210,7 +210,7 @@ def test_handle_event_error_output_returns_text():
         ERROR_OUTPUT,
         {
             "error_code": "no_action",
-            "message": "No entiendes como hacer eso.",
+            "data": {"verb": "xyzzy"},
             "protagonist_id": "hero",
         },
     )
@@ -218,7 +218,7 @@ def test_handle_event_error_output_returns_text():
     result = narrator.handle_event(event, world)
     assert result is not None
     assert isinstance(result, str)
-    assert "No entiendes" in result
+    assert len(result) > 0
 
 
 # ===================================================================
@@ -447,7 +447,7 @@ def test_entity_entered_text_includes_room_name(world=None):
 
 
 def test_error_output_text_includes_message(world=None):
-    """Error output narration includes the error message."""
+    """Error output narration produces non-None text from error_code."""
     if world is None:
         world = _make_world()
     narrator = MinimalNarrator()
@@ -458,13 +458,31 @@ def test_error_output_text_includes_message(world=None):
         ERROR_OUTPUT,
         {
             "error_code": "no_action",
-            "message": "No puedes hacer eso aqui.",
+            "data": {"verb": "xyzzy"},
             "protagonist_id": "hero",
         },
     )
 
     text = narrator.handle_event(event, world)
-    assert "No puedes" in text
+    assert text is not None
+    assert isinstance(text, str)
+    assert len(text) > 0
+
+
+def test_error_output_text_with_empty_error_code():
+    """Error output with missing/empty error_code returns None."""
+    narrator = MinimalNarrator()
+    world = _make_world()
+    bus = EventBus()
+    narrator.initialize(bus)
+
+    event = _make_event(
+        ERROR_OUTPUT,
+        {"protagonist_id": "hero"},
+    )
+
+    result = narrator.handle_event(event, world)
+    assert result is None
 
 
 # ===================================================================
