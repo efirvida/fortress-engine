@@ -1,0 +1,46 @@
+language: es
+verbs:
+  ir: [ATRAVESAR, IR, CRUZAR, PASAR]
+  tomar: [TOMAR, COGER]
+  dejar: [SOLTAR, DEJAR]
+  abrir: [ABRIR]
+  matar: [MATAR, ASESINAR]
+  mirar: [OBSERVAR, MIRAR]
+  examinar: [LEER, VER, EXAMINAR]
+  romper: [ROMPER, FORZAR, DESTROZAR]
+  interrogar: [PREGUNTAR, INTERROGAR]
+  inventario: [INVENTARIO]
+  dar: [REGALAR, DAR]
+  con: [CON]
+  a: [A]
+  terminar: [ABANDONAR, TERMINAR]
+  respondiendo: [RESPONDIENDO]
+  diciendo: [DICIENDO]
+  ejecutar: [EJECUTAR]
+  salvar: [SALVAR]
+  porciento: [PORCIENTO]
+  todo: [TODO]
+  pesar: [PESAR]
+  orinar: [MIAR, ORINAR]
+  cls: [CLS]
+stopwords:
+  - el
+  - la
+  - los
+  - las
+  - un
+  - una
+  - al
+  - del
+  - por
+prepositions:
+  instrument:
+    - con
+  recipient:
+    - a
+speech_markers:
+  - diciendo
+  - respondiendo
+speech_verbs:
+  - decir
+  - responder
