@@ -1,0 +1,8 @@
+macro_edge_id: "me_columna_bailarina"
+from_anchor: "sala_del_columna"
+to_anchor: "sala_de_la_bailarina"
+direction: "bidirectional"
+passage_name: "puerta_triangular"
+passage_description: "Una puerta triangular"
+open: false
+requires_text: "crunch"

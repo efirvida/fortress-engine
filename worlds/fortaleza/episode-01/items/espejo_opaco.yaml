@@ -1,0 +1,7 @@
+entity_id: "espejo_opaco"
+type: "item"
+name: "espejo opaco"
+components:
+  weight: 0
+  description: "Un espejo cubierto por una capa opaca que no refleja nada. Detrás se adivina un hueco."
+spatial_anchor: "cuarto_de_espejos"

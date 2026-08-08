@@ -1,0 +1,7 @@
+entity_id: "sala_del_enigma"
+type: "room"
+name: "la sala del enigma"
+components:
+  description: "Una sala con enigmas y puertas doradas."
+  visited: false
+spatial_anchor: null

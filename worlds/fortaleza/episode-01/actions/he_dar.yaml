@@ -1,0 +1,264 @@
+# GIVE actions — player gives items to trolls
+# FLAG marks troll as happy, TRANSFER removes item from inventory
+
+- hyper_edge_id: "he_dar_cigarro_llamador"
+  name: "Dar cigarro al llamador de bronce"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "llamador_bronce"
+    instrument: "cigarro"
+  operators:
+    - type: "TRANSFER"
+      entity: "cigarro"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "llamador_happy"
+      value: true
+  output: "El llamador sonríe. '¡Por fin! Toma esto.'"
+
+- hyper_edge_id: "he_dar_vaso_trebol"
+  name: "Dar vaso de agua al trébol"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "trebol"
+    instrument: "vaso_agua"
+  operators:
+    - type: "TRANSFER"
+      entity: "vaso_agua"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "trebol_happy"
+      value: true
+  output: "El trébol bebe el agua. 'Gracias, mortal.'"
+
+- hyper_edge_id: "he_dar_lanza_atenea"
+  name: "Dar lanza a la estatua de Atenea"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "atenea"
+    instrument: "lanza"
+  operators:
+    - type: "TRANSFER"
+      entity: "lanza"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "atenea_happy"
+      value: true
+  output: "Atenea acepta la lanza. 'Puedes pasar.'"
+
+- hyper_edge_id: "he_dar_paraguas_hermes"
+  name: "Dar paraguas a la estatua de Hermes"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "hermes"
+    instrument: "paraguas"
+  operators:
+    - type: "TRANSFER"
+      entity: "paraguas"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "hermes_happy"
+      value: true
+  output: "Hermes acepta el paraguas. 'La humedad me destruye.'"
+
+- hyper_edge_id: "he_dar_escoba_bruja"
+  name: "Dar escoba a la bruja"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "bruja"
+    instrument: "escoba"
+  operators:
+    - type: "TRANSFER"
+      entity: "escoba"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "bruja_happy"
+      value: true
+  output: "La bruja toma la escoba. 'Toma mi consejo...'"
+
+- hyper_edge_id: "he_dar_pocion_homunculo"
+  name: "Dar poción al homúnculo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "homunculo"
+    instrument: "pocion_crecer"
+  operators:
+    - type: "TRANSFER"
+      entity: "pocion_crecer"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "homunculo_happy"
+      value: true
+  output: "El homúnculo crece. '¡Gracias!'"
+
+- hyper_edge_id: "he_dar_polvo_troll_infusiones"
+  name: "Dar polvo mágico al troll"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "troll_sala_infusiones"
+    instrument: "polvo_magico"
+  operators:
+    - type: "TRANSFER"
+      entity: "polvo_magico"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "troll_infusiones_happy"
+      value: true
+  output: "El troll toma el polvo. Se hace invisible."
+
+- hyper_edge_id: "he_dar_rosa_doncella"
+  name: "Dar rosa a la doncella"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "doncella"
+    instrument: "rosa"
+  operators:
+    - type: "TRANSFER"
+      entity: "rosa"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "doncella_happy"
+      value: true
+  output: "La doncella acepta la rosa. 'Eres valiente.'"
+
+- hyper_edge_id: "he_dar_cafe_esqueleto"
+  name: "Dar café al esqueleto"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "esqueleto"
+    instrument: "taza_cafe"
+  operators:
+    - type: "TRANSFER"
+      entity: "taza_cafe"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "esqueleto_happy"
+      value: true
+  output: "El esqueleto bebe el café. 'Delicioso.'"
+
+- hyper_edge_id: "he_dar_piedra_raton"
+  name: "Dar piedra filosofal al ratón"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "raton"
+    instrument: "piedra_filosofal"
+  operators:
+    - type: "TRANSFER"
+      entity: "piedra_filosofal"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "raton_happy"
+      value: true
+  output: "El ratón toma la piedra. 'La quinta esencia.'"
+
+- hyper_edge_id: "he_dar_hilo_arana"
+  name: "Dar hilo a la araña"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "arana"
+    instrument: "hilo_ariadna"
+  operators:
+    - type: "TRANSFER"
+      entity: "hilo_ariadna"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "arana_happy"
+      value: true
+  output: "La araña toma el hilo. 'Puedes cruzar el puente.'"
+
+- hyper_edge_id: "he_dar_pastel_crunch"
+  name: "Dar pastel a Crunch"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "crunch"
+    instrument: "pastel_cerezas"
+  operators:
+    - type: "TRANSFER"
+      entity: "pastel_cerezas"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "crunch_happy"
+      value: true
+  output: "Crunch devora el pastel. '¡Ñam ñam!'"
+
+- hyper_edge_id: "he_dar_vendajes_dedalo"
+  name: "Dar vendajes a Dédalo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "dedalo"
+    instrument: "vendajes"
+  operators:
+    - type: "TRANSFER"
+      entity: "vendajes"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "dedalo_happy"
+      value: true
+  output: "Dédalo toma los vendajes. 'Gracias.'"
+
+- hyper_edge_id: "he_dar_maquina_bailarina"
+  name: "Dar máquina del tiempo a la bailarina"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "dar"
+    target: "bailarina"
+    instrument: "maquina_tiempo"
+  operators:
+    - type: "TRANSFER"
+      entity: "maquina_tiempo"
+      from_container: "hero"
+      to_container: null
+    - type: "FLAG"
+      flag: "bailarina_happy"
+      value: true
+  output: "La bailarina toma la máquina. 'El tiempo es relativo.'"
+
+- hyper_edge_id: "he_regalar_item"
+  name: "Regalar algo (alternativa)"
+  priority: 9
+  clique:
+    subject: "player"
+    verb: "regalar"
+    target: "*"
+  operators: []
+  output: "No puedes regalarle eso."

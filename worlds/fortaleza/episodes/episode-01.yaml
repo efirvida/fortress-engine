@@ -1,0 +1,30 @@
+id: "episode-01"
+name: "En las entrañas de la Bestia"
+order: 1
+description: "Has entrado en la Fortaleza. Tu misión: matar a los cuatro centros vitales de la Bestia."
+requires: []
+start_anchor: "el_exterior_de_la_fortaleza"
+goal:
+  conditions:
+    - type: "and"
+      conditions:
+        - type: "flag_is_set"
+          params:
+            flag: "centro_cerebro_dead"
+        - type: "flag_is_set"
+          params:
+            flag: "centro_corazon_dead"
+        - type: "flag_is_set"
+          params:
+            flag: "centro_pulmones_dead"
+        - type: "flag_is_set"
+          params:
+            flag: "centro_estomago_dead"
+        - type: "flag_is_set"
+          params:
+            flag: "troll_muerto"
+  output: "¡Has destruido a la Bestia! Sus centros vitales han caído y el troll también. La Fortaleza tiembla..."
+  side_effects: []
+carry_over:
+  inventory: []
+  flags: []

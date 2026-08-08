@@ -1,0 +1,7 @@
+entity_id: "libro"
+type: "item"
+name: "libro"
+components:
+  weight: 2
+  description: "Un libro de tapas gastadas. Al abrirlo, el suelo parece desaparecer bajo sus pies."
+spatial_anchor: "biblioteca"

@@ -1,0 +1,7 @@
+entity_id: "hacha"
+type: "item"
+name: "hacha"
+components:
+  weight: 5
+  description: "Un hacha de leña con el filo todavía brillante."
+spatial_anchor: "cuarto_de_los_vendajes"

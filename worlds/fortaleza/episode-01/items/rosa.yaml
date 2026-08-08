@@ -1,0 +1,7 @@
+entity_id: "rosa"
+type: "item"
+name: "rosa"
+components:
+  weight: 1
+  description: "Una rosa roja de tallo espinoso, la más hermosa del jardín."
+spatial_anchor: "jardin"

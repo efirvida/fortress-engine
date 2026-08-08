@@ -1,0 +1,8 @@
+entity_id: "ciclope"
+type: "npc"
+name: "Cíclope"
+components:
+  description: "Un gigante de un solo ojo que bloquea el paso a la biblioteca. Ruge al sentir tu presencia."
+  is_guard: true
+  lethal_weapon: "maza"
+spatial_anchor: "biblioteca"

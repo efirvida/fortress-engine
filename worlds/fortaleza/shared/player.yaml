@@ -1,0 +1,7 @@
+entity_id: "hero"
+type: "player"
+name: "Aventurero"
+components:
+  max_weight: 40
+  weight: 0
+spatial_anchor: null

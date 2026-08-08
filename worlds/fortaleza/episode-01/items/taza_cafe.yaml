@@ -1,0 +1,7 @@
+entity_id: "taza_cafe"
+type: "item"
+name: "taza de café"
+components:
+  weight: 1
+  description: "Una taza de café humeante y muy cargado. Despertaría hasta a un muerto."
+spatial_anchor: "sala_de_infusiones"

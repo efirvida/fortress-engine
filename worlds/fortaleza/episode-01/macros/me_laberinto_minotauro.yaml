@@ -1,0 +1,7 @@
+macro_edge_id: "me_laberinto_minotauro"
+from_anchor: "laberinto_1"
+to_anchor: "sala_del_minotauro"
+direction: "bidirectional"
+passage_name: "sendero_dorado"
+passage_description: "Un sendero dorado"
+open: true

@@ -1,0 +1,7 @@
+entity_id: "alcoba_de_la_bruja"
+type: "room"
+name: "la alcoba de la bruja"
+components:
+  description: "Hasta un ciego descubriría que aquí habita una bruja. El cuarto tiene una ventana, pero usted no recuerda haberla visto desde afuera."
+  visited: false
+spatial_anchor: null

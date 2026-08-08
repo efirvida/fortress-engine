@@ -1,0 +1,7 @@
+entity_id: "estatua_atenea"
+type: "item"
+name: "estatua de Atenea"
+components:
+  weight: 0
+  description: "Una estatua de Atenea con las manos vacías. Le falta el arma que le corresponde."
+spatial_anchor: "patio_interior"

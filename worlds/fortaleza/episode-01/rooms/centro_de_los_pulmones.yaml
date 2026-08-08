@@ -1,0 +1,7 @@
+entity_id: "centro_de_los_pulmones"
+type: "room"
+name: "el centro de los pulmones"
+components:
+  description: "El centro vital de los pulmones de la Bestia."
+  visited: false
+spatial_anchor: null

@@ -1,0 +1,7 @@
+entity_id: "lanza"
+type: "item"
+name: "lanza"
+components:
+  weight: 5
+  description: "Una lanza de asta larga con la punta de hierro afilada."
+spatial_anchor: "sala_de_armas"

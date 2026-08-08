@@ -1,0 +1,7 @@
+entity_id: "martillo"
+type: "item"
+name: "martillo"
+components:
+  weight: 4
+  description: "Un martillo de carpintero con la cabeza de hierro mellada."
+spatial_anchor: "sala_de_la_arana"

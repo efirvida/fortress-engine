@@ -1,0 +1,9 @@
+entity_id: "trebol"
+type: "npc"
+name: "trébol"
+components:
+  description: "Un pequeño trébol de cuatro hojas que se queja de sed. Sus hojas tiemblan expectantes."
+  is_troll: true
+  wants_item: "vaso_agua"
+  gift_flag: "trebol_happy"
+spatial_anchor: "salon_de_recepciones"

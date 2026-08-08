@@ -1,0 +1,9 @@
+entity_id: "atenea"
+type: "npc"
+name: "estatua de Atenea"
+components:
+  description: "Una imponente estatua de mármol de la diosa Atenea. Su postura sugiere que espera recibir algo."
+  is_troll: true
+  wants_item: "lanza"
+  gift_flag: "atenea_happy"
+spatial_anchor: "patio_interior"

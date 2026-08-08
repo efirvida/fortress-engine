@@ -1,0 +1,7 @@
+macro_edge_id: "me_cerebro_cripta"
+from_anchor: "centro_del_cerebro"
+to_anchor: "cripta_final"
+direction: "bidirectional"
+passage_name: "escondite"
+passage_description: "Un escondite secreto"
+open: true

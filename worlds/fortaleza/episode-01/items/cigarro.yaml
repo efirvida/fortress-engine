@@ -1,0 +1,7 @@
+entity_id: "cigarro"
+type: "item"
+name: "cigarro"
+components:
+  weight: 1
+  description: "Un cigarro grueso y aromático, de los que se fuman sin prisa."
+spatial_anchor: "sala_de_infusiones"

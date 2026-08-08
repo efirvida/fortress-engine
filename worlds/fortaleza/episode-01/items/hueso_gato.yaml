@@ -1,0 +1,7 @@
+entity_id: "hueso_gato"
+type: "item"
+name: "hueso de gato"
+components:
+  weight: 1
+  description: "Un hueso pequeño y blanquecino, roído por el tiempo."
+spatial_anchor: "cuarto_de_espejos"

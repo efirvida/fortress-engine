@@ -1,0 +1,8 @@
+macro_edge_id: "me_guerrero_armas"
+from_anchor: "cuarto_del_guerrero"
+to_anchor: "sala_de_armas"
+direction: "bidirectional"
+passage_name: "cama"
+passage_description: "Una cama que esconde una puerta"
+open: false
+requires_flag: "cama_rota"

@@ -1,0 +1,7 @@
+entity_id: "sala_del_minotauro"
+type: "room"
+name: "la sala del minotauro"
+components:
+  description: "La sala donde vive el Minotauro."
+  visited: false
+spatial_anchor: null

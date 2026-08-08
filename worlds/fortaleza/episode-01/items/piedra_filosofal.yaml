@@ -1,0 +1,7 @@
+entity_id: "piedra_filosofal"
+type: "item"
+name: "piedra filosofal"
+components:
+  weight: 2
+  description: "Una piedra rojiza y cálida al tacto. Los alquimistas morirían por ella."
+spatial_anchor: "laboratorio_de_la_bestia"

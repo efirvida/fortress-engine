@@ -1,0 +1,8 @@
+macro_edge_id: "me_columna_hierro"
+from_anchor: "sala_del_columna"
+to_anchor: "centro_del_cerebro"
+direction: "bidirectional"
+passage_name: "puerta_hierro"
+passage_description: "Una puerta de hierro"
+open: false
+requires_text: "seis"

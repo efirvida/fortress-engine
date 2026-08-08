@@ -1,0 +1,7 @@
+entity_id: "inscripcion"
+type: "item"
+name: "inscripción"
+components:
+  weight: 0
+  description: "Una inscripción tallada en la pared: \"Cuando hayas llegado casi al final, tendrás que regresar...\""
+spatial_anchor: "sala_de_juegos"

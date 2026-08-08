@@ -1,0 +1,8 @@
+entity_id: "minotauro"
+type: "npc"
+name: "Minotauro"
+components:
+  description: "El Minotauro, mitad hombre mitad toro, embiste contra las paredes de su laberinto interior."
+  is_guard: true
+  lethal_weapon: "espada"
+spatial_anchor: "sala_del_minotauro"

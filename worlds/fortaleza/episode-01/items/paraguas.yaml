@@ -1,0 +1,7 @@
+entity_id: "paraguas"
+type: "item"
+name: "paraguas"
+components:
+  weight: 2
+  description: "Un paraguas negro plegado, en perfecto estado pese a los años."
+spatial_anchor: "cuarto_del_hechicero"

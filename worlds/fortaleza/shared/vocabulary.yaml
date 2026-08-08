@@ -1,0 +1,41 @@
+language: "es"
+
+verbs:
+  ir: ["ir", "atravesar", "cruzar", "pasar"]
+  tomar: ["tomar", "coger"]
+  dejar: ["dejar", "soltar"]
+  abrir: ["abrir"]
+  matar: ["matar", "asesinar", "destrozar"]
+  mirar: ["mirar", "observar"]
+  ver: ["ver", "leer"]
+  romper: ["romper", "forzar"]
+  preguntar: ["preguntar", "interrogar"]
+  dar: ["dar", "regalar"]
+  inventario: ["inventario"]
+  abandonar: ["abandonar", "terminar"]
+  responder: ["responder", "diciendo"]
+  salvar: ["salvar", "guardar", "save"]
+  cargar: ["cargar", "load"]
+  ejecutar: ["ejecutar"]
+  pesar: ["pesar"]
+  mictar: ["miar", "orinar"]
+  limpiar: ["cls"]
+  todo: ["todo"]
+
+stopwords: ["la", "el", "los", "las", "un", "una", "al", "del", "de", "en", "con", "por", "para", "a"]
+
+prepositions:
+  instrument: ["con"]
+  recipient: ["a"]
+
+speech_markers: ["diciendo", "respondiendo"]
+
+speech_verbs: ["decir", "responder"]
+
+movement_verbs: ["ir", "atravesar", "cruzar", "pasar"]
+
+system_commands:
+  save: ["salvar", "guardar", "save"]
+  load: ["cargar", "load"]
+
+messages: {}

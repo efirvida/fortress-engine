@@ -1,0 +1,7 @@
+entity_id: "maza"
+type: "item"
+name: "maza"
+components:
+  weight: 39
+  description: "Una maza de guerra descomunal. Pesa tanto que apenas se puede cargar nada más con ella."
+spatial_anchor: "el_exterior_de_la_fortaleza"

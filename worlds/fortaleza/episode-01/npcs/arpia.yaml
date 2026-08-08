@@ -1,0 +1,8 @@
+entity_id: "arpia"
+type: "npc"
+name: "Arpía"
+components:
+  description: "Una arpía alada que sobrevuela las infusiones. Sus garras brillan con veneno."
+  is_guard: true
+  lethal_weapon: "daga"
+spatial_anchor: "sala_de_infusiones"

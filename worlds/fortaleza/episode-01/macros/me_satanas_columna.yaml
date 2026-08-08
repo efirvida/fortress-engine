@@ -1,0 +1,7 @@
+macro_edge_id: "me_satanas_columna"
+from_anchor: "sala_de_la_arana"
+to_anchor: "sala_del_columna"
+direction: "bidirectional"
+passage_name: "puerta_oculta"
+passage_description: "Una puerta oculta"
+open: true

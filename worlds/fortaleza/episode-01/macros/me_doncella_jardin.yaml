@@ -1,0 +1,7 @@
+macro_edge_id: "me_doncella_jardin"
+from_anchor: "alcoba_de_la_doncella"
+to_anchor: "jardin"
+direction: "bidirectional"
+passage_name: "ventana"
+passage_description: "Una ventana al jardín"
+open: true

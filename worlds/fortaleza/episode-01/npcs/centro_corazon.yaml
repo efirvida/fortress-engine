@@ -1,0 +1,8 @@
+entity_id: "centro_corazon"
+type: "npc"
+name: "centro del corazón"
+components:
+  description: "El corazón gigante late con fuerza. Su ritmo sacude toda la cámara."
+  is_guard: true
+  lethal_weapon: "arco"
+spatial_anchor: "centro_del_corazon"

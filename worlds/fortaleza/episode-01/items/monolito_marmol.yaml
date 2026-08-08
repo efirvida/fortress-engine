@@ -1,0 +1,7 @@
+entity_id: "monolito_marmol"
+type: "item"
+name: "monolito de mármol"
+components:
+  weight: 0
+  description: "Un monolito de mármol macizo. Suena hueco: algo se oculta en su interior."
+spatial_anchor: "salon_de_recepciones"

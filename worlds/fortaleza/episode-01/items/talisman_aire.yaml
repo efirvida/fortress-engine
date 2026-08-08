@@ -1,0 +1,7 @@
+entity_id: "talisman_aire"
+type: "item"
+name: "talismán de aire"
+components:
+  weight: 1
+  description: "Un talismán grabado con el símbolo del aire. Al sostenerlo se respira mejor."
+spatial_anchor: "cuarto_del_hechicero"

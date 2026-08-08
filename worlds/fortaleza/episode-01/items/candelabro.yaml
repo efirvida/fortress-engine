@@ -1,0 +1,7 @@
+entity_id: "candelabro"
+type: "item"
+name: "candelabro"
+components:
+  weight: 3
+  description: "Un candelabro cuya llama permanece inmóvil, como congelada en el aire."
+spatial_anchor: "biblioteca"

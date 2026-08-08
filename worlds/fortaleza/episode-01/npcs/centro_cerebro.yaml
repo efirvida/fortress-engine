@@ -1,0 +1,8 @@
+entity_id: "centro_cerebro"
+type: "npc"
+name: "centro del cerebro"
+components:
+  description: "Una masa encefálica envuelta en fuego fatuo. Chisporrotea mientras procesa cada uno de tus movimientos."
+  is_guard: true
+  lethal_weapon: "antorcha"
+spatial_anchor: "centro_del_cerebro"

@@ -1,0 +1,7 @@
+macro_edge_id: "me_laboratorio_hechicero"
+from_anchor: "laboratorio_de_la_bestia"
+to_anchor: "cuarto_del_hechicero"
+direction: "bidirectional"
+passage_name: "tunel_laboratorio"
+passage_description: "Un túnel desde el laboratorio"
+open: true

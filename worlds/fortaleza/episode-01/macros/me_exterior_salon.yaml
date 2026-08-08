@@ -1,0 +1,8 @@
+macro_edge_id: "me_exterior_salon"
+from_anchor: "el_exterior_de_la_fortaleza"
+to_anchor: "salon_de_recepciones"
+direction: "bidirectional"
+passage_name: "puerta_principal"
+passage_description: "La puerta principal de la fortaleza"
+open: false
+requires_text: "password_key[2]"

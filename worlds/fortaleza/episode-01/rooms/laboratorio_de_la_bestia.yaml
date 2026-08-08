@@ -1,0 +1,7 @@
+entity_id: "laboratorio_de_la_bestia"
+type: "room"
+name: "el laboratorio de la Bestia"
+components:
+  description: "Hay muchos frascos. A usted le llaman la atención los últimos: están llenos de homúnculos."
+  visited: false
+spatial_anchor: null

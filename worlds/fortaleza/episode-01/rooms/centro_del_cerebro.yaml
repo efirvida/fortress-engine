@@ -1,0 +1,7 @@
+entity_id: "centro_del_cerebro"
+type: "room"
+name: "el centro del cerebro"
+components:
+  description: "El centro vital del cerebro de la Bestia."
+  visited: false
+spatial_anchor: null

@@ -1,0 +1,7 @@
+entity_id: "biblioteca"
+type: "room"
+name: "la biblioteca"
+components:
+  description: "Hay miles de libros en este lugar. Todos tienen alguna hoja marcada con una servilleta."
+  visited: false
+spatial_anchor: null

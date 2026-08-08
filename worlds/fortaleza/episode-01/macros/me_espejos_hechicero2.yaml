@@ -1,0 +1,7 @@
+macro_edge_id: "me_espejos_hechicero2"
+from_anchor: "cuarto_de_espejos"
+to_anchor: "cuarto_del_hechicero"
+direction: "bidirectional"
+passage_name: "escalera"
+passage_description: "Una escalera"
+open: true

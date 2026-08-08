@@ -1,0 +1,7 @@
+entity_id: "grabado"
+type: "item"
+name: "grabado"
+components:
+  weight: 0
+  description: "Un grabado en la pared que le muestra a usted mismo conversando con una muchacha."
+spatial_anchor: "cuarto_del_guerrero"

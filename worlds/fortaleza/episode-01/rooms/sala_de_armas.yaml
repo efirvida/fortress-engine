@@ -1,0 +1,7 @@
+entity_id: "sala_de_armas"
+type: "room"
+name: "la sala de armas"
+components:
+  description: "Este lugar parece salido del sueño de un guerrero."
+  visited: false
+spatial_anchor: null

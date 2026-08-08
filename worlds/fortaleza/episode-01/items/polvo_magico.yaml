@@ -1,0 +1,7 @@
+entity_id: "polvo_magico"
+type: "item"
+name: "polvo mágico"
+components:
+  weight: 1
+  description: "Un frasco con un polvo brillante. Quien lo espolvorea sobre sí mismo deja de ser visto."
+spatial_anchor: "alcoba_de_la_bruja"

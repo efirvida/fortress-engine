@@ -1,0 +1,7 @@
+entity_id: "arco"
+type: "item"
+name: "arco"
+components:
+  weight: 4
+  description: "Un arco de tejo con la cuerda tensa, capaz de alcanzar un blanco lejano."
+spatial_anchor: "sala_de_armas"

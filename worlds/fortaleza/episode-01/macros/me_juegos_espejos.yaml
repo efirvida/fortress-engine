@@ -1,0 +1,8 @@
+macro_edge_id: "me_juegos_espejos"
+from_anchor: "sala_de_juegos"
+to_anchor: "cuarto_de_espejos"
+direction: "bidirectional"
+passage_name: "escalera"
+passage_description: "Una escalera de caracol"
+open: false
+requires_text: "treinta y nueve"
