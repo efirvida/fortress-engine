@@ -353,6 +353,7 @@ class ParsedCommand:
     target: str | None              # entity_id del objetivo
     context: str | None = None      # entity_id contextual
     instrument: str | None = None   # entity_id del instrumento
+    text: str | None = None         # texto hablado (DICIENDO/RESPONDIENDO)
 ```
 
 ### 3.8 Episode y GoalConditions
@@ -433,6 +434,8 @@ class TurnOrchestrator:
         goal_evaluator: GoalEvaluator,
         episode_manager: EpisodeManager,
         repository: WorldStateRepository | None = None,
+        save_system: EventSourcingSaveSystem | None = None,
+        vocabulary: 'Vocabulary | None' = None,
     ) -> None:
         """Inicializa el orquestador con todas sus dependencias inyectadas."""
         ...
@@ -482,11 +485,11 @@ class TurnOrchestrator:
 
 **Manejo de comandos de sistema** (PRD 4.6):
 
-El orquestador intercepta los siguientes comandos antes del parseo normal:
-- `"GUARDAR <slot>"` → delega en `repository.save_snapshot()` + emite `game_saved`.
+El orquestador intercepta los siguientes comandos antes del parseo normal. Las palabras de reconocimiento vienen del `Vocabulary` del mundo (`system_commands` en `shared/vocabulary.yaml`); las palabras listadas aquí son los defaults en código (`DEFAULT_SYSTEM_COMMANDS`) cuando el mundo no las declara. Lo mismo aplica a los verbos de movimiento (`movement_verbs`, default `{"ir", "abrir"}`):
+- `"GUARDAR <slot>"` → el orquestador emite `game_saved({ save_slot })`. La persistencia del snapshot la hace `EventSourcingSaveSystem._on_game_saved` vía su `state_provider`.
 - `"CARGAR <slot>"` → delega en `repository.load_latest_snapshot()` + replay de event log + emite `game_loaded`.
 - `"TERMINAR"` → emite `game_over({ reason: "player_quit" })`.
-- `"CAMBIAR A <nombre>"` → busca entidad `player_controlled` con ese nombre, actualiza `active_protagonist_id`, emite `protagonist_switched`.
+- `"CAMBIAR A <nombre>"` → busca entidad `player_controlled` con ese nombre, actualiza `active_protagonist_id`, emite `protagonist_switched` (comando prefijo — se recorta la surface).
 - `"ESPERAR"` → no-op (pasa el turno).
 - `"GRUPO"` → emite `protagonists_listed`.
 
@@ -573,10 +576,18 @@ class DualGraphEngine:
 
     def validate_macro_edge(
         self, edge: MacroEdge, state: WorldState
-    ) -> tuple[bool, str | None]:
+    ) -> 'MacroGateResult':
         """
         Evalúa los predicados de una arista Macro (GDD 2.2).
-        Retorna (es_válido, mensaje_de_error_o_muerte).
+        Retorna un `MacroGateResult` (dataclass congelada):
+        - is_valid: True si todas las gates pasaron.
+        - is_fatal: True si alguna gate falló Y `edge.death_message` está presente.
+        - gate_code: uno de los 5 códigos planos cuando es inválido
+          (`text_closed`, `requires_item`, `forbids_item`, `requires_flag`,
+          `forbids_flag`); cadena vacía si es válido.
+        - data: siempre incluye `passage_name` + el predicado que falló.
+        El orquestador enruta muerte-vs-bloqueo vía `is_fatal` (sin comparación
+        de strings).
         """
         ...
 
@@ -608,14 +619,15 @@ class DualGraphEngine:
 **Interfaz pública**:
 
 ```python
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
 @dataclass
 class OperatorResult:
     success: bool
-    error_message: str | None = None
+    code: str | None = None                            # código plano de falla (None en éxito)
+    data: dict[str, Any] = field(default_factory=dict)  # datos estructurados para el narrador
     events_payload: dict[str, Any] | None = None  # datos para que el orquestador emita eventos
 
 
@@ -627,8 +639,8 @@ def execute_transfer(
 
     Validaciones:
     - Si to_container es el protagonista activo:
-      1. Si entity.weight > player.max_weight → error: "Usted no puede cargar con eso."
-      2. Si sum(inventory_items.weight) + entity.weight > player.max_weight → error: "Sería demasiado peso."
+      1. Si entity.weight > player.max_weight → error_code: "not_portable" + data.
+      2. Si sum(inventory_items.weight) + entity.weight > player.max_weight → error_code: "too_heavy" + data.
       3. Si entity.portable == false → error: entidad no portable.
     - entity debe existir en from_container.
 
@@ -717,7 +729,7 @@ def execute_operator(
 **Notas de implementación**:
 - Los operadores son funciones puras sin efectos secundarios fuera de `WorldState`. No conocen al EventBus.
 - El orquestador recibe el `OperatorResult` y emite los eventos correspondientes (`entity_transferred`, `entity_transformed`, etc.).
-- La validación de peso es la única que puede fallar. Los demás operadores solo fallan si hay un bug en los datos del mundo (referencias colgantes, valores incorrectos).
+- Las validaciones de peso (`not_portable`, `too_heavy`), `portable == false` y las precondiciones de transform/combine/teleport pueden fallar: `OperatorResult` transporta `code` + `data` planos y el narrador renderiza el texto (`DEFAULT_SPANISH_MESSAGES`). `error_message` fue removido (spec de operadores atómicos).
 
 ### 4.4 `engine/state.py` — Contenedor de Estado
 
@@ -1227,6 +1239,17 @@ class EntityLoader:
         """Carga entidades compartidas (player, vocabulario) desde shared/."""
         ...
 
+    def load_vocabulary(self, world_path: str | None = None) -> 'Vocabulary' | None:
+        """
+        Carga el vocabulario del mundo desde `<world>/shared/vocabulary.yaml`.
+        Retorna None si el archivo no existe (el parser usa su cascada de
+        defaults). El `Vocabulary` resultante contiene: verbs, stopwords,
+        prepositions, speech_markers, speech_verbs, messages (texto del
+        narrador por error_code/system code), movement_verbs y
+        system_commands.
+        """
+        ...
+
     def load_rooms(self, episode_id: str) -> list[Entity]:
         """Carga todas las rooms desde episode-XX/rooms/*.yaml."""
         ...
@@ -1282,7 +1305,36 @@ class EntityLoader:
 Cada tipo de archivo YAML tiene un modelo Pydantic que valida su estructura antes de convertirlo a dataclass:
 
 ```python
+from dataclasses import dataclass, field
 from pydantic import BaseModel
+
+
+@dataclass
+class Vocabulary:
+    """Vocabulario del mundo cargado desde shared/vocabulary.yaml."""
+    language: str
+    verbs: dict[str, list[str]]
+    stopwords: list[str]
+    prepositions: dict[str, list[str]]
+    speech_markers: list[str]
+    speech_verbs: list[str]
+    messages: dict[str, str] = field(default_factory=dict)
+    movement_verbs: list[str] = field(default_factory=list)
+    system_commands: dict[str, list[str]] = field(default_factory=dict)
+
+
+class PluginConfigYAML(BaseModel):
+    plugin: str
+    options: dict[str, Any] = {}
+
+
+class WorldYAML(BaseModel):
+    """Modelo Pydantic de world.yaml (PRD 4.8, GDD 3.1)."""
+    world_id: str
+    name: str
+    language: str = "es"                                     # default "es"
+    parser: str | PluginConfigYAML = PluginConfigYAML(plugin="classic")
+    narrator: str | PluginConfigYAML = PluginConfigYAML(plugin="template")
 
 
 class EntityYAML(BaseModel):
@@ -1439,7 +1491,7 @@ class ClassicParser(ParserInterface):
         "EJECUTAR", "SALVAR",
         "PORCIENTO", "TODO", "PESAR",
         "MIAR", "ORINAR",
-        "CLS", "ESPERAR",
+        "CLS",
     }
 
     # Vocabulario por defecto en código: {canónico: [sinónimos]} + stopwords V2.
@@ -1538,7 +1590,7 @@ class TemplateNarrator(NarratorInterface):
         event_bus.subscribe("game_over", self._on_game_over)
         event_bus.subscribe("system_message", self._on_system_message)
         event_bus.subscribe("entity_described", self._on_entity_described)
-        event_bus.subscribe("item_examined", self._on_item_examined)
+        event_bus.subscribe("entity_examined", self._on_entity_examined)
         event_bus.subscribe("inventory_listed", self._on_inventory_listed)
 
     def handle_event(
@@ -2238,9 +2290,10 @@ narrator:
 ### 9.3 Aislamiento de Errores
 
 Los plugins son código externo desde la perspectiva del motor. Si un plugin lanza una excepción:
-- El motor captura la excepción, emite `error_output` con un mensaje genérico, y continúa.
+- El motor captura la excepción, emite `error_output` con `error_code="parser_error"` y `data={}`, y continúa.
 - El plugin no puede tumbar el motor.
 - En modo debug, el traceback completo se imprime en stderr.
+- El texto del mensaje vive en el narrador (`error_output.parser_error` en `DEFAULT_SPANISH_MESSAGES`) — el motor no construye strings.
 
 ```python
 def execute_turn(self, raw_text: str) -> None:
@@ -2252,7 +2305,7 @@ def execute_turn(self, raw_text: str) -> None:
             turn_number=self._state.turn_number,
             payload={
                 "error_code": "parser_error",
-                "message": "No entiendo ese comando.",
+                "data": {},
             },
             protagonist_id=self._state.active_protagonist_id,
         ))
@@ -2307,11 +2360,17 @@ def cmd_run(args: argparse.Namespace) -> int:
     world_config = loader.load_world_config()
     episodes = loader.load_episodes()
 
-    # 2. Determinar parser y narrador
-    parser_name = args.parser or world_config.get("parser", "classic")
-    narrator_name = args.narrator or world_config.get("narrator", "template")
-    parser = load_parser(parser_name)
-    narrator = load_narrator(narrator_name)
+    # 2. Determinar parser, narrador y vocabulario (via plugin factory)
+    vocabulary = loader.load_vocabulary()  # worlds/<name>/shared/vocabulary.yaml o None
+    parser_cfg = world_config.get("parser", {"plugin": "classic", "options": {}})
+    narrator_cfg = world_config.get("narrator", {"plugin": "template", "options": {}})
+    if isinstance(parser_cfg, str):
+        parser_cfg = {"plugin": parser_cfg, "options": {}}
+    if isinstance(narrator_cfg, str):
+        narrator_cfg = {"plugin": narrator_cfg, "options": {}}
+    language = world_config.get("language", "es")
+    parser = create_parser(PluginConfig(**parser_cfg), language)
+    narrator = create_narrator(PluginConfig(**narrator_cfg), language)
 
     # 3. Inicializar estado, grafo, event bus
     state = WorldState()
@@ -2323,8 +2382,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     if args.save:
         db_path = f"saves/slot_{args.save}/fortaleza.db"
         repository = SQLiteWorldStateRepository(db_path)
-        save_system = EventSourcingSaveSystem(event_bus, repository)
-        event_bus.subscribe("*", save_system._append_to_log)
+        save_system = EventSourcingSaveSystem(event_bus, repository, state_provider=lambda: state)
+        event_bus.subscribe("game_saved", save_system._on_game_saved)
 
     # 5. Cargar episodio inicial
     episode_manager = EpisodeManager(episodes, args.world_path, event_bus)
@@ -2361,6 +2420,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         goal_evaluator=goal_evaluator,
         episode_manager=episode_manager,
         repository=repository,
+        save_system=save_system if args.save else None,
+        vocabulary=vocabulary,
     )
 
     # 9. Emitir eventos de inicio

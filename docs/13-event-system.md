@@ -97,7 +97,7 @@ Cada uno de los cinco operadores atómicos emite un evento cuando se ejecuta exi
 | `flag_set` | FLAG | `{ flag_name, old_value, new_value }` |
 | `entity_teleported` | TELEPORT | `{ entity_id, from_anchor_id, to_anchor_id }` |
 
-**Estos eventos son producidos por el State Container, no por las Hiper-Aristas directamente**. Cuando una Hiper-Arista ejecuta `TRANSFER(Antorcha, room_03, player_inventory)`, el State Container aplica el cambio y emite `entity_transferred`. Esto garantiza que el event log refleje fielmente el estado real — si un TRANSFER falla (peso excedido, contenedor inválido), no se emite el evento.
+**Estos eventos son producidos por el orquestador desde `OperatorResult.events_payload`** (los operadores son bus-free). Cuando una Hiper-Arista ejecuta `TRANSFER(Antorcha, room_03, player_inventory)`, el orquestador aplica el cambio y emite `entity_transferred`. Esto garantiza que el event log refleje fielmente el estado real — si un TRANSFER falla (peso excedido, contenedor inválido), no se emite el evento.
 
 ### 2.4 Eventos de Narración
 
@@ -111,8 +111,8 @@ Estos eventos transportan texto que la UI debe mostrar al jugador. Son producido
 | `inventory_listed` | Cuando el jugador consulta su inventario (INVENTORY/INVENTARIO) | `{ protagonist_id, items: [{ id, name, weight }], total_weight, capacity }` |
 | `protagonists_listed` | Cuando el jugador usa el comando GRUPO | `{ protagonists: [{ id, name, location, status }] }` |
 | `action_output` | Texto asociado a la ejecución de una Hiper-Arista (campo `output` en la definición YAML de la acción) | `{ hyper_edge_id, text, protagonist_id }` |
-| `error_output` | Errores de parser, validación de clique, ejecución de operadores | `{ error_code, message, protagonist_id }` |
-| `system_message` | Mensajes del motor que no pertenecen a una acción específica (ej: "La partida se ha guardado.") | `{ message }` |
+| `error_output` | Errores de parser, validación de clique, ejecución de operadores | `{ error_code, data, protagonist_id }` (el texto vive en el narrador, keyed por `error_code`) |
+| `system_message` | Mensajes del motor que no pertenecen a una acción específica (ej: feedback de guardado) | `{ code, data }` |
 
 **Relación con el Gap #2 (Salida de texto asociada a operadores)**: El campo `output` de las Hiper-Aristas se emite como `action_output`. El narrador por plantillas (V1) usa este texto directamente. El narrador IA (V2) puede usarlo como prompt base y decorarlo.
 
@@ -519,10 +519,10 @@ StateContainer → intenta TRANSFER(Bote, room_12, player_inventory)
 StateContainer → calcula peso actual (35) + peso del Bote (39) = 74 > 40
 StateContainer → LA TRANSFERENCIA FALLA — no se emite entity_transferred
 TurnOrchestrator → action_resolved("tomar_bote", operators_executed=[], has_effects=false)
-Narrador → error_output("tomar_bote", "Sería demasiado peso.")
+Narrador → error_output(error_code="too_heavy", data={ entity_id, current_weight, item_weight, max_capacity })
 ```
 
-**Principio clave**: solo los operadores que efectivamente modifican el estado emiten eventos. Si un TRANSFER falla por validación de peso, no hay `entity_transferred`. La UI recibe `action_resolved(has_effects=false)` y `error_output(...)` para informar al jugador.
+**Principio clave**: solo los operadores que efectivamente modifican el estado emiten eventos. Si un TRANSFER falla por validación de peso, no hay `entity_transferred`. La UI recibe `action_resolved(has_effects=false)` y `error_output(error_code, data)` — el narrador renderiza el texto (p.ej. `error_output.too_heavy` en `DEFAULT_SPANISH_MESSAGES`).
 
 ---
 
@@ -625,7 +625,7 @@ class TerminalUI(UIInterface):
         print(event.payload["text"])
 
     def _on_error_output(self, event: EngineEvent) -> None:
-        print(f"[ERROR] {event.payload['message']}")
+        print(f"[ERROR] {event.payload['error_code']} {event.payload.get('data', {})}")
 
     def _on_game_over(self, event: EngineEvent) -> None:
         print(f"\n=== FIN DEL JUEGO ===")
