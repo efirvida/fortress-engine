@@ -36,7 +36,11 @@
     - type: "FLAG"
       flag: "arbol_marfil_roto"
       value: true
-  output: "El hacha mohosa parte el marfil. Algo brilla entre las astillas."
+    - type: "TRANSFER"
+      entity: "maza"
+      from_container: null
+      to_container: "otra_orilla_del_rio_negro"
+  output: "El hacha mohosa parte el marfil. Entre las astillas aparece una maza pesada."
 
 - hyper_edge_id: "he_romper_muralla"
   name: "Romper la primera muralla"
@@ -45,7 +49,7 @@
     subject: "player"
     verb: "romper"
     target: "muralla"
-    instrument: "marmidosa"
+    instrument: "maza"
   operators:
     - type: "TRANSFORM"
       entity: "muralla"
@@ -55,7 +59,7 @@
     - type: "FLAG"
       flag: "muralla_rota"
       value: true
-  output: "Marmidosa abre una brecha en la muralla. Al otro lado se oye el viento."
+  output: "La maza abre una brecha en la muralla. Al otro lado se oye el viento."
 
 - hyper_edge_id: "he_romper_huevo"
   name: "Romper el huevo del Comedor"

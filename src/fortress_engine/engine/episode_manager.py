@@ -320,6 +320,15 @@ class EpisodeManager:
             if eid in self._episodes
         ]
 
+    def goal_evaluator_for(self, episode_id: str) -> "GoalEvaluator":
+        """Return a fresh :class:`GoalEvaluator` bound to *episode_id*'s goal.
+
+        Raised ``KeyError`` when *episode_id* is unknown.
+        """
+        from fortress_engine.engine.goal_evaluator import GoalEvaluator
+
+        return GoalEvaluator(self._episodes[episode_id].goal)
+
     def unload_graph(self, graph: DualGraphEngine) -> None:
         """Clear the graph's internal data structures."""
         graph._anchors.clear()

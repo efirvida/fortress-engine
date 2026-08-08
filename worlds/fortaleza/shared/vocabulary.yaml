@@ -22,7 +22,7 @@ verbs:
   limpiar: ["cls"]
   todo: ["todo"]
 
-stopwords: ["la", "el", "los", "las", "un", "una", "al", "del", "de", "en", "con", "por", "para", "a"]
+stopwords: ["la", "el", "los", "las", "un", "una", "al", "del", "de", "en", "por", "para"]
 
 prepositions:
   instrument: ["con"]

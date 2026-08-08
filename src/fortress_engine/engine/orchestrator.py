@@ -465,8 +465,13 @@ class TurnOrchestrator:
                 },
             )
         else:
-            # Transition succeeded — replace the graph reference.
+            # Transition succeeded — replace the graph reference and bind
+            # the next episode's goal evaluator so the new episode is
+            # evaluated against its OWN goal conditions (REQ-GOAL-001).
             self._graph = new_graph  # type: ignore[assignment]
+            self._goal_evaluator = self._episode_manager.goal_evaluator_for(
+                self._state.current_episode_id
+            )
 
         return True
 

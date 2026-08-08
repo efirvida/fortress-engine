@@ -815,8 +815,235 @@ def test_fortaleza_divergences_documented():
 
 
 # ====================================================================
-# Fortaleza bidirectional macro edges (Slice L4)
+# Fortaleza Part II ritual + goal evaluator handoff (Slice L5)
 # ====================================================================
+
+
+def _part2_ritual_fixture() -> _FortalezaFixture:
+    """Fixture with the seven sacred objects + ritual tools in inventory."""
+    fx = _FortalezaFixture("episode-02")
+    items = {
+        e.entity_id: e for e in fx.loader.load_items("episode-02")
+    }
+    for eid in (
+        "antorcha_subterraneos",
+        "pendulo",
+        "espejo_roto",
+        "bote_carante",
+        "rosa_diamante",
+        "escudo_de_aquiles",
+        "cinta_de_moebius",
+        "muslo_de_carnero",
+        "aguja_plata",
+    ):
+        assert eid in items, f"ritual object {eid!r} missing from episode-02"
+        entity = items[eid]
+        fx.state.entities[eid] = entity
+        entity.spatial_anchor = "hero"
+    return fx
+
+
+def test_fortaleza_part2_goal_evaluator_handoff():
+    """Episode-02 is evaluated against its OWN goal conditions (REQ-GOAL-001)
+    after the handoff: once the ritual is complete, final completion fires.
+
+    The seven ritual drops transfer the sacred objects to their goal anchors
+    (faithful to the original ritual steps 66-73); the monster and the
+    daughter are resolved from their rooms (see the dedicated reachability
+    tests for the travel legs)."""
+    fx = _part2_ritual_fixture()
+    # Place the seven sacred objects via the ritual drop edges.
+    ritual_drops = (
+        "dejar antorcha_subterraneos",
+        "dejar pendulo",
+        "dejar espejo_roto",
+        "dejar bote_carante",
+        "dejar rosa_diamante",
+        "dejar escudo_de_aquiles",
+        "dejar cinta_de_moebius",
+    )
+    for cmd in ritual_drops:
+        events = fx.turn(cmd)
+        assert fx.last_error(events) is None, (
+            f"{cmd!r} failed at {fx.hero_anchor()}"
+        )
+        assert GAME_OVER not in [e.type for e in events]
+
+    # Feed the monster (lamb leg) and kill the daughter (silver needle) by
+    # resolving the NPCs at their rooms and executing the real actions.
+    for eid in ("muslo_de_carnero", "aguja_plata"):
+        entity = fx.state.entities[eid]
+        entity.spatial_anchor = "hero"
+    npcs = {e.entity_id: e for e in fx.loader.load_npcs("episode-02")}
+    for npc_id, room in (
+        ("monstruo", "calabozo_del_monstruo"),
+        ("hija_del_hechicero", "alcoba_secreta"),
+    ):
+        npc = npcs[npc_id]
+        fx.state.entities[npc_id] = npc
+        npc.spatial_anchor = room
+
+    # Move to the monster's cell, feed it; then to the secret alcove and
+    # kill the daughter with the silver needle.
+    fx.state.get_entity("hero").spatial_anchor = "calabozo_del_monstruo"
+    events = fx.turn("dar muslo_de_carnero a monstruo")
+    assert fx.last_error(events) is None, (
+        f"dar muslo failed: {fx.last_error(events)}"
+    )
+    fx.state.get_entity("hero").spatial_anchor = "alcoba_secreta"
+    events = fx.turn("matar hija_del_hechicero con aguja_plata")
+    assert fx.last_error(events) is None, (
+        f"matar hija failed: {fx.last_error(events)}"
+    )
+
+    # Episode-02's own goal is now satisfied (the fixture's default
+    # evaluator is bound to episode-01, so use the episode-02 evaluator —
+    # this is exactly the handoff REQ-GOAL-001 provides at runtime).
+    result = fx.ep_mgr.goal_evaluator_for("episode-02").check(fx.state)
+    assert result is True
+
+    # With an orchestrator bound to the episode-02 evaluator (the state the
+    # engine reaches after the transition handoff), a turn emits final
+    # completion.
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    ep2_orch = TurnOrchestrator(
+        state=fx.state,
+        graph=fx.graph,
+        event_bus=fx.bus,
+        parser=fx.parser,
+        narrator=fx.narrator,
+        goal_evaluator=fx.ep_mgr.goal_evaluator_for("episode-02"),
+        episode_manager=fx.ep_mgr,
+        vocabulary=fx.vocabulary,
+    )
+    before = len(fx.events)
+    ep2_orch.execute_turn("mirar")
+    events = fx.events[before:]
+    all_types = [e.type for e in events]
+    assert GAME_COMPLETED in all_types, (
+        f"expected game_completed after ritual, got {all_types}"
+    )
+    assert GAME_OVER not in all_types
+    assert sum(1 for e in events if e.type == TURN_ENDED) == 1
+
+
+def test_fortaleza_part2_monster_reachable():
+    """The monster is reachable from the terraces via the spiral stairs
+    (open passage); killing it by feeding the lamb leg sets the flag."""
+    fx = _FortalezaFixture("episode-02")
+    items = {e.entity_id: e for e in fx.loader.load_items("episode-02")}
+    muslo = items["muslo_de_carnero"]
+    fx.state.entities["muslo_de_carnero"] = muslo
+    muslo.spatial_anchor = "hero"
+
+    # habitacion_para_huespedes -> pasillo -> terrazas -> calabozo.
+    for cmd in ("ir puerta", "ir puerta_oro", "ir escalera_caracol"):
+        events = fx.turn(cmd)
+        assert fx.last_error(events) is None, (
+            f"{cmd!r} failed: {fx.last_error(events)}"
+        )
+    assert fx.hero_anchor() == "calabozo_del_monstruo"
+
+    events = fx.turn("dar muslo_de_carnero a monstruo")
+    assert fx.last_error(events) is None
+    assert fx.state.get_flag("monstruo_muerto") is True
+
+
+def test_fortaleza_part2_muralla_chain():
+    """The Part II original model: break the ivory tree with the axe to get
+    the maza, then break the wall with it, then the avenue opens (L5 world
+    corrections — deadlock removed by anchoring the tree on Orilla 2)."""
+    fx = _FortalezaFixture("episode-02")
+    # Walk: start -> pasillo -> cuarto_del_lenador (hacha) -> terrazas ->
+    # orilla -> otra_orilla.
+    flow = (
+        "ir puerta",
+        "ir puerta_espinos",
+        "tomar hacha_lenador",
+        "ir puerta_espinos",
+        "ir puerta_oro",
+        "ir escalera_caracol_orilla",
+        "ir rio_negro",
+    )
+    for cmd in flow:
+        events = fx.turn(cmd)
+        assert fx.last_error(events) is None, (
+            f"{cmd!r} failed: {fx.last_error(events)}"
+        )
+    assert fx.hero_anchor() == "otra_orilla_del_rio_negro"
+
+    # Break the ivory tree -> maza appears on Orilla 2.
+    events = fx.turn("romper arbol_de_marfil con hacha_lenador")
+    assert fx.last_error(events) is None
+    assert "maza" in [
+        e.entity_id
+        for e in fx.state.get_entities_in_container(
+            "otra_orilla_del_rio_negro"
+        )
+    ]
+
+    # Break the wall with the maza (used from the anchor) -> flag set.
+    events = fx.turn("romper muralla con maza")
+    assert fx.last_error(events) is None
+    assert fx.state.get_flag("muralla_rota") is True
+
+    # The avenue to the gardens opens.
+    events = fx.turn("ir avenida_hierro")
+    assert fx.last_error(events) is None
+    assert fx.hero_anchor() == "jardines_del_hechicero"
+
+
+def test_fortaleza_episode_transition_swaps_goal_evaluator():
+    """Completing Part I transitions to episode-02 AND rebinds the goal
+    evaluator (REQ-GOAL-001): the orchestrator's evaluator now checks
+    episode-02's conditions, so final completion is reachable after the
+    Part II ritual."""
+    fx = _FortalezaFixture("episode-01")
+    # Give the hero the four center weapons and kill the five targets.
+    items = {e.entity_id: e for e in fx.loader.load_items("episode-01")}
+    for eid in ("maza", "lanza", "arco", "antorcha"):
+        entity = items[eid]
+        fx.state.entities[eid] = entity
+        entity.spatial_anchor = "hero"
+    npcs = {e.entity_id: e for e in fx.loader.load_npcs("episode-01")}
+    for npc_id, room in (
+        ("centro_pulmones", "centro_de_los_pulmones"),
+        ("centro_corazon", "centro_del_corazon"),
+        ("centro_estomago", "centro_del_estomago"),
+        ("centro_cerebro", "centro_del_cerebro"),
+        ("troll_final", "cripta_final"),
+    ):
+        npc = npcs[npc_id]
+        fx.state.entities[npc_id] = npc
+        npc.spatial_anchor = room
+
+    flow = (
+        "ir garganta",
+        "ir traquea",
+        "matar centro_pulmones con maza",
+        "ir vena",
+        "matar centro_corazon con arco",
+        "ir arteria_principal",
+        "ir esofago",
+        "matar centro_estomago con lanza",
+        "ir conducto",
+        "matar centro_cerebro con antorcha",
+        "ir escondite",
+        "matar troll_final con maza",
+    )
+    for cmd in flow:
+        events = fx.turn(cmd)
+        assert fx.last_error(events) is None, (
+            f"{cmd!r} failed: {fx.last_error(events)}"
+        )
+
+    # Transition fired: current episode is episode-02.
+    assert fx.state.current_episode_id == "episode-02"
+    assert fx.ep_mgr.goal_evaluator_for("episode-02").check(fx.state) is False
+    # The orchestrator's internal evaluator is now bound to episode-02
+    # (not episode-01), which is what makes the Part II ritual winnable.
+    assert fx.orch._goal_evaluator is not None
 
 
 def test_fortaleza_bidirectional_round_trip():

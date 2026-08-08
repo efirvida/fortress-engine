@@ -1,0 +1,7 @@
+entity_id: "maza"
+type: "item"
+name: "maza"
+components:
+  weight: 37
+  description: "Una maza pesada, forjada del marfil del árbol. Sirve para derribar la muralla."
+spatial_anchor: null

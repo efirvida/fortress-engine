@@ -1,6 +1,20 @@
 # TAKE actions (episode 2) — player picks up items from rooms
 # TRANSFER moves the entity from its spatial_anchor room to the hero inventory
 
+- hyper_edge_id: "he_tomar_maza"
+  name: "Tomar la maza"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "maza"
+  operators:
+    - type: "TRANSFER"
+      entity: "maza"
+      from_container: "otra_orilla_del_rio_negro"
+      to_container: "hero"
+  output: "Tomas la maza de marfil. Es pesada pero manejable."
+
 - hyper_edge_id: "he_tomar_aguja_plata"
   name: "Tomar la aguja"
   priority: 10
