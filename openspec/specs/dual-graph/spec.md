@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Replace the `(bool, str | None)` return of `validate_macro_edge` with a structured result so the engine stops emitting Spanish blocked messages and can distinguish fatal (death) from blocked without string equality.
+Replace the `(bool, str | None)` return of `validate_macro_edge` with a structured result so the engine stops emitting Spanish blocked messages and can distinguish fatal (death) from blocked without string equality. Also complete the specified bidirectional semantics for macro edges (`direction: bidirectional` must be traversable both ways).
 
 ## MODIFIED Requirements
 
@@ -44,3 +44,31 @@ The five gate codes SHALL be flat: `text_closed`, `requires_item`, `forbids_item
 - GIVEN a closed edge with `requires_text`
 - WHEN the player provides the matching text
 - THEN the edge flips `open=True` and the result is valid
+
+### Requirement: Bidirectional macro edge expansion
+
+For `direction == "bidirectional"`, the macro graph MUST allow both directions and preserve predicates/outcomes. `unidirectional` edges MUST NOT gain reverse routes. `EntityLoader.load_macro_edges()` SHALL expand a bidirectional edge into a reverse copy (swapped anchors, generated `<id>_reverse`, copied predicates/outcomes/`open`), skipping an existing reverse declaration. A dedicated round-trip test and a follow-up issue MUST be provided.
+
+#### Scenario: Round trip
+
+- GIVEN a loaded bidirectional edge
+- WHEN the protagonist crosses it and returns through the same passage
+- THEN both movements succeed with equivalent gate semantics
+
+#### Scenario: Unidirectional stays one-way
+
+- GIVEN a loaded unidirectional edge
+- WHEN the protagonist attempts the reverse route
+- THEN the reverse movement is not available
+
+#### Scenario: Text gate failure carries code and data
+
+- GIVEN a closed bidirectional text gate
+- WHEN the wrong text is supplied in either direction
+- THEN the failure carries the gate code and data, with no movement or death
+
+#### Scenario: Correct text unlocks
+
+- GIVEN a closed bidirectional text gate
+- WHEN the correct text is supplied from either side
+- THEN the gate opens and both directions become traversable
