@@ -30,6 +30,15 @@ _NARRATED_EVENTS: frozenset[str] = frozenset({
 class NarratorInterface(ABC):
     """Abstract narrator that produces output from engine events."""
 
+    def __init__(self, language: str = "es") -> None:
+        self._language = language
+
+    @property
+    @abstractmethod
+    def language(self) -> str:
+        """Return the language code this narrator operates in (e.g. 'es', 'en')."""
+        ...
+
     @abstractmethod
     def initialize(self, event_bus: EventBus) -> None:
         """Register event handlers on the bus."""
@@ -55,8 +64,14 @@ class MinimalNarrator(NarratorInterface):
     Returns ``None`` for all other event types.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, language: str = "es") -> None:
+        super().__init__(language)
         self._initialized = False
+
+    @property
+    def language(self) -> str:
+        """Return the language code for this narrator instance."""
+        return self._language
 
     def initialize(self, event_bus: EventBus) -> None:
         """Subscribe to narrated event types on *event_bus* (idempotent)."""

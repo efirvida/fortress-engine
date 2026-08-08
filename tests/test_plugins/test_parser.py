@@ -405,3 +405,64 @@ def test_parse_known_verbs(world, parser, raw, expected_verb, expected_target):
     result = parser.parse(raw, world)
     assert result.verb == expected_verb
     assert result.target == expected_target
+
+
+# ===================================================================
+# N1 — Language property (specs/plugin-contracts)
+# ===================================================================
+
+
+def test_parser_language_default_es():
+    """MinimalParser() defaults language to 'es'."""
+    p = MinimalParser()
+    assert p.language == "es"
+
+
+def test_parser_language_override_en():
+    """MinimalParser(language='en') stores and exposes 'en'."""
+    p = MinimalParser(language="en")
+    assert p.language == "en"
+
+
+def test_parser_language_preserved_on_instance():
+    """Each MinimalParser instance keeps its own language value."""
+    p_es = MinimalParser()
+    p_en = MinimalParser(language="en")
+    assert p_es.language == "es"
+    assert p_en.language == "en"
+
+
+def test_parser_language_is_read_only():
+    """language is a read-only property — assigning it raises."""
+    p = MinimalParser()
+    with pytest.raises(AttributeError):
+        p.language = "fr"  # type: ignore[misc]
+
+
+def test_parser_abc_has_language_abstract():
+    """ParserInterface declares an abstract `language` property."""
+    # The ABC must expose the abstract property descriptor.
+    assert hasattr(ParserInterface, "language")
+    from abc import abstractmethod
+    # It must be marked abstract (the ABC machinery enforces it).
+    assert getattr(ParserInterface.language, "__isabstractmethod__", False) is True
+
+
+def test_parser_no_arg_backcompat(world):
+    """MinimalParser() with no args parses exactly as before N1."""
+    p = MinimalParser()
+    result = p.parse("ir norte", world)
+    assert result.verb == "ir"
+    assert result.target == "norte"
+    assert result.subject == "hero"
+    # Existing behavior preserved — language is "es"
+    assert p.language == "es"
+
+
+def test_parser_language_override_still_parses(world):
+    """MinimalParser(language='en') parses identically to default."""
+    p = MinimalParser(language="en")
+    assert p.language == "en"
+    result = p.parse("examinar puerta", world)
+    assert result.verb == "examinar"
+    assert result.target == "puerta"

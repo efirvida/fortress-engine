@@ -57,6 +57,15 @@ _SPEECH_VERBS: frozenset[str] = frozenset({"decir", "responder"})
 class ParserInterface(ABC):
     """Abstract parser that converts raw player text into a ParsedCommand."""
 
+    def __init__(self, language: str = "es") -> None:
+        self._language = language
+
+    @property
+    @abstractmethod
+    def language(self) -> str:
+        """Return the language code this parser operates in (e.g. 'es', 'en')."""
+        ...
+
     @abstractmethod
     def parse(self, raw_text: str, world_state: WorldState) -> ParsedCommand:
         """Parse *raw_text* into a structured command."""
@@ -81,6 +90,14 @@ class MinimalParser(ParserInterface):
           ``ParsedCommand`` may have an unknown verb, and the orchestrator
           handles the ``error_output`` path when no clique matches.
     """
+
+    def __init__(self, language: str = "es") -> None:
+        super().__init__(language)
+
+    @property
+    def language(self) -> str:
+        """Return the language code for this parser instance."""
+        return self._language
 
     def parse(self, raw_text: str, world_state: WorldState) -> ParsedCommand:
         tokens = raw_text.strip().split()
