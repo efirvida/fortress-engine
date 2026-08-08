@@ -814,6 +814,49 @@ def test_fortaleza_divergences_documented():
         assert topic in text, f"Divergence doc missing topic {topic!r}"
 
 
+# ====================================================================
+# Fortaleza bidirectional macro edges (Slice L4)
+# ====================================================================
+
+
+def test_fortaleza_bidirectional_round_trip():
+    """A bidirectional passage is traversable in both directions: crossing
+    and returning through the same passage name both succeed."""
+    fx = _FortalezaFixture()
+    # exterior -> garganta (open bidirectional passage).
+    events = fx.turn("ir garganta")
+    assert fx.last_error(events) is None
+    assert fx.hero_anchor() == "garganta"
+    # Return through the same passage name.
+    events = fx.turn("ir garganta")
+    assert fx.last_error(events) is None
+    assert fx.hero_anchor() == "el_exterior_de_la_fortaleza"
+    # No game_over, one turn_ended per leg.
+    all_types = fx.all_event_types()
+    assert GAME_OVER not in all_types
+    assert sum(1 for e in fx.events if e.type == TURN_ENDED) == 2
+
+
+def test_fortaleza_bidirectional_preserves_gate_equivalence():
+    """A gated bidirectional passage keeps equivalent gate semantics on
+    both sides: the correct text unlocks each direction independently
+    (open state is copied by value, so the reverse edge re-requires the
+    text — matching the original's separate per-direction links)."""
+    fx = _FortalezaFixture()
+    # Open the principal door from the exterior.
+    events = fx.turn("ir puerta_principal diciendo Abrete Sesamo")
+    assert fx.last_error(events) is None
+    assert fx.hero_anchor() == "salon_de_recepciones"
+    # Return through the reverse edge: without text it is still closed.
+    events = fx.turn("ir puerta_principal")
+    assert fx.last_error(events) == "blocked"
+    assert fx.hero_anchor() == "salon_de_recepciones"
+    # With the correct text the reverse direction opens (equivalent gate).
+    events = fx.turn("ir puerta_principal diciendo Abrete Sesamo")
+    assert fx.last_error(events) is None
+    assert fx.hero_anchor() == "el_exterior_de_la_fortaleza"
+
+
 def test_fortaleza_l2_password_gate_opens_with_decoded_text():
     """The principal door opens with the decoded password 'Abrete Sesamo'
     and stays blocked with a wrong password."""

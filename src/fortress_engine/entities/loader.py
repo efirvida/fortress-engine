@@ -9,7 +9,7 @@ Pydantic is used ONLY at load time — runtime objects are plain dataclasses.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field as dc_field
+from dataclasses import dataclass, field as dc_field, replace as dc_replace
 from pathlib import Path
 from typing import Any, cast
 
@@ -505,7 +505,16 @@ class EntityLoader:
     # -------------------------------------------------------------------
 
     def load_macro_edges(self, episode_id: str) -> list[MacroEdge]:
-        """Load MacroEdges from ``episode-XX/macros/*.yaml``."""
+        """Load MacroEdges from ``episode-XX/macros/*.yaml``.
+
+        Edges declared ``direction == "bidirectional"`` are expanded into a
+        reverse copy (swapped anchors, generated ID, copied predicates,
+        outcomes, and ``open`` state) so the macro graph is traversable in
+        both directions — completing the semantics specified in
+        ``docs/tdd.md:198`` and ``docs/gdd.md:261``.  A reverse edge that
+        already exists (same passage in the opposite direction) is NOT
+        duplicated.  ``unidirectional`` edges stay single-sided.
+        """
         macro_dir = self._episode_dir(episode_id) / "macros"
 
         result: list[MacroEdge] = []
@@ -518,7 +527,39 @@ class EntityLoader:
                 )
             else:
                 result.append(_macro_edge_from_model(models))
-        return result
+
+        return self._expand_bidirectional(result)
+
+    @staticmethod
+    def _expand_bidirectional(edges: list[MacroEdge]) -> list[MacroEdge]:
+        """Return declared edges plus reverse copies for bidirectional ones.
+
+        A reverse copy swaps ``from_anchor``/``to_anchor``, keeps the same
+        ``passage_name`` and predicate/outcome fields, copies the mutable
+        ``open`` value, and uses ``<id>_reverse`` as its ID.  If an edge in
+        the opposite direction with the same passage name already exists in
+        *edges*, no reverse copy is created.
+        """
+        expanded: list[MacroEdge] = list(edges)
+        existing: set[tuple[str, str, str]] = {
+            (e.from_anchor, e.to_anchor, e.passage_name) for e in edges
+        }
+        for edge in edges:
+            if edge.direction != "bidirectional":
+                continue
+            reverse_key = (edge.to_anchor, edge.from_anchor, edge.passage_name)
+            if reverse_key in existing:
+                # A reverse declaration already exists — do not duplicate.
+                continue
+            reverse = dc_replace(
+                edge,
+                macro_edge_id=f"{edge.macro_edge_id}_reverse",
+                from_anchor=edge.to_anchor,
+                to_anchor=edge.from_anchor,
+            )
+            expanded.append(reverse)
+            existing.add(reverse_key)
+        return expanded
 
     def load_hyper_edges(self, episode_id: str) -> list[HyperEdge]:
         """Load HyperEdges from ``episode-XX/actions/*.yaml`` (recursive)."""
