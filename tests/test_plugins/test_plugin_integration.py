@@ -314,3 +314,128 @@ def test_parser_subject_resolution_in_turn(tmp_path):
     # Now the parser should return subject="sidekick"
     parsed = fx.parser.parse("ir norte", fx.state)
     assert parsed.subject == "sidekick"
+
+
+# ===================================================================
+# N5.4: Factory-built ClassicParser + TemplateNarrator integration
+# ===================================================================
+
+
+class _FactoryOrchFixture:
+    """Holds all components for a factory-built TurnOrchestrator."""
+
+    def __init__(self, tmp_path):
+        from fortress_engine.plugins.factory import (
+            PluginConfig,
+            create_parser,
+            create_narrator,
+        )
+
+        base = _make_minimal_world(tmp_path)
+        loader = EntityLoader(str(base))
+        episodes = loader.load_episodes()
+
+        self.bus = EventBus()
+        self.parser = create_parser(PluginConfig("classic"), "es")
+        self.narrator = create_narrator(PluginConfig("template"), "es")
+        self.narrator.initialize(self.bus)
+
+        self.state = WorldState(
+            entities={
+                "hero": Entity("hero", "player", "Hero", {"max_weight": 40}, None),
+            },
+            player_controlled_entities=["hero"],
+            active_protagonist_id="hero",
+            current_episode_id="",
+            turn_number=0,
+        )
+
+        self.ep_mgr = EpisodeManager(episodes, str(base), self.bus)
+        self.graph = self.ep_mgr.start_episode("episode-01", self.state)
+        assert self.state.current_episode_id == "episode-01"
+
+        episode = episodes[0]
+        self.goal_eval = GoalEvaluator(episode.goal)
+
+        self.orch = TurnOrchestrator(
+            state=self.state,
+            graph=self.graph,
+            event_bus=self.bus,
+            parser=self.parser,
+            narrator=self.narrator,
+            goal_evaluator=self.goal_eval,
+            episode_manager=self.ep_mgr,
+        )
+
+        # Collect events through the bus
+        self.received: list[EngineEvent] = []
+        self.bus.subscribe("*", lambda e: self.received.append(e))
+
+
+def test_factory_orchestrator_movement_with_template_narrator(tmp_path):
+    """Build orchestrator via factory (ClassicParser + TemplateNarrator),
+    execute 'ir norte', and verify entity_entered narration."""
+    fx = _FactoryOrchFixture(tmp_path)
+
+    fx.orch.execute_turn("ir norte")
+
+    # Player moved to room_b
+    assert fx.state.get_entity("hero").spatial_anchor == "room_b"
+
+    # entity_entered emitted
+    entered_events = [e for e in fx.received if e.type == ENTITY_ENTERED]
+    assert len(entered_events) == 1
+
+    # TemplateNarrator produces text for entity_entered
+    narration = fx.narrator.handle_event(entered_events[0], fx.state)
+    assert narration is not None
+    assert isinstance(narration, str)
+    assert len(narration) > 0
+
+
+def test_factory_orchestrator_integration_turn_structure(tmp_path):
+    """Full turn with factory-built orchestrator: movement → canonical event
+    sequence fires and TemplateNarrator narration is non-None for key events."""
+    fx = _FactoryOrchFixture(tmp_path)
+
+    fx.orch.execute_turn("ir norte")
+
+    from fortress_engine.events.event_types import (
+        TURN_STARTED,
+        INPUT_RECEIVED,
+        ACTION_ATTEMPTED,
+        ENTITY_TELEPORTED,
+        ACTION_RESOLVED,
+        TURN_ENDED,
+    )
+
+    event_types = [e.type for e in fx.received]
+    for ev in (
+        TURN_STARTED, INPUT_RECEIVED, ACTION_ATTEMPTED,
+        ENTITY_ENTERED, ENTITY_TELEPORTED, ACTION_RESOLVED, TURN_ENDED,
+    ):
+        assert ev in event_types, f"Expected {ev} in event sequence"
+
+    # TemplateNarrator handles entity_entered and returns non-None text
+    entered_events = [e for e in fx.received if e.type == ENTITY_ENTERED]
+    assert len(entered_events) == 1
+    narration = fx.narrator.handle_event(entered_events[0], fx.state)
+    assert narration is not None
+    assert isinstance(narration, str)
+    assert len(narration) > 0
+
+
+def test_factory_orchestrator_unknown_command(tmp_path):
+    """Unknown command with factory-built orchestrator → error_output
+    and TemplateNarrator produces non-None narration."""
+    fx = _FactoryOrchFixture(tmp_path)
+
+    fx.orch.execute_turn("xyzzy")
+
+    error_events = [e for e in fx.received if e.type == ERROR_OUTPUT]
+    assert len(error_events) == 1
+
+    narration = fx.narrator.handle_event(error_events[0], fx.state)
+    assert narration is not None
+    assert isinstance(narration, str)
+    assert len(narration) > 0
