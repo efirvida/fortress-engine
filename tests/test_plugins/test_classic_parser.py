@@ -80,6 +80,9 @@ def _make_vocabulary_dict(**overrides):
         },
         "speech_markers": ["diciendo", "respondiendo"],
         "speech_verbs": ["decir", "responder"],
+        "messages": {},
+        "movement_verbs": [],
+        "system_commands": {},
     }
     default.update(overrides)
     return default

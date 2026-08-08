@@ -220,7 +220,7 @@ def test_handle_action_output():
 
 
 def test_handle_error_output():
-    """error_output returns text from payload 'message' key."""
+    """error_output dispatches by error_code from DEFAULT_SPANISH_MESSAGES."""
     narrator = TemplateNarrator()
     world = _make_world()
     bus = EventBus()
@@ -230,14 +230,15 @@ def test_handle_error_output():
         ERROR_OUTPUT,
         {
             "error_code": "no_action",
-            "message": "No entiendes como hacer eso.",
+            "data": {"verb": "xyzzy"},
             "protagonist_id": "hero",
         },
     )
 
     result = narrator.handle_event(event, world)
     assert result is not None
-    assert "No entiendes" in result
+    assert "No entiendes cómo hacer" in result
+    assert "xyzzy" in result
 
 
 def test_handle_episode_completed():
@@ -280,7 +281,7 @@ def test_handle_game_over():
 
 
 def test_handle_system_message():
-    """system_message returns text from payload 'message' key."""
+    """system_message dispatches by payload['code'] from DEFAULT_SPANISH_MESSAGES."""
     narrator = TemplateNarrator()
     world = _make_world()
     bus = EventBus()
@@ -288,12 +289,13 @@ def test_handle_system_message():
 
     event = _make_event(
         SYSTEM_MESSAGE,
-        {"message": "Bienvenido al mundo."},
+        {"code": "game_saved", "data": {"slot": "slot_1"}},
     )
 
     result = narrator.handle_event(event, world)
     assert result is not None
-    assert "Bienvenido" in result
+    assert "Partida guardada" in result
+    assert "slot_1" in result
 
 
 def test_handle_entity_described():
@@ -463,8 +465,8 @@ def test_action_output_missing_text_falls_back():
     assert len(result) > 0
 
 
-def test_error_output_missing_message_falls_back():
-    """error_output without 'message' in payload returns fallback text."""
+def test_error_output_unknown_code_falls_back():
+    """error_output with unknown error_code falls back deterministically."""
     narrator = TemplateNarrator()
     world = _make_world()
     bus = EventBus()
@@ -472,7 +474,7 @@ def test_error_output_missing_message_falls_back():
 
     event = _make_event(
         ERROR_OUTPUT,
-        {"error_code": "unknown", "protagonist_id": "hero"},
+        {"error_code": "bogus_code_xyz", "data": {}, "protagonist_id": "hero"},
     )
 
     result = narrator.handle_event(event, world)
@@ -539,8 +541,8 @@ def test_episode_completed_missing_victory_text_falls_back():
     assert len(result) > 0
 
 
-def test_system_message_missing_message_falls_back():
-    """system_message without 'message' returns fallback text."""
+def test_system_message_missing_code_falls_back():
+    """system_message without 'code' returns fallback text."""
     narrator = TemplateNarrator()
     world = _make_world()
     bus = EventBus()
@@ -714,6 +716,236 @@ def test_unhandled_narration_event_returns_none():
 
     result = narrator.handle_event(event, world)
     assert result is None
+
+
+# ===================================================================
+# L5.1: error_output dispatches by error_code from messages dict
+# ===================================================================
+
+
+def test_error_output_by_error_code():
+    """error_output with known error_code renders from DEFAULT_SPANISH_MESSAGES."""
+    narrator = TemplateNarrator()
+    world = _make_world()
+    bus = EventBus()
+    narrator.initialize(bus)
+
+    event = _make_event(
+        ERROR_OUTPUT,
+        {"error_code": "too_heavy", "data": {}, "protagonist_id": "hero"},
+    )
+
+    result = narrator.handle_event(event, world)
+    assert result is not None
+    assert "Sería demasiado peso" in result
+
+
+def test_error_output_data_placeholders():
+    """Data placeholders in error_output templates render from payload data."""
+    narrator = TemplateNarrator()
+    world = _make_world()
+    bus = EventBus()
+    narrator.initialize(bus)
+
+    event = _make_event(
+        ERROR_OUTPUT,
+        {"error_code": "missing_slot", "data": {"slot": "slot_2"}, "protagonist_id": "hero"},
+    )
+
+    result = narrator.handle_event(event, world)
+    assert result is not None
+    assert "slot_2" in result
+    assert "No hay partida guardada" in result
+
+
+def test_error_output_no_message_key():
+    """error_output payload without 'message' key still renders from code+data."""
+    narrator = TemplateNarrator()
+    world = _make_world()
+    bus = EventBus()
+    narrator.initialize(bus)
+
+    event = _make_event(
+        ERROR_OUTPUT,
+        {"error_code": "not_portable", "data": {"entity_id": "rock"}, "protagonist_id": "hero"},
+    )
+
+    result = narrator.handle_event(event, world)
+    assert result is not None
+    assert "Usted no puede cargar con eso" in result
+
+
+def test_error_output_custom_messages():
+    """Custom messages dict overrides DEFAULT_SPANISH_MESSAGES."""
+    narrator = TemplateNarrator(
+        messages={"error_output.no_action": "Cannot '{verb}' here."}
+    )
+    world = _make_world()
+    bus = EventBus()
+    narrator.initialize(bus)
+
+    event = _make_event(
+        ERROR_OUTPUT,
+        {"error_code": "no_action", "data": {"verb": "xyzzy"}, "protagonist_id": "hero"},
+    )
+
+    result = narrator.handle_event(event, world)
+    assert result is not None
+    assert "Cannot" in result
+    assert "xyzzy" in result
+
+
+def test_error_output_format_no_crash():
+    """Format error (missing placeholder) returns template, never crashes."""
+    narrator = TemplateNarrator()
+    world = _make_world()
+    bus = EventBus()
+    narrator.initialize(bus)
+
+    # missing_slot template has {slot} placeholder, but data has no 'slot'
+    event = _make_event(
+        ERROR_OUTPUT,
+        {"error_code": "missing_slot", "data": {}, "protagonist_id": "hero"},
+    )
+
+    result = narrator.handle_event(event, world)
+    assert result is not None
+    assert isinstance(result, str)
+    assert len(result) > 0
+
+
+# ===================================================================
+# L5.2: system_message dispatches by code only (no message back-compat)
+# ===================================================================
+
+
+def test_system_message_by_code():
+    """system_message dispatches by payload['code'] from DEFAULT_SPANISH_MESSAGES."""
+    narrator = TemplateNarrator()
+    world = _make_world()
+    bus = EventBus()
+    narrator.initialize(bus)
+
+    event = _make_event(
+        SYSTEM_MESSAGE,
+        {"code": "game_loaded", "data": {"slot": "slot_2"}},
+    )
+
+    result = narrator.handle_event(event, world)
+    assert result is not None
+    assert "Partida cargada" in result
+    assert "slot_2" in result
+
+
+def test_system_message_code_only_no_message_backcompat():
+    """system_message with only code+data (no 'message' key) still renders."""
+    narrator = TemplateNarrator()
+    world = _make_world()
+    bus = EventBus()
+    narrator.initialize(bus)
+
+    event = _make_event(
+        SYSTEM_MESSAGE,
+        {"code": "protagonist_switched", "data": {"name": "Hero"}},
+    )
+
+    result = narrator.handle_event(event, world)
+    assert result is not None
+    assert "Ahora controlas a" in result
+    assert "Hero" in result
+
+
+def test_system_message_unknown_code_fallback():
+    """Unknown system_message code falls back deterministically."""
+    narrator = TemplateNarrator()
+    world = _make_world()
+    bus = EventBus()
+    narrator.initialize(bus)
+
+    event = _make_event(
+        SYSTEM_MESSAGE,
+        {"code": "unknown_code", "data": {}},
+    )
+
+    result = narrator.handle_event(event, world)
+    assert result is not None
+    assert isinstance(result, str)
+    assert len(result) > 0
+
+
+def test_system_message_unknown_code_no_crash_format():
+    """System message with missing placeholders returns template, no crash."""
+    narrator = TemplateNarrator()
+    world = _make_world()
+    bus = EventBus()
+    narrator.initialize(bus)
+
+    event = _make_event(
+        SYSTEM_MESSAGE,
+        {"code": "game_saved", "data": {}},
+    )
+
+    result = narrator.handle_event(event, world)
+    assert result is not None
+    assert isinstance(result, str)
+    assert len(result) > 0
+
+
+# ===================================================================
+# L5.2: Every engine error code has a template — contract guard
+# ===================================================================
+
+# All flat error codes the engine can emit (from design.md operator table
+# + orchestrator error_output sites + graph gate codes).
+_ALL_ENGINE_ERROR_CODES: list[str] = [
+    "no_action",
+    "blocked",
+    "text_closed",
+    "requires_item",
+    "forbids_item",
+    "requires_flag",
+    "forbids_flag",
+    "operator_failed",
+    "not_portable",
+    "too_heavy",
+    "entity_not_found",
+    "entity_not_in_container",
+    "container_not_found",
+    "transform_component_missing",
+    "combine_inputs_missing",
+    "teleport_entity_not_found",
+    "teleport_anchor_not_found",
+    "unknown_operator",
+    "unhandled_operator",
+    "no_repository",
+    "invalid_slot",
+    "missing_slot",
+    "invalid_protagonist",
+]
+
+
+@pytest.mark.parametrize("code", _ALL_ENGINE_ERROR_CODES)
+def test_every_error_code_has_template(code: str):
+    """Every error code the engine can emit has a template in DEFAULT_SPANISH_MESSAGES."""
+    from fortress_engine.plugins.template_narrator import DEFAULT_SPANISH_MESSAGES
+
+    key = f"error_output.{code}"
+    assert key in DEFAULT_SPANISH_MESSAGES, f"Missing template for {key}"
+    template = DEFAULT_SPANISH_MESSAGES[key]
+    assert isinstance(template, str)
+    assert len(template) > 0
+
+
+def test_every_system_code_has_template():
+    """Every system code has a template in DEFAULT_SPANISH_MESSAGES."""
+    from fortress_engine.plugins.template_narrator import DEFAULT_SPANISH_MESSAGES
+
+    for code in ("game_saved", "game_loaded", "protagonist_switched", "protagonists_listed"):
+        key = f"system_message.{code}"
+        assert key in DEFAULT_SPANISH_MESSAGES, f"Missing template for {key}"
+        template = DEFAULT_SPANISH_MESSAGES[key]
+        assert isinstance(template, str)
+        assert len(template) > 0
 
 
 # ===================================================================

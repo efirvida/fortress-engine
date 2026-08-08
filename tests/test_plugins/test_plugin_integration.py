@@ -255,25 +255,23 @@ def test_movement_with_real_parser_and_narrator(tmp_path):
 
 
 def test_unknown_command_with_real_parser(tmp_path):
-    """Unknown command 'xyzzy' → error_output path with real parser and narrator."""
+    """Unknown command 'xyzzy' → error_output with code+data (no message)."""
     fx = _OrchFixture(tmp_path)
 
     fx.orch.execute_turn("xyzzy")
 
-    # error_output emitted
+    # error_output emitted with code+data
     error_events = [e for e in fx.received if e.type == ERROR_OUTPUT]
     assert len(error_events) == 1
-
-    narration = fx.narrator.handle_event(error_events[0], fx.state)
-    assert narration is not None
-    assert isinstance(narration, str)
-    assert len(narration) > 0
+    payload = error_events[0].payload
+    assert payload["error_code"] == "no_action"
+    assert "data" in payload
+    assert "message" not in payload
 
 
 def test_examinar_with_real_parser(tmp_path):
     """'examinar rusty_key' parses to examinar verb — no matching clique
-    (no he in the minimal world), so error_output fires. Parser still works
-    correctly."""
+    (no he in the minimal world), so error_output fires with code+data."""
     fx = _OrchFixture(tmp_path)
 
     fx.orch.execute_turn("examinar rusty_key")
@@ -281,9 +279,10 @@ def test_examinar_with_real_parser(tmp_path):
     # No examinar hyper edge → error_output
     error_events = [e for e in fx.received if e.type == ERROR_OUTPUT]
     assert len(error_events) == 1
-
-    narration = fx.narrator.handle_event(error_events[0], fx.state)
-    assert narration is not None
+    payload = error_events[0].payload
+    assert payload["error_code"] == "no_action"
+    assert "data" in payload
+    assert "message" not in payload
 
 
 def test_system_commands_bypass_parser(tmp_path):
@@ -427,7 +426,7 @@ def test_factory_orchestrator_integration_turn_structure(tmp_path):
 
 def test_factory_orchestrator_unknown_command(tmp_path):
     """Unknown command with factory-built orchestrator → error_output
-    and TemplateNarrator produces non-None narration."""
+    and TemplateNarrator renders DEFAULT_SPANISH_MESSAGES text from error_code."""
     fx = _FactoryOrchFixture(tmp_path)
 
     fx.orch.execute_turn("xyzzy")
@@ -438,4 +437,9 @@ def test_factory_orchestrator_unknown_command(tmp_path):
     narration = fx.narrator.handle_event(error_events[0], fx.state)
     assert narration is not None
     assert isinstance(narration, str)
-    assert len(narration) > 0
+
+    # TemplateNarrator dispatches by error_code against DEFAULT_SPANISH_MESSAGES
+    payload = error_events[0].payload
+    assert payload["error_code"] == "no_action"
+    assert "No entiendes cómo hacer" in narration
+    assert "xyzzy" in narration

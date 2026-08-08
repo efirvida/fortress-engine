@@ -1,4 +1,4 @@
-"""Tests for TurnOrchestrator — RED phase (E1.3).
+"""Tests for TurnOrchestrator — RED phase (E1.3, L2).
 
 TurnOrchestrator coordinates one active-protagonist turn: parse → validate →
 execute operators → emit events → evaluate goals → transition/end.
@@ -46,6 +46,7 @@ from fortress_engine.events.event_types import (
     EngineEvent,
 )
 
+from fortress_engine.entities.loader import Vocabulary
 from fortress_engine.plugins.parser_interface import ParserInterface
 from fortress_engine.plugins.narrator_interface import NarratorInterface
 
@@ -392,7 +393,7 @@ def test_execute_turn_successful_action_event_order(tmp_path):
 
 
 def test_execute_turn_no_clique_emits_error(tmp_path):
-    """When no clique matches, error_output is emitted and state is unchanged."""
+    """When no clique matches, error_output is emitted with code+data (no message)."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -416,9 +417,14 @@ def test_execute_turn_no_clique_emits_error(tmp_path):
 
     orch.execute_turn("volar")
 
-    # error_output emitted
+    # error_output emitted with code+data, no message
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) == 1
+    payload = error_events[0].payload
+    assert payload["error_code"] == "no_action"
+    assert "data" in payload
+    assert payload["data"]["verb"] == "volar"
+    assert "message" not in payload
 
     # No action events
     assert not any(e.type == ACTION_ATTEMPTED for e in received)
@@ -685,7 +691,7 @@ def _add_text_door(graph, passage_name="puerta principal"):
 
 
 def test_movement_abrir_text_door_blocked(tmp_path):
-    """ABRIR on a closed requires_text door without the text → error_output."""
+    """ABRIR on a closed requires_text door without the text → error_output with code+data."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -713,8 +719,11 @@ def test_movement_abrir_text_door_blocked(tmp_path):
 
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) == 1
-    assert error_events[0].payload["error_code"] == "blocked"
-    assert "cerrada" in error_events[0].payload["message"]
+    payload = error_events[0].payload
+    assert payload["error_code"] == "blocked"
+    assert "data" in payload
+    assert payload["data"]["passage_name"] == "puerta principal"
+    assert "message" not in payload
 
     # No teleport — the hero stays in room_a and the door stays closed.
     assert state.get_entity("hero").spatial_anchor == "room_a"
@@ -794,7 +803,7 @@ def test_movement_ir_open_door_still_works(tmp_path):
 
 
 def test_movement_ir_closed_text_door_blocked(tmp_path):
-    """IR on a closed requires_text edge without the text → error_output.
+    """IR on a closed requires_text edge without the text → error_output with code+data.
 
     The orchestrator passes text=None for IR commands, so the door must
     not open and the hero must not move.
@@ -826,7 +835,10 @@ def test_movement_ir_closed_text_door_blocked(tmp_path):
 
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) == 1
-    assert error_events[0].payload["error_code"] == "blocked"
+    payload = error_events[0].payload
+    assert payload["error_code"] == "blocked"
+    assert "data" in payload
+    assert "message" not in payload
 
     assert state.get_entity("hero").spatial_anchor == "room_a"
     assert not any(e.type == ENTITY_TELEPORTED for e in received)
@@ -839,7 +851,12 @@ def test_movement_ir_closed_text_door_blocked(tmp_path):
 
 
 def test_execute_turn_danger_macro_edge_fails(tmp_path):
-    """Movement through a requires_item gate without the item → game_over."""
+    """Movement through a requires_item gate without the item → game_over.
+
+    L4: death-vs-block is now via is_fatal (MacroGateResult), not string
+    equality.  GAME_OVER reason is "player_death" (stable code); the
+    world-authored death_message flows in gate.data.
+    """
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -869,10 +886,109 @@ def test_execute_turn_danger_macro_edge_fails(tmp_path):
 
     orch.execute_turn("ir back")
 
-    # Fatal gate requires amulet, hero doesn't have it → game_over
+    # Fatal gate → is_fatal=True → GAME_OVER with reason="player_death"
     game_over_events = [e for e in received if e.type == GAME_OVER]
     assert len(game_over_events) == 1
-    assert "You died on the path." in game_over_events[0].payload.get("reason", "")
+    assert game_over_events[0].payload["reason"] == "player_death"
+
+    # No error_output on death
+    assert not any(e.type == ERROR_OUTPUT for e in received)
+
+
+def test_execute_turn_lethal_gate_emits_game_over_player_death(tmp_path):
+    """A lethal gate (is_fatal=True) emits GAME_OVER reason="player_death"
+    regardless of gate_code, and never emits error_output."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+    from fortress_engine.engine.graph import MacroGateResult
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    # Monkey-patch validate_macro_edge to simulate a lethal gate for ANY
+    # movement so we don't need to set up an actual edge.
+    original = graph.validate_macro_edge
+    graph.validate_macro_edge = lambda edge, st, tx=None: MacroGateResult(
+        is_valid=False, is_fatal=True, gate_code="requires_item",
+        data={"passage_name": "north", "required_item": "amulet",
+              "death_message": "The bridge collapses!"},
+    )
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="ir", target="north")
+    )
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+    )
+
+    orch.execute_turn("ir north")
+
+    # Restore for cleanliness (pytest does not require it but good practice).
+    graph.validate_macro_edge = original
+
+    game_over_events = [e for e in received if e.type == GAME_OVER]
+    assert len(game_over_events) == 1
+    assert game_over_events[0].payload["reason"] == "player_death"
+    # W-1 fix: the world-authored death_message flows through gate.data so
+    # a narrator can render it (engine never constructs the string itself).
+    assert game_over_events[0].payload["death_message"] == "The bridge collapses!"
+
+    assert not any(e.type == ERROR_OUTPUT for e in received)
+
+
+def test_execute_turn_nonfatal_gate_emits_blocked_error(tmp_path):
+    """A non-fatal gate (is_fatal=False) emits error_output with
+    error_code="blocked" and gate data."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+    from fortress_engine.engine.graph import MacroGateResult
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    original = graph.validate_macro_edge
+    graph.validate_macro_edge = lambda edge, st, tx=None: MacroGateResult(
+        is_valid=False, is_fatal=False, gate_code="requires_flag",
+        data={"passage_name": "north", "required_flag": "key_found"},
+    )
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="ir", target="north")
+    )
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+    )
+
+    orch.execute_turn("ir north")
+
+    graph.validate_macro_edge = original
+
+    # error_output emitted with blocked code + gate data
+    error_events = [e for e in received if e.type == ERROR_OUTPUT]
+    assert len(error_events) == 1
+    payload = error_events[0].payload
+    assert payload["error_code"] == "blocked"
+    assert "data" in payload
+    assert payload["data"]["gate_code"] == "requires_flag"
+    assert payload["data"]["passage_name"] == "north"
+    assert payload["data"]["required_flag"] == "key_found"
+    assert "message" not in payload
+
+    # No GAME_OVER
+    assert not any(e.type == GAME_OVER for e in received)
+
+    # turn_ended still emitted
+    assert any(e.type == TURN_ENDED for e in received)
 
 
 # ===================================================================
@@ -881,7 +997,7 @@ def test_execute_turn_danger_macro_edge_fails(tmp_path):
 
 
 def test_execute_turn_operator_fails_emits_error(tmp_path):
-    """When an operator fails, error_output is emitted and the sequence stops."""
+    """When an operator fails, error_output is emitted with code+data (no message)."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -912,9 +1028,13 @@ def test_execute_turn_operator_fails_emits_error(tmp_path):
 
     orch.execute_turn("coger llave")
 
-    # error_output emitted (operator failure)
+    # error_output emitted with code+data, no message
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) == 1
+    payload = error_events[0].payload
+    assert payload["error_code"] == "operator_failed"
+    assert "data" in payload
+    assert "message" not in payload
 
     # No state-change events (the failing TRANSFER didn't emit)
     assert not any(e.type == ENTITY_TRANSFERRED for e in received)
@@ -1089,7 +1209,7 @@ def test_execute_turn_increments_turn_number(tmp_path):
 
 
 def test_execute_turn_guardar_without_repository_emits_error(tmp_path):
-    """GUARDAR without a repository emits error_output gracefully."""
+    """GUARDAR without a repository emits error_output with code+data."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -1115,10 +1235,14 @@ def test_execute_turn_guardar_without_repository_emits_error(tmp_path):
 
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) >= 1
+    payload = error_events[0].payload
+    assert payload["error_code"] == "no_repository"
+    assert "data" in payload
+    assert "message" not in payload
 
 
 def test_execute_turn_cargar_without_repository_emits_error(tmp_path):
-    """CARGAR without a repository emits error_output gracefully."""
+    """CARGAR without a repository emits error_output with code+data."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -1144,6 +1268,10 @@ def test_execute_turn_cargar_without_repository_emits_error(tmp_path):
 
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) >= 1
+    payload = error_events[0].payload
+    assert payload["error_code"] == "no_repository"
+    assert "data" in payload
+    assert "message" not in payload
 
 
 # ===================================================================
@@ -1152,7 +1280,7 @@ def test_execute_turn_cargar_without_repository_emits_error(tmp_path):
 
 
 def test_execute_turn_guardar_bare_without_repository(tmp_path):
-    """GUARDAR (without slot number) emits error_output gracefully."""
+    """GUARDAR (without slot number) emits error_output with code+data."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -1178,10 +1306,13 @@ def test_execute_turn_guardar_bare_without_repository(tmp_path):
 
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) >= 1
+    payload = error_events[0].payload
+    assert payload["error_code"] == "no_repository"
+    assert "message" not in payload
 
 
 def test_execute_turn_cargar_bare_without_repository(tmp_path):
-    """CARGAR (without slot number) emits error_output gracefully."""
+    """CARGAR (without slot number) emits error_output with code+data."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -1207,6 +1338,9 @@ def test_execute_turn_cargar_bare_without_repository(tmp_path):
 
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) >= 1
+    payload = error_events[0].payload
+    assert payload["error_code"] == "no_repository"
+    assert "message" not in payload
 
 
 # ===================================================================
@@ -1215,7 +1349,7 @@ def test_execute_turn_cargar_bare_without_repository(tmp_path):
 
 
 def test_execute_turn_cambiar_a_invalid_name(tmp_path):
-    """CAMBIAR A <nonexistent> emits error_output."""
+    """CAMBIAR A <nonexistent> emits error_output with code+data."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -1240,6 +1374,10 @@ def test_execute_turn_cambiar_a_invalid_name(tmp_path):
 
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) == 1
+    payload = error_events[0].payload
+    assert payload["error_code"] == "invalid_protagonist"
+    assert "data" in payload
+    assert "message" not in payload
 
 
 # ===================================================================
@@ -1248,7 +1386,7 @@ def test_execute_turn_cambiar_a_invalid_name(tmp_path):
 
 
 def test_execute_turn_conditional_edge_blocked(tmp_path):
-    """requires_flag macro edge that is blocked emits error_output (no death)."""
+    """requires_flag macro edge that is blocked emits error_output with code+data."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -1287,9 +1425,13 @@ def test_execute_turn_conditional_edge_blocked(tmp_path):
 
     orch.execute_turn("ir este")
 
-    # Should emit error_output (blocked, not death)
+    # Should emit error_output (blocked, not death) with code+data
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) >= 1
+    payload = error_events[0].payload
+    assert payload["error_code"] == "blocked"
+    assert "data" in payload
+    assert "message" not in payload
     # No game_over (not fatal)
     assert not any(e.type == GAME_OVER for e in received)
 
@@ -1506,7 +1648,7 @@ def test_execute_turn_hyper_edge_without_output(tmp_path):
 
 
 def test_execute_turn_cambiar_a_entity_not_in_state(tmp_path):
-    """CAMBIAR A with a player_controlled ID not in entities dict."""
+    """CAMBIAR A with a player_controlled ID not in entities dict → error with code+data."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
 
     state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
@@ -1534,6 +1676,10 @@ def test_execute_turn_cambiar_a_entity_not_in_state(tmp_path):
 
     error_events = [e for e in received if e.type == ERROR_OUTPUT]
     assert len(error_events) == 1
+    payload = error_events[0].payload
+    assert payload["error_code"] == "invalid_protagonist"
+    assert "data" in payload
+    assert "message" not in payload
 
 
 def test_execute_turn_grupo_with_ghost_entities(tmp_path):
@@ -1834,3 +1980,481 @@ def test_execute_turn_movement_player_dead_post_action_checks(tmp_path):
 
     assert any(e.type == TURN_ENDED for e in received)
     assert state.get_flag("player_dead") is True
+
+
+# ===================================================================
+# L2: Vocabulary-driven orchestrator — new RED tests
+# ===================================================================
+
+
+def test_orchestrator_accepts_vocabulary_parameter(tmp_path):
+    """Constructor accepts vocabulary: Vocabulary|None=None."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+    narrator = _StubNarrator()
+
+    # No vocabulary → constructor works (back-compat)
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+    )
+    assert orch is not None
+
+    # English vocabulary → constructor works
+    vocab = Vocabulary(
+        language="en", verbs={}, stopwords=[], prepositions={},
+        speech_markers=[], speech_verbs=[],
+        messages={}, movement_verbs=["go", "open"],
+        system_commands={
+            "save": ["save"], "load": ["load"], "quit": ["quit"],
+            "wait": ["wait"], "group": ["group"], "switch": ["switch to"],
+        },
+    )
+    orch_en = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+        vocabulary=vocab,
+    )
+    assert orch_en is not None
+
+
+def test_movement_uses_vocabulary_verbs(tmp_path):
+    """Orchestrator resolves movement from vocabulary.movement_verbs (English 'go')."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="go", target="north")
+    )
+
+    vocab = Vocabulary(
+        language="en", verbs={}, stopwords=[], prepositions={},
+        speech_markers=[], speech_verbs=[],
+        messages={}, movement_verbs=["go", "open"],
+        system_commands={},
+    )
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+        vocabulary=vocab,
+    )
+
+    orch.execute_turn("go north")
+
+    # Movement succeeded: hero teleported to room_b
+    assert state.get_entity("hero").spatial_anchor == "room_b"
+    assert any(e.type == ENTITY_TELEPORTED for e in received)
+    assert any(e.type == ENTITY_ENTERED for e in received)
+
+
+def test_system_commands_from_vocabulary_english(tmp_path):
+    """English system commands from vocabulary dispatch correctly (save→stash, quit→quit)."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+
+    vocab = Vocabulary(
+        language="en", verbs={}, stopwords=[], prepositions={},
+        speech_markers=[], speech_verbs=[],
+        messages={}, movement_verbs=["go"],
+        system_commands={
+            "save": ["save"],
+            "load": ["load"],
+            "quit": ["quit"],
+            "wait": ["wait"],
+            "group": ["group"],
+            "switch": ["switch to"],
+        },
+    )
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+        vocabulary=vocab,
+    )
+
+    orch.execute_turn("quit")
+
+    game_over_events = [e for e in received if e.type == GAME_OVER]
+    assert len(game_over_events) == 1
+    assert game_over_events[0].payload["reason"] == "player_quit"
+
+
+def test_switch_prefix_uses_vocabulary_surface(tmp_path):
+    """switch prefix strips the vocabulary surface (e.g. 'switch to' instead of 'cambiar a')."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    # Add a switchable companion
+    state.entities["ana"] = Entity("ana", "player", "Ana", {}, "room_a")
+    state.player_controlled_entities = ["hero", "ana"]
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+
+    vocab = Vocabulary(
+        language="en", verbs={}, stopwords=[], prepositions={},
+        speech_markers=[], speech_verbs=[],
+        messages={}, movement_verbs=["go"],
+        system_commands={
+            "save": ["save"], "load": ["load"],
+            "quit": ["quit"], "wait": ["wait"],
+            "group": ["group"], "switch": ["switch to"],
+        },
+    )
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+        vocabulary=vocab,
+    )
+
+    orch.execute_turn("switch to ana")
+
+    switched = [e for e in received if e.type == PROTAGONIST_SWITCHED]
+    assert len(switched) == 1
+    assert switched[0].payload["from_protagonist_id"] == "hero"
+    assert switched[0].payload["to_protagonist_id"] == "ana"
+
+
+def test_default_movement_verbs_fallback(tmp_path):
+    """When vocabulary is None, DEFAULT_MOVEMENT_VERBS={'ir','abrir'} applies."""
+    from fortress_engine.engine.orchestrator import (
+        TurnOrchestrator,
+        DEFAULT_MOVEMENT_VERBS,
+    )
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="ir", target="north")
+    )
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+        vocabulary=None,
+    )
+
+    orch.execute_turn("ir north")
+
+    # Movement succeeded: hero teleported to room_b
+    assert state.get_entity("hero").spatial_anchor == "room_b"
+    # DEFAULT_MOVEMENT_VERBS is {'ir', 'abrir'}
+    assert "ir" in DEFAULT_MOVEMENT_VERBS
+    assert "abrir" in DEFAULT_MOVEMENT_VERBS
+
+
+def test_default_system_commands_fallback(tmp_path):
+    """When vocabulary has no system_commands, DEFAULT_SYSTEM_COMMANDS covers Spanish."""
+    from fortress_engine.engine.orchestrator import (
+        TurnOrchestrator,
+        DEFAULT_SYSTEM_COMMANDS,
+    )
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+
+    vocab = Vocabulary(
+        language="en", verbs={}, stopwords=[], prepositions={},
+        speech_markers=[], speech_verbs=[],
+        messages={}, movement_verbs=["go"],
+        system_commands={},  # fall back to defaults
+    )
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+        vocabulary=vocab,
+    )
+
+    orch.execute_turn("terminar")
+
+    game_over_events = [e for e in received if e.type == GAME_OVER]
+    assert len(game_over_events) == 1
+    assert game_over_events[0].payload["reason"] == "player_quit"
+    # DEFAULT_SYSTEM_COMMANDS covers all 6 canonical kinds
+    for kind in ("save", "load", "quit", "wait", "group", "switch"):
+        assert kind in DEFAULT_SYSTEM_COMMANDS
+
+
+def test_default_system_commands_is_dict_of_lists(tmp_path):
+    """DEFAULT_SYSTEM_COMMANDS is a dict mapping canonical kind → list of surface words."""
+    from fortress_engine.engine.orchestrator import DEFAULT_SYSTEM_COMMANDS
+
+    assert isinstance(DEFAULT_SYSTEM_COMMANDS, dict)
+    for surfaces in DEFAULT_SYSTEM_COMMANDS.values():
+        assert isinstance(surfaces, list)
+        assert len(surfaces) > 0
+
+
+def test_default_movement_verbs_is_frozenset(tmp_path):
+    """DEFAULT_MOVEMENT_VERBS is a frozenset containing 'ir' and 'abrir'."""
+    from fortress_engine.engine.orchestrator import DEFAULT_MOVEMENT_VERBS
+
+    assert isinstance(DEFAULT_MOVEMENT_VERBS, frozenset)
+    assert DEFAULT_MOVEMENT_VERBS == frozenset({"ir", "abrir"})
+
+
+def test_parse_save_slot_strips_vocabulary_surface(tmp_path):
+    """_parse_save_slot strips vocabulary surface words using the surfaces parameter."""
+    from fortress_engine.engine.orchestrator import _parse_save_slot
+
+    # With default (no surfaces arg) — uses hardcoded Spanish/English defaults
+    assert _parse_save_slot("guardar 2") == "slot_2"
+
+    # With custom surfaces (English only)
+    assert _parse_save_slot("save 3", surfaces={"save", "load"}) == "slot_3"
+    assert _parse_save_slot("load 2", surfaces={"save", "load"}) == "slot_2"
+    assert _parse_save_slot("save", surfaces={"save", "load"}) == "slot_1"
+    assert _parse_save_slot("guardar 1", surfaces={"save", "load"}) == "slot_1"  # unrecognized → slot_1
+    assert _parse_save_slot("save 99", surfaces={"save", "load"}) is None  # out of range
+
+    # Non-numeric suffix with custom surfaces
+    assert _parse_save_slot("save xyz", surfaces={"save", "load"}) == "slot_1"
+
+
+def test_episode_completed_constant_import(tmp_path):
+    """The orchestrator imports EPISODE_COMPLETED constant (not bare string)."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+    from fortress_engine.events.event_types import EPISODE_COMPLETED
+
+    # Verify the constant is importable and is the string "episode_completed"
+    assert EPISODE_COMPLETED == "episode_completed"
+
+    # Verify the orchestrator uses the constant internally (not bare string)
+    import inspect
+    source = inspect.getsource(TurnOrchestrator._evaluate_goal)
+    assert "EPISODE_COMPLETED" in source
+    assert '"episode_completed"' not in source
+
+
+def test_grupo_location_is_none_not_limbo(tmp_path):
+    """GRUPO emits location as spatial_anchor (may be None), never 'limbo' literal."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    # Add a protagonist with no spatial_anchor (None)
+    state.entities["nomad"] = Entity("nomad", "player", "Nomad", {}, None)
+    state.player_controlled_entities = ["hero", "nomad"]
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+    )
+
+    orch.execute_turn("GRUPO")
+
+    grupo_events = [e for e in received if e.type == PROTAGONISTS_LISTED]
+    assert len(grupo_events) == 1
+    prots = grupo_events[0].payload["protagonists"]
+    nomad = next(p for p in prots if p["name"] == "Nomad")
+    # location is None, NOT "limbo"
+    assert nomad["location"] is None
+
+
+def test_error_output_no_message_in_save_load_paths(tmp_path):
+    """The no_repository and invalid_slot error sites emit NO 'message' key."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+        repository=None, save_system=None,
+    )
+
+    orch.execute_turn("guardar")
+
+    error_events = [e for e in received if e.type == ERROR_OUTPUT]
+    for evt in error_events:
+        assert "message" not in evt.payload, (
+            f"error_output must not carry message: {evt.payload}"
+        )
+
+
+def test_detect_system_command_empty_input(tmp_path):
+    """_detect_system_command returns None for empty/whitespace input."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+    narrator = _StubNarrator()
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+    )
+
+    assert orch._detect_system_command("") is None
+    assert orch._detect_system_command("   ") is None
+
+
+def test_system_commands_fills_missing_canonical_kinds(tmp_path):
+    """_system_commands() fills missing canonical kinds from defaults."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+    narrator = _StubNarrator()
+
+    # Vocabulary with only "save" defined — missing "load", "quit", etc.
+    vocab = Vocabulary(
+        language="en", verbs={}, stopwords=[], prepositions={},
+        speech_markers=[], speech_verbs=[],
+        messages={}, movement_verbs=["go"],
+        system_commands={"save": ["stash"]},
+    )
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+        vocabulary=vocab,
+    )
+
+    cmds = orch._system_commands()
+    # All canonical kinds present
+    for kind in ("save", "load", "quit", "wait", "group", "switch"):
+        assert kind in cmds
+    # save uses the vocabulary surface
+    assert "stash" in cmds["save"]
+    # load filled from defaults
+    assert "cargar" in cmds["load"]
+
+
+def test_switch_without_name_detected(tmp_path):
+    """Bare 'switch' command (no name) is detected as switch kind."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+    narrator = _StubNarrator()
+
+    vocab = Vocabulary(
+        language="en", verbs={}, stopwords=[], prepositions={},
+        speech_markers=[], speech_verbs=[],
+        messages={}, movement_verbs=["go"],
+        system_commands={"switch": ["switch to"]},
+    )
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+        vocabulary=vocab,
+    )
+
+    # Exact prefix match (no name) is detected as switch
+    assert orch._detect_system_command("switch to") == "switch"
+
+
+def test_switch_with_empty_surfaces_fallback(tmp_path):
+    """Switch with empty surfaces falls back to defaults."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    state.entities["ana"] = Entity("ana", "player", "Ana", {}, "room_a")
+    state.player_controlled_entities = ["hero", "ana"]
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+
+    vocab = Vocabulary(
+        language="en", verbs={}, stopwords=[], prepositions={},
+        speech_markers=[], speech_verbs=[],
+        messages={}, movement_verbs=["go"],
+        system_commands={"switch": []},
+    )
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+        vocabulary=vocab,
+    )
+
+    # Empty switch surfaces are filled from defaults → "cambiar a" works
+    orch.execute_turn("cambiar a ana")
+    switched = [e for e in received if e.type == PROTAGONIST_SWITCHED]
+    assert len(switched) == 1
+
+
+def test_switch_prefix_no_space_not_detected(tmp_path):
+    """Switch surface prefix matches but next char not a space → no detection.
+
+    Covers the 608→602 branch where switch prefix matches but
+    lower[len(surface)] != " ".
+    """
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    parser = _StubParser(ParsedCommand(subject="hero", verb="mirar", target=None))
+    narrator = _StubNarrator()
+
+    orch = TurnOrchestrator(
+        state=state, graph=graph, event_bus=bus,
+        parser=parser, narrator=narrator,
+        goal_evaluator=goal_eval, episode_manager=ep_mgr,
+    )
+
+    # "cambiar a" surface, raw = "cambiar ana"
+    # "cambiar ana".startswith("cambiar a") → True
+    # lower[9] = "n" ≠ " " → falls through, not detected as switch
+    result = orch._detect_system_command("cambiar ana")
+    # The save surfaces also don't match as exact, so it returns None
+    assert result is None

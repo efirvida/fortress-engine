@@ -105,7 +105,9 @@ class MinimalNarrator(NarratorInterface):
             return str(desc)
 
         if event.type == "error_output":
-            msg = event.payload.get("message", "")
-            return f"({msg})" if msg else None
+            code = event.payload.get("error_code", "")
+            if code:
+                return f"({code})"
+            return None
 
         return None

@@ -1,7 +1,10 @@
 """Tests for the five atomic operators and the OperatorResult contract.
 
 Follows atomic-operators spec and tdd.md §7.1.
+L3: code+data replaces error_message; English diagnostics removed.
 """
+
+import pytest
 
 from fortress_engine.entities.entity import Entity
 from fortress_engine.entities.components import WEIGHT, MAX_WEIGHT
@@ -61,6 +64,26 @@ def _minimal_state(
 
 
 # ===================================================================
+# OperatorResult contract (L3: error_message removed)
+# ===================================================================
+
+
+def test_operator_result_has_no_error_message_attribute():
+    """OperatorResult has code+data; error_message attribute does NOT exist."""
+    from fortress_engine.engine.operators import OperatorResult
+
+    r = OperatorResult(success=True)
+    assert hasattr(r, "code")
+    assert hasattr(r, "data")
+    assert not hasattr(r, "error_message")
+
+    r_fail = OperatorResult(success=False, code="entity_not_found", data={"entity_id": "x"})
+    assert r_fail.code == "entity_not_found"
+    assert r_fail.data == {"entity_id": "x"}
+    assert not hasattr(r_fail, "error_message")
+
+
+# ===================================================================
 # TRANSFER
 # ===================================================================
 
@@ -77,9 +100,9 @@ def test_transfer_item_to_inventory_success():
     result = execute_transfer(state, op, protagonist_id="hero")
 
     assert result.success is True
-    assert result.error_message is None
+    assert result.code is None
+    assert result.data == {}
     assert state.get_entity("sword").spatial_anchor == "hero"
-    # Payload follows 13-event-system.md §2.3
     payload = result.events_payload
     assert payload is not None
     assert payload["entity_id"] == "sword"
@@ -88,7 +111,7 @@ def test_transfer_item_to_inventory_success():
 
 
 def test_transfer_item_exceeds_max_weight():
-    """Item weight > protagonist capacity → 'Usted no puede cargar con eso.'"""
+    """Item weight > protagonist capacity → code=not_portable + data."""
     from fortress_engine.engine.operators import TransferOp, execute_transfer
 
     hero = _make_player("hero", capacity=5)
@@ -101,14 +124,15 @@ def test_transfer_item_exceeds_max_weight():
     result = execute_transfer(state, op, protagonist_id="hero")
 
     assert result.success is False
-    assert result.error_message == "Usted no puede cargar con eso."
+    assert result.code == "not_portable"
+    assert result.data == {"entity_id": "boulder", "item_weight": 10, "max_capacity": 5}
     assert result.events_payload is None
     # State must be unchanged
     assert state.get_entity("boulder").spatial_anchor == "room_01"
 
 
 def test_transfer_inventory_full():
-    """Inventory full → 'Sería demasiado peso.'"""
+    """Inventory full → code=too_heavy + data."""
     from fortress_engine.engine.operators import TransferOp, execute_transfer
 
     hero = _make_player("hero", capacity=10)
@@ -123,13 +147,19 @@ def test_transfer_inventory_full():
     result = execute_transfer(state, op, protagonist_id="hero")
 
     assert result.success is False
-    assert result.error_message == "Sería demasiado peso."
+    assert result.code == "too_heavy"
+    assert result.data == {
+        "entity_id": "barrel",
+        "current_weight": 8,
+        "item_weight": 5,
+        "max_capacity": 10,
+    }
     assert result.events_payload is None
     assert state.get_entity("barrel").spatial_anchor == "room_01"
 
 
 def test_transfer_item_not_portable():
-    """Entity with portable=false cannot be transferred to inventory."""
+    """Entity with portable=false → code=not_portable + data."""
     from fortress_engine.engine.operators import TransferOp, execute_transfer
 
     hero = _make_player("hero", capacity=100)
@@ -142,7 +172,8 @@ def test_transfer_item_not_portable():
     result = execute_transfer(state, op, protagonist_id="hero")
 
     assert result.success is False
-    assert result.error_message == "Usted no puede cargar con eso."
+    assert result.code == "not_portable"
+    assert result.data == {"entity_id": "table"}
     assert result.events_payload is None
     assert state.get_entity("table").spatial_anchor == "room_01"
 
@@ -161,12 +192,12 @@ def test_transfer_item_without_portable_key_is_portable():
     result = execute_transfer(state, op, protagonist_id="hero")
 
     assert result.success is True
-    assert result.error_message is None
+    assert result.code is None
     assert state.get_entity("sword").spatial_anchor == "hero"
 
 
 def test_transfer_non_portable_with_weight_fails():
-    """portable=false + WEIGHT still cannot be transferred."""
+    """portable=false + WEIGHT → code=not_portable."""
     from fortress_engine.engine.operators import TransferOp, execute_transfer
 
     hero = _make_player("hero", capacity=100)
@@ -181,7 +212,8 @@ def test_transfer_non_portable_with_weight_fails():
     result = execute_transfer(state, op, protagonist_id="hero")
 
     assert result.success is False
-    assert result.error_message == "Usted no puede cargar con eso."
+    assert result.code == "not_portable"
+    assert result.data == {"entity_id": "statue"}
     assert result.events_payload is None
     assert state.get_entity("statue").spatial_anchor == "room_01"
 
@@ -216,11 +248,16 @@ def test_transfer_default_max_weight_is_40():
     op_too = TransferOp(entity="too_heavy", from_container="room_01", to_container="hero")
     result_too = execute_transfer(state, op_too, protagonist_id="hero")
     assert result_too.success is False
-    assert result_too.error_message == "Usted no puede cargar con eso."
+    assert result_too.code == "not_portable"
+    assert result_too.data == {
+        "entity_id": "too_heavy",
+        "item_weight": 41,
+        "max_capacity": 40,
+    }
 
 
 def test_transfer_to_nonexistent_container_fails():
-    """TRANSFER to a container that does not exist fails."""
+    """TRANSFER to a container that does not exist fails with container_not_found."""
     from fortress_engine.engine.operators import TransferOp, execute_transfer
 
     hero = _make_player("hero")
@@ -231,7 +268,8 @@ def test_transfer_to_nonexistent_container_fails():
     result = execute_transfer(state, op, protagonist_id="hero")
 
     assert result.success is False
-    assert result.error_message is not None
+    assert result.code == "container_not_found"
+    assert result.data == {"container_id": "void"}
     assert result.events_payload is None
     assert state.get_entity("rock").spatial_anchor == "room_01"
 
@@ -249,7 +287,8 @@ def test_transfer_entity_not_in_from_container_fails():
     result = execute_transfer(state, op, protagonist_id="hero")
 
     assert result.success is False
-    assert result.error_message is not None
+    assert result.code == "entity_not_in_container"
+    assert result.data == {"entity_id": "rock", "container_id": "room_01"}
     assert result.events_payload is None
     assert state.get_entity("rock").spatial_anchor == "room_02"
 
@@ -268,10 +307,28 @@ def test_transfer_to_null_destroys_entity():
     result = execute_transfer(state, op, protagonist_id="hero")
 
     assert result.success is True
+    assert result.code is None
     assert state.get_entity("cursed_gem").spatial_anchor is None
     payload = result.events_payload
     assert payload is not None
     assert payload["to_container_id"] is None
+
+
+def test_transfer_fails_when_entity_missing():
+    """TRANSFER for a non-existent entity fails with entity_not_found."""
+    from fortress_engine.engine.operators import TransferOp, execute_transfer
+
+    hero = _make_player("hero")
+    room = _make_entity("room_01", type_="room")
+    state = _minimal_state(hero, room)
+
+    op = TransferOp(entity="ghost", from_container="room_01", to_container="hero")
+    result = execute_transfer(state, op, protagonist_id="hero")
+
+    assert result.success is False
+    assert result.code == "entity_not_found"
+    assert result.data == {"entity_id": "ghost"}
+    assert result.events_payload is None
 
 
 # ===================================================================
@@ -292,7 +349,7 @@ def test_transform_changes_component():
     result = execute_transform(state, op)
 
     assert result.success is True
-    assert result.error_message is None
+    assert result.code is None
     assert state.get_entity("door_01").components["state"] == "open"
     payload = result.events_payload
     assert payload is not None
@@ -303,7 +360,7 @@ def test_transform_changes_component():
 
 
 def test_transform_fails_if_old_value_mismatch():
-    """TRANSFORM: old_value mismatch → fail, state unchanged."""
+    """TRANSFORM: old_value mismatch → code=transform_component_missing."""
     from fortress_engine.engine.operators import TransformOp, execute_transform
 
     door = _make_entity("door_01", type_="door", components={"state": "open"})
@@ -315,14 +372,15 @@ def test_transform_fails_if_old_value_mismatch():
     result = execute_transform(state, op)
 
     assert result.success is False
-    assert result.error_message is not None
+    assert result.code == "transform_component_missing"
+    assert result.data == {"entity_id": "door_01", "component": "state"}
     assert result.events_payload is None
     # State untouched
     assert state.get_entity("door_01").components["state"] == "open"
 
 
 def test_transform_fails_if_entity_missing():
-    """TRANSFORM: non-existent entity → fail."""
+    """TRANSFORM: non-existent entity → code=entity_not_found."""
     from fortress_engine.engine.operators import TransformOp, execute_transform
 
     state = WorldState()
@@ -332,7 +390,8 @@ def test_transform_fails_if_entity_missing():
     result = execute_transform(state, op)
 
     assert result.success is False
-    assert result.error_message is not None
+    assert result.code == "entity_not_found"
+    assert result.data == {"entity_id": "ghost"}
     assert result.events_payload is None
 
 
@@ -362,6 +421,7 @@ def test_combine_destroys_inputs_and_creates_output():
     result = execute_combine(state, op, anchor_id="room_01")
 
     assert result.success is True
+    assert result.code is None
     assert result.events_payload is not None
     assert result.events_payload["input_entity_ids"] == ["flour", "water"]
     assert result.events_payload["output_entity_id"] == "dough"
@@ -374,7 +434,7 @@ def test_combine_destroys_inputs_and_creates_output():
 
 
 def test_combine_fails_if_input_missing():
-    """COMBINE: missing input entity → fail."""
+    """COMBINE: missing input entity → code=combine_inputs_missing."""
     from fortress_engine.engine.operators import CombineOp, execute_combine
 
     flour = _make_entity("flour", spatial_anchor="room_01")
@@ -385,12 +445,13 @@ def test_combine_fails_if_input_missing():
     result = execute_combine(state, op, anchor_id="room_01")
 
     assert result.success is False
-    assert result.error_message is not None
+    assert result.code == "combine_inputs_missing"
+    assert result.data == {"input_entity_id": "water"}
     assert result.events_payload is None
 
 
 def test_combine_fails_if_output_missing():
-    """COMBINE: output entity doesn't exist → fail."""
+    """COMBINE: output entity doesn't exist → code=combine_inputs_missing."""
     from fortress_engine.engine.operators import CombineOp, execute_combine
 
     flour = _make_entity("flour", spatial_anchor="room_01")
@@ -402,7 +463,8 @@ def test_combine_fails_if_output_missing():
     result = execute_combine(state, op, anchor_id="room_01")
 
     assert result.success is False
-    assert result.error_message is not None
+    assert result.code == "combine_inputs_missing"
+    assert result.data == {"output_entity_id": "dough"}
     assert result.events_payload is None
 
 
@@ -422,6 +484,7 @@ def test_flag_sets_value():
     result = execute_flag(state, op)
 
     assert result.success is True
+    assert result.code is None
     assert state.get_flag("door_open") is True
     payload = result.events_payload
     assert payload is not None
@@ -439,6 +502,7 @@ def test_flag_sets_new_flag():
     result = execute_flag(state, op)
 
     assert result.success is True
+    assert result.code is None
     assert state.get_flag("visited_cave") is True
     payload = result.events_payload
     assert payload["flag_name"] == "visited_cave"
@@ -466,6 +530,7 @@ def test_teleport_moves_entity():
     result = execute_teleport(state, op)
 
     assert result.success is True
+    assert result.code is None
     assert state.get_entity("hero").spatial_anchor == "room_b"
     payload = result.events_payload
     assert payload is not None
@@ -475,7 +540,7 @@ def test_teleport_moves_entity():
 
 
 def test_teleport_fails_if_entity_missing():
-    """TELEPORT: entity doesn't exist → fail."""
+    """TELEPORT: entity doesn't exist → code=teleport_entity_not_found."""
     from fortress_engine.engine.operators import TeleportOp, execute_teleport
 
     room_a = _make_entity("room_a", type_="room")
@@ -486,12 +551,13 @@ def test_teleport_fails_if_entity_missing():
     result = execute_teleport(state, op)
 
     assert result.success is False
-    assert result.error_message is not None
+    assert result.code == "teleport_entity_not_found"
+    assert result.data == {"entity_id": "ghost"}
     assert result.events_payload is None
 
 
 def test_teleport_fails_if_room_not_found():
-    """TELEPORT: to_anchor entity doesn't exist → fail."""
+    """TELEPORT: to_anchor entity doesn't exist → code=teleport_anchor_not_found."""
     from fortress_engine.engine.operators import TeleportOp, execute_teleport
 
     hero = _make_player("hero")
@@ -502,7 +568,8 @@ def test_teleport_fails_if_room_not_found():
     result = execute_teleport(state, op)
 
     assert result.success is False
-    assert result.error_message is not None
+    assert result.code == "teleport_anchor_not_found"
+    assert result.data == {"to_anchor": "void"}
     assert result.events_payload is None
 
 
@@ -540,7 +607,6 @@ def test_execute_operator_dispatches_teleport():
         "from_anchor": "room_a",
         "to_anchor": "room_b",
     }
-    # graph=None is fine for teleport; it validates via state entities
     result = execute_operator(state, op_data, "hero", None)
 
     assert result.success is True
@@ -548,19 +614,20 @@ def test_execute_operator_dispatches_teleport():
 
 
 def test_execute_operator_unknown_type_returns_error():
-    """Unknown operator type returns a failure OperatorResult."""
+    """Unknown operator type → code=unknown_operator."""
     from fortress_engine.engine.operators import execute_operator
 
     state = WorldState()
     result = execute_operator(state, {"type": "BOGUS"}, "hero", None)
 
     assert result.success is False
-    assert result.error_message is not None
+    assert result.code == "unknown_operator"
+    assert result.data == {"op_type": "BOGUS"}
     assert result.events_payload is None
 
 
 def test_execute_operator_combine_unknown_protagonist_fails():
-    """COMBINE with a missing protagonist returns a failure, not a KeyError."""
+    """COMBINE with a missing protagonist → code=protagonist_not_found."""
     from fortress_engine.engine.operators import execute_operator
 
     flour = _make_entity("flour", spatial_anchor="room_01")
@@ -574,7 +641,8 @@ def test_execute_operator_combine_unknown_protagonist_fails():
     result = execute_operator(state, op_data, "ghost", None)
 
     assert result.success is False
-    assert result.error_message == "Entity 'ghost' not found"
+    assert result.code == "protagonist_not_found"
+    assert result.data == {"entity_id": "ghost"}
     assert result.events_payload is None
     # No state mutation happened
     assert state.get_entity("flour").spatial_anchor == "room_01"
@@ -648,8 +716,6 @@ def test_operator_from_dict_flag():
 
 def test_operator_from_dict_unknown_type_raises_value_error():
     """operator_from_dict raises ValueError for an unknown operator type."""
-    import pytest
-
     from fortress_engine.engine.operators import operator_from_dict
 
     with pytest.raises(ValueError) as exc:
@@ -659,8 +725,6 @@ def test_operator_from_dict_unknown_type_raises_value_error():
 
 def test_operator_from_dict_unknown_key_raises_value_error():
     """operator_from_dict raises ValueError naming an unknown dict key."""
-    import pytest
-
     from fortress_engine.engine.operators import operator_from_dict
 
     with pytest.raises(ValueError) as exc:
@@ -675,8 +739,6 @@ def test_operator_from_dict_unknown_key_raises_value_error():
 
 def test_operator_from_dict_missing_type_raises_value_error():
     """operator_from_dict raises ValueError when 'type' is missing."""
-    import pytest
-
     from fortress_engine.engine.operators import operator_from_dict
 
     with pytest.raises(ValueError):
@@ -715,22 +777,6 @@ def test_combine_op_defaults_input_entities_to_empty_list():
     from_dict = operator_from_dict({"type": "COMBINE", "output_entity": "dough"})
     assert isinstance(from_dict, CombineOp)
     assert from_dict.input_entities == []
-
-
-def test_transfer_fails_when_entity_missing():
-    """TRANSFER for a non-existent entity fails with a descriptive message."""
-    from fortress_engine.engine.operators import TransferOp, execute_transfer
-
-    hero = _make_player("hero")
-    room = _make_entity("room_01", type_="room")
-    state = _minimal_state(hero, room)
-
-    op = TransferOp(entity="ghost", from_container="room_01", to_container="hero")
-    result = execute_transfer(state, op, protagonist_id="hero")
-
-    assert result.success is False
-    assert result.error_message == "Entity 'ghost' not found"
-    assert result.events_payload is None
 
 
 def test_execute_operator_dispatches_transfer():
@@ -821,6 +867,240 @@ def test_execute_operator_combine_uses_protagonist_anchor():
         "input_entity_ids": ["flour"],
         "output_entity_id": "dough",
     }
+
+
+# ===================================================================
+# Parametrized: every failure path → correct code + data
+# ===================================================================
+
+_operator_failure_cases = [
+    # --- TRANSFER ---
+    pytest.param(
+        "TRANSFER",
+        {
+            "type": "TRANSFER", "entity": "ghost",
+            "from_container": "room_01", "to_container": "hero",
+        },
+        {"hero": ("player", None, "room_01"), "room_01": ("room", None, None)},
+        "entity_not_found",
+        {"entity_id": "ghost"},
+        id="TRANSFER: entity_not_found",
+    ),
+    pytest.param(
+        "TRANSFER",
+        {
+            "type": "TRANSFER", "entity": "rock",
+            "from_container": "room_01", "to_container": "hero",
+        },
+        {
+            "hero": ("player", {"max_weight": 100}, "room_01"),
+            "rock": ("item", {"weight": 1}, "room_02"),
+            "room_01": ("room", None, None),
+            "room_02": ("room", None, None),
+        },
+        "entity_not_in_container",
+        {"entity_id": "rock", "container_id": "room_01"},
+        id="TRANSFER: entity_not_in_container",
+    ),
+    pytest.param(
+        "TRANSFER",
+        {
+            "type": "TRANSFER", "entity": "rock",
+            "from_container": "room_01", "to_container": "void",
+        },
+        {"hero": ("player", None, "room_01"), "rock": ("item", {"weight": 1}, "room_01")},
+        "container_not_found",
+        {"container_id": "void"},
+        id="TRANSFER: container_not_found",
+    ),
+    pytest.param(
+        "TRANSFER",
+        {
+            "type": "TRANSFER", "entity": "table",
+            "from_container": "room_01", "to_container": "hero",
+        },
+        {"hero": ("player", None, "room_01"), "table": ("item", {"portable": False}, "room_01")},
+        "not_portable",
+        {"entity_id": "table"},
+        id="TRANSFER: not_portable (portable=False)",
+    ),
+    pytest.param(
+        "TRANSFER",
+        {
+            "type": "TRANSFER", "entity": "boulder",
+            "from_container": "room_01", "to_container": "hero",
+        },
+        {"hero": ("player", {"max_weight": 5}, "room_01"), "boulder": ("item", {"weight": 10}, "room_01")},
+        "not_portable",
+        {"entity_id": "boulder", "item_weight": 10, "max_capacity": 5},
+        id="TRANSFER: not_portable (weight > max_capacity)",
+    ),
+    pytest.param(
+        "TRANSFER",
+        {
+            "type": "TRANSFER", "entity": "barrel",
+            "from_container": "room_01", "to_container": "hero",
+        },
+        {
+            "hero": ("player", {"max_weight": 10}, "room_01"),
+            "rock": ("item", {"weight": 8}, "hero"),
+            "barrel": ("item", {"weight": 5}, "room_01"),
+        },
+        "too_heavy",
+        {"entity_id": "barrel", "current_weight": 8, "item_weight": 5, "max_capacity": 10},
+        id="TRANSFER: too_heavy",
+    ),
+    # --- TRANSFORM ---
+    pytest.param(
+        "TRANSFORM",
+        {
+            "type": "TRANSFORM", "entity": "ghost",
+            "component": "state", "old_value": "a", "new_value": "b",
+        },
+        {},
+        "entity_not_found",
+        {"entity_id": "ghost"},
+        id="TRANSFORM: entity_not_found",
+    ),
+    pytest.param(
+        "TRANSFORM",
+        {
+            "type": "TRANSFORM", "entity": "door_01",
+            "component": "state", "old_value": "closed", "new_value": "sealed",
+        },
+        {"door_01": ("door", {"state": "open"}, None)},
+        "transform_component_missing",
+        {"entity_id": "door_01", "component": "state"},
+        id="TRANSFORM: transform_component_missing",
+    ),
+    # --- COMBINE ---
+    pytest.param(
+        "COMBINE",
+        {
+            "type": "COMBINE", "input_entities": ["flour", "water"],
+            "output_entity": "dough",
+        },
+        {
+            "hero": ("player", None, "room_01"),
+            "flour": ("item", None, "room_01"),
+            "room_01": ("room", None, None),
+        },
+        "combine_inputs_missing",
+        {"input_entity_id": "water"},
+        id="COMBINE: combine_inputs_missing (input)",
+    ),
+    pytest.param(
+        "COMBINE",
+        {
+            "type": "COMBINE", "input_entities": ["flour", "water"],
+            "output_entity": "dough",
+        },
+        {
+            "hero": ("player", None, "room_01"),
+            "flour": ("item", None, "room_01"),
+            "water": ("item", None, "room_01"),
+            "room_01": ("room", None, None),
+        },
+        "combine_inputs_missing",
+        {"output_entity_id": "dough"},
+        id="COMBINE: combine_inputs_missing (output)",
+    ),
+    # --- TELEPORT ---
+    pytest.param(
+        "TELEPORT",
+        {
+            "type": "TELEPORT", "entity": "ghost",
+            "from_anchor": "room_a", "to_anchor": "room_b",
+        },
+        {"room_a": ("room", None, None), "room_b": ("room", None, None)},
+        "teleport_entity_not_found",
+        {"entity_id": "ghost"},
+        id="TELEPORT: teleport_entity_not_found",
+    ),
+    pytest.param(
+        "TELEPORT",
+        {
+            "type": "TELEPORT", "entity": "hero",
+            "from_anchor": "room_a", "to_anchor": "void",
+        },
+        {"hero": ("player", None, "room_a"), "room_a": ("room", None, None)},
+        "teleport_anchor_not_found",
+        {"to_anchor": "void"},
+        id="TELEPORT: teleport_anchor_not_found",
+    ),
+    # --- dispatch ---
+    pytest.param(
+        "BOGUS",
+        {"type": "BOGUS"},
+        {},
+        "unknown_operator",
+        {"op_type": "BOGUS"},
+        id="dispatch: unknown_operator",
+    ),
+    pytest.param(
+        "COMBINE",
+        {
+            "type": "COMBINE", "input_entities": ["flour"],
+            "output_entity": "dough",
+        },
+        {"flour": ("item", None, "room_01"), "dough": ("item", None, None), "room_01": ("room", None, None)},
+        "protagonist_not_found",
+        {"entity_id": "ghost"},
+        id="dispatch: protagonist_not_found",
+    ),
+]
+
+
+def _op_entity_spec_to_entity(eid: str, spec: tuple) -> Entity:
+    """Convert a (type, optional_components_dict, optional_spatial_anchor) spec to Entity."""
+    type_, comps, anchor = spec
+    components = {}
+    if comps is not None:
+        components.update(comps)
+    return _make_entity(eid, type_=type_, components=components, spatial_anchor=anchor)
+
+
+@pytest.mark.parametrize(
+    "op_type_hint,op_data,entity_specs,expected_code,expected_data",
+    _operator_failure_cases,
+)
+def test_operator_failure_codes(
+    op_type_hint, op_data, entity_specs, expected_code, expected_data
+):
+    """Every operator failure path returns the correct code + data."""
+    from fortress_engine.engine.operators import execute_operator
+
+    entities: dict[str, Entity] = {}
+    for eid, spec in entity_specs.items():
+        entities[eid] = _op_entity_spec_to_entity(eid, spec)
+
+    # Ensure room_01 exists for anchored entities
+    if "room_01" not in entities:
+        entities["room_01"] = _make_entity("room_01", type_="room")
+
+    state = WorldState(entities=entities)
+
+    protagonist_id = "ghost" if expected_code == "protagonist_not_found" else "hero"
+    if protagonist_id not in entities and expected_code != "protagonist_not_found":
+        entities[protagonist_id] = _make_entity(
+            protagonist_id,
+            type_="player",
+            components={"max_weight": 100} if "max_weight" not in str(entity_specs.get(protagonist_id, ())) else {},
+            spatial_anchor="room_01",
+        )
+        state = WorldState(entities=entities)
+
+    # Ensure player_controlled is set for the protagonist
+    state.player_controlled_entities = [protagonist_id]
+    state.active_protagonist_id = protagonist_id
+
+    result = execute_operator(state, op_data, protagonist_id, None)
+
+    assert result.success is False
+    assert result.code == expected_code
+    assert result.data == expected_data
+    assert result.events_payload is None
+    assert not hasattr(result, "error_message")
 
 
 # The final `else: Unhandled operator type` branch in execute_operator is

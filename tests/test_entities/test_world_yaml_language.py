@@ -273,7 +273,7 @@ class TestVocabularyDataclass:
     """Vocabulary dataclass mirrors VocabularyYAML at runtime."""
 
     def test_round_trip_all_fields(self):
-        """Vocabulary stores all 6 sections from YAML model."""
+        """Vocabulary stores all 9 sections from YAML model."""
         vocab = Vocabulary(
             language="es",
             verbs={"ir": ["ATRAVESAR", "CRUZAR"], "tomar": ["COGER"]},
@@ -281,6 +281,9 @@ class TestVocabularyDataclass:
             prepositions={"instrument": ["con"], "recipient": ["a"]},
             speech_markers=["diciendo"],
             speech_verbs=["decir"],
+            messages={},
+            movement_verbs=[],
+            system_commands={},
         )
         assert vocab.language == "es"
         assert vocab.verbs == {"ir": ["ATRAVESAR", "CRUZAR"], "tomar": ["COGER"]}
@@ -298,6 +301,9 @@ class TestVocabularyDataclass:
             prepositions={"instrument": [], "recipient": []},
             speech_markers=[],
             speech_verbs=[],
+            messages={},
+            movement_verbs=[],
+            system_commands={},
         )
         assert vocab.language is None
 
@@ -310,6 +316,9 @@ class TestVocabularyDataclass:
             prepositions={"instrument": ["con"]},
             speech_markers=["diciendo"],
             speech_verbs=["decir"],
+            messages={},
+            movement_verbs=[],
+            system_commands={},
         )
         v2 = Vocabulary(
             language="es",
@@ -318,6 +327,9 @@ class TestVocabularyDataclass:
             prepositions={"instrument": ["con"]},
             speech_markers=["diciendo"],
             speech_verbs=["decir"],
+            messages={},
+            movement_verbs=[],
+            system_commands={},
         )
         assert v1 == v2
 
@@ -330,6 +342,9 @@ class TestVocabularyDataclass:
             prepositions={"instrument": ["con"]},
             speech_markers=["diciendo"],
             speech_verbs=["decir"],
+            messages={},
+            movement_verbs=[],
+            system_commands={},
         )
         v2 = Vocabulary(
             language="en",
@@ -338,6 +353,9 @@ class TestVocabularyDataclass:
             prepositions={"instrument": ["with"]},
             speech_markers=["saying"],
             speech_verbs=["say"],
+            messages={},
+            movement_verbs=[],
+            system_commands={},
         )
         assert v1 != v2
 
@@ -360,6 +378,11 @@ class TestVocabularyDataclass:
             },
             speech_markers=list(yaml_model.speech_markers),
             speech_verbs=list(yaml_model.speech_verbs),
+            messages=dict(yaml_model.messages),
+            movement_verbs=list(yaml_model.movement_verbs),
+            system_commands={
+                k: list(v) for k, v in yaml_model.system_commands.items()
+            },
         )
         assert vocab.language == "es"
         assert vocab.verbs == {"ir": ["ATRAVESAR"], "tomar": ["COGER"]}
@@ -559,6 +582,302 @@ speech_verbs: []
 
         with pytest.raises(ValueError, match="vocabulary"):
             loader.load_vocabulary()
+
+
+# ===================================================================
+# L1 (engine-language-agnostic) — VocabularyYAML +3 optional sections
+# ===================================================================
+
+
+class TestVocabularyYAMLExtensions:
+    """VocabularyYAML gains messages, movement_verbs, system_commands."""
+
+    def test_new_sections_present(self):
+        """VocabularyYAML parses messages, movement_verbs, system_commands."""
+        model = VocabularyYAML(
+            verbs={"ir": ["ATRAVESAR"]},
+            stopwords=["el"],
+            prepositions={"instrument": ["con"]},
+            speech_markers=[],
+            speech_verbs=[],
+            messages={"error_output.no_action": "No entiendes."},
+            movement_verbs=["ir", "abrir"],
+            system_commands={
+                "save": ["guardar"],
+                "load": ["cargar"],
+                "quit": ["terminar"],
+                "wait": ["esperar"],
+                "group": ["grupo"],
+                "switch": ["cambiar a"],
+            },
+        )
+        assert model.messages == {"error_output.no_action": "No entiendes."}
+        assert model.movement_verbs == ["ir", "abrir"]
+        assert model.system_commands == {
+            "save": ["guardar"],
+            "load": ["cargar"],
+            "quit": ["terminar"],
+            "wait": ["esperar"],
+            "group": ["grupo"],
+            "switch": ["cambiar a"],
+        }
+
+    def test_new_sections_absent_default_empty(self):
+        """VocabularyYAML defaults new sections to empty when not provided."""
+        model = VocabularyYAML(
+            verbs={"ir": ["ATRAVESAR"]},
+            stopwords=["el"],
+            prepositions={"instrument": ["con"]},
+            speech_markers=[],
+            speech_verbs=[],
+        )
+        assert model.messages == {}
+        assert model.movement_verbs == []
+        assert model.system_commands == {}
+
+    def test_extra_forbid_rejects_misspelled_section(self):
+        """VocabularyYAML extra='forbid' still detects unknown keys."""
+        with pytest.raises(ValueError, match="unk"):
+            VocabularyYAML(
+                verbs={"ir": ["ATRAVESAR"]},
+                stopwords=["el"],
+                prepositions={"instrument": ["con"]},
+                speech_markers=[],
+                speech_verbs=[],
+                unkown_section=42,  # type: ignore[call-arg]
+            )
+
+    def test_full_design_example_parses(self):
+        """The full vocabulary.yaml example from design.md Data Design parses."""
+        model = VocabularyYAML(
+            language="es",
+            verbs={
+                "ir": ["atravesar", "cruzar", "pasar"],
+                "tomar": ["coger"],
+                "abrir": [],
+            },
+            stopwords=["el", "la", "los", "las", "un", "una", "al", "del", "por"],
+            prepositions={"instrument": ["con"], "recipient": ["a"]},
+            speech_markers=["diciendo", "respondiendo"],
+            speech_verbs=["decir", "responder"],
+            messages={
+                "error_output.no_action": "No entiendes cómo hacer '{verb}' aquí.",
+                "error_output.blocked": "No puedes ir por ahí.",
+            },
+            movement_verbs=["ir", "abrir"],
+            system_commands={
+                "save": ["guardar", "save"],
+                "load": ["cargar", "load"],
+                "quit": ["terminar", "abandonar", "quit"],
+                "wait": ["esperar", "wait"],
+                "group": ["grupo", "group"],
+                "switch": ["cambiar a"],
+            },
+        )
+        assert model.language == "es"
+        assert model.messages == {
+            "error_output.no_action": "No entiendes cómo hacer '{verb}' aquí.",
+            "error_output.blocked": "No puedes ir por ahí.",
+        }
+        assert model.movement_verbs == ["ir", "abrir"]
+        assert model.system_commands["save"] == ["guardar", "save"]
+        assert model.system_commands["switch"] == ["cambiar a"]
+
+
+# ===================================================================
+# L1 — Vocabulary dataclass gains new fields
+# ===================================================================
+
+
+class TestVocabularyDataclassExtensions:
+    """Vocabulary runtime dataclass mirrors the 3 new sections."""
+
+    def test_new_fields_round_trip(self):
+        """Vocabulary stores all 9 sections including messages, movement_verbs,
+        system_commands."""
+        vocab = Vocabulary(
+            language="es",
+            verbs={"ir": ["ATRAVESAR"]},
+            stopwords=["el"],
+            prepositions={"instrument": ["con"]},
+            speech_markers=["diciendo"],
+            speech_verbs=["decir"],
+            messages={"error_output.no_action": "No entiendes."},
+            movement_verbs=["ir", "abrir"],
+            system_commands={"save": ["guardar"]},
+        )
+        assert vocab.messages == {"error_output.no_action": "No entiendes."}
+        assert vocab.movement_verbs == ["ir", "abrir"]
+        assert vocab.system_commands == {"save": ["guardar"]}
+
+    def test_new_fields_default_empty(self):
+        """Vocabulary new fields can be empty."""
+        vocab = Vocabulary(
+            language=None,
+            verbs={},
+            stopwords=[],
+            prepositions={"instrument": []},
+            speech_markers=[],
+            speech_verbs=[],
+            messages={},
+            movement_verbs=[],
+            system_commands={},
+        )
+        assert vocab.messages == {}
+        assert vocab.movement_verbs == []
+        assert vocab.system_commands == {}
+
+    def test_equality_includes_new_fields(self):
+        """Two Vocabularies with different new fields are not equal."""
+        v1 = Vocabulary(
+            language="es",
+            verbs={"ir": ["IR"]},
+            stopwords=["el"],
+            prepositions={"instrument": ["con"]},
+            speech_markers=[],
+            speech_verbs=[],
+            messages={"error_output.no_action": "No entiendes."},
+            movement_verbs=["ir"],
+            system_commands={"save": ["guardar"]},
+        )
+        v2 = Vocabulary(
+            language="es",
+            verbs={"ir": ["IR"]},
+            stopwords=["el"],
+            prepositions={"instrument": ["con"]},
+            speech_markers=[],
+            speech_verbs=[],
+            messages={},
+            movement_verbs=["ir"],
+            system_commands={"save": ["guardar"]},
+        )
+        assert v1 != v2
+
+
+# ===================================================================
+# L1 — load_vocabulary carries new sections
+# ===================================================================
+
+
+class TestLoadVocabularyExtensions:
+    """EntityLoader.load_vocabulary carries messages, movement_verbs,
+    system_commands through to the Vocabulary dataclass."""
+
+    def _make_world(self, tmp_path, vocab_content: str | None = None):
+        base = tmp_path / "world"
+        _write_yaml(
+            base / "world.yaml",
+            "world_id: test\nname: Test\n",
+        )
+        if vocab_content is not None:
+            _write_yaml(base / "shared" / "vocabulary.yaml", vocab_content)
+        return base
+
+    def test_load_new_sections(self, tmp_path):
+        """load_vocabulary loads messages, movement_verbs, system_commands."""
+        base = self._make_world(
+            tmp_path,
+            """\
+language: es
+verbs:
+  ir: [ATRAVESAR]
+stopwords: [el]
+prepositions:
+  instrument: [con]
+speech_markers: []
+speech_verbs: []
+messages:
+  error_output.no_action: "No entiendes."
+movement_verbs: [ir, abrir]
+system_commands:
+  save: [guardar, save]
+  load: [cargar, load]
+  quit: [terminar]
+  wait: [esperar]
+  group: [grupo]
+  switch: [cambiar a]
+""",
+        )
+        loader = EntityLoader(str(base))
+        vocab = loader.load_vocabulary()
+
+        assert vocab is not None
+        assert vocab.messages == {"error_output.no_action": "No entiendes."}
+        assert vocab.movement_verbs == ["ir", "abrir"]
+        assert vocab.system_commands == {
+            "save": ["guardar", "save"],
+            "load": ["cargar", "load"],
+            "quit": ["terminar"],
+            "wait": ["esperar"],
+            "group": ["grupo"],
+            "switch": ["cambiar a"],
+        }
+
+    def test_load_absent_new_sections_back_compat(self, tmp_path):
+        """load_vocabulary with existing Epic #3 shape (no new sections)
+        returns a Vocabulary where new fields are empty."""
+        base = self._make_world(
+            tmp_path,
+            """\
+language: es
+verbs:
+  ir: [ATRAVESAR, CRUZAR]
+  tomar: [COGER]
+stopwords:
+  - el
+  - la
+prepositions:
+  instrument: [con]
+  recipient: [a]
+speech_markers:
+  - diciendo
+speech_verbs:
+  - decir
+""",
+        )
+        loader = EntityLoader(str(base))
+        vocab = loader.load_vocabulary()
+
+        assert vocab is not None
+        assert vocab.messages == {}
+        assert vocab.movement_verbs == []
+        assert vocab.system_commands == {}
+
+    def test_load_preserves_mutability_isolation_new_fields(self, tmp_path):
+        """Mutating returned Vocabulary new fields doesn't affect reload."""
+        base = self._make_world(
+            tmp_path,
+            """\
+language: es
+verbs:
+  ir: [ATRAVESAR]
+stopwords: [el]
+prepositions:
+  instrument: [con]
+speech_markers: []
+speech_verbs: []
+messages:
+  error_output.no_action: "No entiendes."
+movement_verbs: [ir]
+system_commands:
+  save: [guardar]
+""",
+        )
+        loader = EntityLoader(str(base))
+        vocab = loader.load_vocabulary()
+        assert vocab is not None
+
+        # Mutate
+        vocab.messages["new_key"] = "mutated"
+        vocab.movement_verbs.append("abrir")
+        vocab.system_commands["save"].append("save")
+
+        # Reload
+        vocab2 = loader.load_vocabulary()
+        assert vocab2 is not None
+        assert vocab2.messages == {"error_output.no_action": "No entiendes."}
+        assert vocab2.movement_verbs == ["ir"]
+        assert vocab2.system_commands == {"save": ["guardar"]}
 
 
 # ===================================================================

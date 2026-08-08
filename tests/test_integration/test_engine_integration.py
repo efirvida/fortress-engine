@@ -278,7 +278,7 @@ def test_operators_state_transfer_from_loaded_edge(tmp_path):
     result = execute_operator(state, op_data, "hero", graph)
 
     assert result.success is True
-    assert result.error_message is None
+    assert result.code is None
     # State mutated: rusty_key now in the hero's inventory.
     assert state.get_entity("rusty_key").spatial_anchor == "hero"
     assert [e.entity_id for e in state.get_player_inventory("hero")] == [

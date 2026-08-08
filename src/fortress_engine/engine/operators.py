@@ -8,7 +8,7 @@ the TurnOrchestrator converts into state-change EngineEvents.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from typing import Any, Union, TYPE_CHECKING
 
 from fortress_engine.engine.state import LIMBO_ROOM_ID, WorldState
@@ -83,21 +83,15 @@ class OperatorResult:
 
     Attributes:
         success: Whether the operator executed successfully.
-        error_message: Human-readable error description on failure.
+        code: Machine-readable failure code (None on success).
+        data: Structured failure data dict for the narrator to render.
         events_payload: Dict payload for state-change EngineEvent (see
             13-event-system.md §2.3).  ``None`` on failure.
     """
     success: bool
-    error_message: str | None = None
+    code: str | None = None
+    data: dict[str, object] = field(default_factory=dict)
     events_payload: dict[str, Any] | None = None
-
-
-# ---------------------------------------------------------------------------
-# Error message constants (PRD §4.4)
-# ---------------------------------------------------------------------------
-
-_MSG_NOT_PORTABLE: str = "Usted no puede cargar con eso."
-_MSG_TOO_HEAVY: str = "Sería demasiado peso."
 
 
 # ===================================================================
@@ -118,7 +112,8 @@ def execute_transfer(
     if not state.entity_exists(entity_id):
         return OperatorResult(
             success=False,
-            error_message=f"Entity '{entity_id}' not found",
+            code="entity_not_found",
+            data={"entity_id": entity_id},
         )
 
     entity = state.get_entity(entity_id)
@@ -130,16 +125,15 @@ def execute_transfer(
     ):
         return OperatorResult(
             success=False,
-            error_message=(
-                f"Entity '{entity_id}' is not in container "
-                f"'{op.from_container}'"
-            ),
+            code="entity_not_in_container",
+            data={"entity_id": entity_id, "container_id": op.from_container},
         )
 
     if to_container is not None and not state.entity_exists(to_container):
         return OperatorResult(
             success=False,
-            error_message=f"Container '{to_container}' not found",
+            code="container_not_found",
+            data={"container_id": to_container},
         )
 
     # --- weight / portability validation (protagonist inventory only) ---
@@ -148,7 +142,8 @@ def execute_transfer(
         if entity.components.get("portable", True) is False:
             return OperatorResult(
                 success=False,
-                error_message=_MSG_NOT_PORTABLE,
+                code="not_portable",
+                data={"entity_id": entity_id},
             )
 
         item_weight: int = entity.components.get(WEIGHT, 0)
@@ -160,7 +155,12 @@ def execute_transfer(
         if item_weight > max_capacity:
             return OperatorResult(
                 success=False,
-                error_message=_MSG_NOT_PORTABLE,
+                code="not_portable",
+                data={
+                    "entity_id": entity_id,
+                    "item_weight": item_weight,
+                    "max_capacity": max_capacity,
+                },
             )
 
         # Inventory capacity check.
@@ -168,7 +168,13 @@ def execute_transfer(
         if current_weight + item_weight > max_capacity:
             return OperatorResult(
                 success=False,
-                error_message=_MSG_TOO_HEAVY,
+                code="too_heavy",
+                data={
+                    "entity_id": entity_id,
+                    "current_weight": current_weight,
+                    "item_weight": item_weight,
+                    "max_capacity": max_capacity,
+                },
             )
 
     # --- apply mutation ---
@@ -201,7 +207,8 @@ def execute_transform(
     if not state.entity_exists(entity_id):
         return OperatorResult(
             success=False,
-            error_message=f"Entity '{entity_id}' not found",
+            code="entity_not_found",
+            data={"entity_id": entity_id},
         )
 
     entity = state.get_entity(entity_id)
@@ -210,11 +217,8 @@ def execute_transform(
     if current_value != op.old_value:
         return OperatorResult(
             success=False,
-            error_message=(
-                f"Transform on '{entity_id}': expected component "
-                f"'{op.component}' to be {op.old_value!r}, "
-                f"got {current_value!r}"
-            ),
+            code="transform_component_missing",
+            data={"entity_id": entity_id, "component": op.component},
         )
 
     entity.components[op.component] = op.new_value
@@ -246,16 +250,16 @@ def execute_combine(
         if not state.entity_exists(eid):
             return OperatorResult(
                 success=False,
-                error_message=f"Combine: input entity '{eid}' not found",
+                code="combine_inputs_missing",
+                data={"input_entity_id": eid},
             )
 
     # Validate output entity exists.
     if not state.entity_exists(op.output_entity):
         return OperatorResult(
             success=False,
-            error_message=(
-                f"Combine: output entity '{op.output_entity}' not found"
-            ),
+            code="combine_inputs_missing",
+            data={"output_entity_id": op.output_entity},
         )
 
     # Destroy inputs.
@@ -305,13 +309,15 @@ def execute_teleport(state: WorldState, op: TeleportOp) -> OperatorResult:
     if not state.entity_exists(op.entity):
         return OperatorResult(
             success=False,
-            error_message=f"Teleport: entity '{op.entity}' not found",
+            code="teleport_entity_not_found",
+            data={"entity_id": op.entity},
         )
 
     if not state.entity_exists(op.to_anchor):
         return OperatorResult(
             success=False,
-            error_message=f"Teleport: destination anchor '{op.to_anchor}' not found",
+            code="teleport_anchor_not_found",
+            data={"to_anchor": op.to_anchor},
         )
 
     entity = state.get_entity(op.entity)
@@ -392,7 +398,8 @@ def execute_operator(
     if op_type not in _OP_TO_CLASS:
         return OperatorResult(
             success=False,
-            error_message=f"Unknown operator type: {op_type!r}",
+            code="unknown_operator",
+            data={"op_type": op_type},
         )
 
     op = operator_from_dict(op_data)
@@ -406,7 +413,8 @@ def execute_operator(
         if not state.entity_exists(protagonist_id):
             return OperatorResult(
                 success=False,
-                error_message=f"Entity '{protagonist_id}' not found",
+                code="protagonist_not_found",
+                data={"entity_id": protagonist_id},
             )
         anchor_id = state.get_entity(protagonist_id).spatial_anchor
         if anchor_id is None:
@@ -424,5 +432,6 @@ def execute_operator(
         # justification (AGENTS.md testing hard gate).
         return OperatorResult(  # pragma: no cover
             success=False,
-            error_message=f"Unhandled operator type: {op_type!r}",
+            code="unhandled_operator",
+            data={"op_type": op_type},
         )
