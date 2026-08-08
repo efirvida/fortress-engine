@@ -55,7 +55,7 @@ class TestFortalezaEpisodes:
         assert len(episodes) == 2
         ep2 = episodes[1]
         assert ep2.id == "episode-02"
-        assert ep2.start_anchor == "cuarto_huespedes"
+        assert ep2.start_anchor == "habitacion_para_huespedes"
         assert "episode-01" in ep2.requires
 
 

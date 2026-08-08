@@ -8,7 +8,7 @@ goal:
   conditions:
     - type: "and"
       conditions:
-         - type: "entity_in_room"
+        - type: "entity_in_room"
           params:
             entity: "antorcha_subterraneos"
             room: "habitacion_para_huespedes"
