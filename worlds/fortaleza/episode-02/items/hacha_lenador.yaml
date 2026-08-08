@@ -1,0 +1,7 @@
+entity_id: "hacha_lenador"
+type: "item"
+name: "Hacha"
+components:
+  weight: 17
+  description: "Muy mohosa. Útil para romper el Árbol de marfil y para dar al Jardinero."
+spatial_anchor: "cuarto_del_lenador"

@@ -1,0 +1,7 @@
+entity_id: "daga_dragon"
+type: "item"
+name: "Daga"
+components:
+  weight: 2
+  description: "Empuñadura de dragón. Arma letal contra el Grifo."
+spatial_anchor: "cuarto_del_lenador"

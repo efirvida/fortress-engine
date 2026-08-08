@@ -1,0 +1,7 @@
+entity_id: "reloj_de_arena"
+type: "item"
+name: "Reloj de arena"
+components:
+  weight: 2
+  description: "Emite tic-tac. Debe voltearse antes de entregar a Caronte en la Orilla del Río Negro."
+spatial_anchor: "terrazas"

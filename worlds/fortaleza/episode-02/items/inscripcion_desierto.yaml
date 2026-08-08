@@ -1,0 +1,7 @@
+entity_id: "inscripcion_desierto"
+type: "item"
+name: "Inscripción del Desierto"
+components:
+  weight: 1
+  description: "El Obispo le recomendó cierto objeto para protegerse a la hora de coger a Marmidosa. ¡No intente cruzar el camino en esta dirección con dicho objeto encima!"
+spatial_anchor: "desierto"

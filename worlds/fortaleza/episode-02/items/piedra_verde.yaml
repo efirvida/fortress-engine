@@ -1,0 +1,7 @@
+entity_id: "piedra_verde"
+type: "item"
+name: "Piedra verde"
+components:
+  weight: 9
+  description: "Increíblemente sólida. Útil para romper la segunda muralla en el Desierto."
+spatial_anchor: "interior_del_baul"

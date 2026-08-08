@@ -1,0 +1,7 @@
+entity_id: "panuelo"
+type: "item"
+name: "Pañuelo"
+components:
+  weight: 1
+  description: "Bordado con A y S. Protección para la Puerta de metal en la Cocina."
+spatial_anchor: "cuarto_de_la_hija_del_hechicero"

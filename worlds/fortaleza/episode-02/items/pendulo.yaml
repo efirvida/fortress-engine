@@ -1,0 +1,7 @@
+entity_id: "pendulo"
+type: "item"
+name: "Péndulo"
+components:
+  weight: 3
+  description: "Oscila colgado de un punto invisible. Debe colocarse en el Salón de Fumar — condición de victoria."
+spatial_anchor: "choza_del_sabio"

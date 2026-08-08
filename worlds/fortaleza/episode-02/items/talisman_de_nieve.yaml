@@ -1,0 +1,7 @@
+entity_id: "talisman_de_nieve"
+type: "item"
+name: "Talismán de Nieve"
+components:
+  weight: 1
+  description: "Tormenta de nieve encerrada en cristal. Protección para la Grieta en el Lago. NO llevar por el Camino del Desierto."
+spatial_anchor: "cuarto_de_juguetes"

@@ -1,0 +1,7 @@
+entity_id: "esqueleto_de_murcielago"
+type: "item"
+name: "Esqueleto de Murciélago"
+components:
+  weight: 7
+  description: "3 metros de ala a ala. Útil para dar al Sabio en su choza."
+spatial_anchor: "catacumbas"
