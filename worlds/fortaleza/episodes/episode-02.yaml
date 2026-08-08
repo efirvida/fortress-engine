@@ -3,27 +3,27 @@ name: "La venganza de la Bestia"
 order: 2
 description: "La Bestia ha muerto, pero su espíritu se vengará. Debes escapar de la Fortaleza colocando 7 objetos sagrados."
 requires: ["episode-01"]
-start_anchor: "cuarto_huespedes"
+start_anchor: "habitacion_para_huespedes"
 goal:
   conditions:
     - type: "and"
       conditions:
-        - type: "entity_in_room"
+         - type: "entity_in_room"
           params:
-            entity: "antorcha"
-            room: "cuarto_huespedes"
+            entity: "antorcha_subterraneos"
+            room: "habitacion_para_huespedes"
         - type: "entity_in_room"
           params:
             entity: "pendulo"
             room: "salon_de_fumar"
         - type: "entity_in_room"
           params:
-            entity: "espejo"
-            room: "cuarto_de_aura"
+            entity: "espejo_roto"
+            room: "cuarto_de_la_hija_del_hechicero"
         - type: "entity_in_room"
           params:
-            entity: "bote"
-            room: "orilla_2_rio_negro"
+            entity: "bote_carante"
+            room: "otra_orilla_del_rio_negro"
         - type: "entity_in_room"
           params:
             entity: "rosa_diamante"
@@ -35,7 +35,7 @@ goal:
         - type: "entity_in_room"
           params:
             entity: "cinta_de_moebius"
-            room: "torre_de_cristal_exterior"
+            room: "exterior_de_la_torre_de_cristal"
         - type: "flag_is_set"
           params:
             flag: "monstruo_muerto"

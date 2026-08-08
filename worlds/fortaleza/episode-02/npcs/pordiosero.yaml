@@ -4,6 +4,6 @@ name: "pordiosero"
 components:
   description: "Un hombre harapiento que guarda silencio y extiende su mano pidiendo una limosna en medio del oasis."
   is_troll: true
-  wants_item: "bolsa"
+  wants_item: "bolsa_oro"
   gift_flag: "pordiosero_happy"
 spatial_anchor: "oasis"

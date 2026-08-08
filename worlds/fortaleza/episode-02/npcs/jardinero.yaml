@@ -4,6 +4,6 @@ name: "jardinero"
 components:
   description: "Un anciano encorvado que intenta cortar un abeto con una navaja, sin prestar atención a nadie."
   is_troll: true
-  wants_item: "hacha"
+  wants_item: "hacha_lenador"
   gift_flag: "jardinero_happy"
 spatial_anchor: "jardines_del_hechicero"

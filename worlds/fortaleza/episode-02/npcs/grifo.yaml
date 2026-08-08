@@ -4,5 +4,5 @@ name: "grifo"
 components:
   description: "Una criatura medio león, medio águila, que parece dormida junto a la puerta de la Reja. Sus garras brillan peligrosamente."
   is_guard: true
-  lethal_weapon: "daga"
+  lethal_weapon: "daga_dragon"
 spatial_anchor: "pasillo"

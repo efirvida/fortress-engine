@@ -4,5 +4,5 @@ name: "inmortal"
 components:
   description: "Un ser eterno con el rostro marcado por el cansancio de los siglos. Sus ojos han visto demasiado."
   is_guard: true
-  lethal_weapon: "arco"
+  lethal_weapon: "arco_inmortal"
 spatial_anchor: "cuarto_del_inmortal"

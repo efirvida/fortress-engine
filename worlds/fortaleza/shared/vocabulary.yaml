@@ -25,11 +25,8 @@ verbs:
 stopwords: ["la", "el", "los", "las", "un", "una", "al", "del", "de", "en", "con", "por", "para", "a"]
 
 prepositions:
-  con: ["con"]
-  a: ["a"]
-  en: ["en"]
-  por: ["por"]
-  de: ["de"]
+  instrument: ["con"]
+  recipient: ["a"]
 
 speech_markers: ["diciendo", "respondiendo"]
 
