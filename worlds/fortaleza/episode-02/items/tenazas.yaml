@@ -1,0 +1,7 @@
+entity_id: "tenazas"
+type: "item"
+name: "Tenazas"
+components:
+  weight: 2
+  description: "Muy fuertes. Útiles para romper la Reja en el Lago."
+spatial_anchor: "campo_cultivado"

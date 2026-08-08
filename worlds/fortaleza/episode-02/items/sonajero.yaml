@@ -1,0 +1,7 @@
+entity_id: "sonajero"
+type: "item"
+name: "Sonajero"
+components:
+  weight: 2
+  description: "Juguete para recién nacidos. Útil para dar al Dinosaurio en el Comedor."
+spatial_anchor: "cuarto_de_juguetes"

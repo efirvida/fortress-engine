@@ -1,0 +1,7 @@
+entity_id: "bolsa_oro"
+type: "item"
+name: "Bolsa"
+components:
+  weight: 5
+  description: "Llena de oro. Útil para dar al Pordiosero en el Oasis."
+spatial_anchor: "habitacion_de_los_tesoros"

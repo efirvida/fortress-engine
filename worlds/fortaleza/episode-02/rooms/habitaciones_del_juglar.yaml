@@ -1,0 +1,7 @@
+entity_id: "habitaciones_del_juglar"
+type: "room"
+name: "las habitaciones del Juglar"
+components:
+  description: "El ambiente de la habitación le induce a creer que el juglar no era exactamente lo que se llama una persona alegre."
+  visited: false
+spatial_anchor: null

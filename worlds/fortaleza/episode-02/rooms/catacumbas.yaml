@@ -1,0 +1,7 @@
+entity_id: "catacumbas"
+type: "room"
+name: "las Catacumbas"
+components:
+  description: "Nunca antes había visto tantos esqueletos juntos. Más que enterrados en ese lugar, parecían haber muerto ahí. En el fondo usted divisa un hueco sin cadáver con una inscripción. La inscripción dice: 'Este es para ti'."
+  visited: false
+spatial_anchor: null

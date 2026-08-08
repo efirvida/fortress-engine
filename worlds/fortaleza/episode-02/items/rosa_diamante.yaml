@@ -1,0 +1,7 @@
+entity_id: "rosa_diamante"
+type: "item"
+name: "Rosa diamante"
+components:
+  weight: 3
+  description: "Increíblemente hermosa. Debe colocarse en el Fondo del Lago — condición de victoria."
+spatial_anchor: "habitacion_de_los_tesoros"

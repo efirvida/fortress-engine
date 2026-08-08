@@ -1,0 +1,7 @@
+entity_id: "inscripcion_inmortal"
+type: "item"
+name: "Inscripción del Inmortal"
+components:
+  weight: 1
+  description: "¿Quién quiere vivir para siempre?"
+spatial_anchor: "cuarto_del_inmortal"

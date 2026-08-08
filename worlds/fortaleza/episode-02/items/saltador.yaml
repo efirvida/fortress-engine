@@ -1,0 +1,7 @@
+entity_id: "saltador"
+type: "item"
+name: "Saltador"
+components:
+  weight: 7
+  description: "Tronco de abeto con resorte. Protección para saltar al Precipicio en el Pico Negro."
+spatial_anchor: "cuarto_de_juguetes"

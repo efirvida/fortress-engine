@@ -1,0 +1,7 @@
+entity_id: "antorcha_subterraneos"
+type: "item"
+name: "Antorcha"
+components:
+  weight: 3
+  description: "Muy brillante. Útil para derretir la Columna de Hielo en la Pirámide del Hechicero."
+spatial_anchor: "subterraneos"

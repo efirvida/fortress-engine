@@ -1,0 +1,7 @@
+entity_id: "inscripcion_ciudad"
+type: "item"
+name: "Inscripción de la Ciudad Abandonada"
+components:
+  weight: 1
+  description: "Aquí habitaron los horantes durante mucho tiempo, hasta que La Bestia ocupó el lugar. Ellos levantaron cada pared de la Fortaleza, solo ellos saben cómo salir."
+spatial_anchor: "ciudad_abandonada"

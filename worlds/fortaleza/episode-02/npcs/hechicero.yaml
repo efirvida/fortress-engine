@@ -1,0 +1,9 @@
+entity_id: "hechicero"
+type: "npc"
+name: "hechicero"
+components:
+  description: "Un hombre inmenso, de barba blanca y túnica negra, que sostiene una vara con una carabela en la punta. Guarda un silencio impenetrable."
+  is_troll: true
+  wants_item: "marmidosa"
+  gift_flag: "hechicero_happy"
+spatial_anchor: "habitaciones_del_hechicero"

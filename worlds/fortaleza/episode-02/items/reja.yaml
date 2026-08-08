@@ -1,0 +1,7 @@
+entity_id: "reja"
+type: "item"
+name: "Reja"
+components:
+  description: "Un objeto que puede ser roto."
+  breakable: true
+spatial_anchor: "fondo_del_lago"

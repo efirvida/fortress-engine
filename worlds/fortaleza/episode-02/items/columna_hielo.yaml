@@ -1,0 +1,7 @@
+entity_id: "columna_hielo"
+type: "item"
+name: "Columna Hielo"
+components:
+  description: "Un objeto que puede ser roto."
+  breakable: true
+spatial_anchor: "piramide_del_hechicero"

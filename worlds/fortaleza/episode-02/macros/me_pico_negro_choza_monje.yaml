@@ -1,0 +1,7 @@
+macro_edge_id: "me_pico_negro_choza_monje"
+from_anchor: "cima_del_pico_negro"
+to_anchor: "choza_del_monje"
+direction: "bidirectional"
+passage_name: "puerta_madera"
+passage_description: "La Puerta de Madera de la choza"
+open: true

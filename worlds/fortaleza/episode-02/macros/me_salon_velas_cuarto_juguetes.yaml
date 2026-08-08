@@ -1,0 +1,7 @@
+macro_edge_id: "me_salon_velas_cuarto_juguetes"
+from_anchor: "salon_de_las_velas"
+to_anchor: "cuarto_de_juguetes"
+direction: "bidirectional"
+passage_name: "puerta_blanca"
+passage_description: "La Puerta Blanca"
+open: true

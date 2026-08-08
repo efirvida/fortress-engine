@@ -1,0 +1,7 @@
+macro_edge_id: "me_ciudad_abandonada_choza_sabio"
+from_anchor: "ciudad_abandonada"
+to_anchor: "choza_del_sabio"
+direction: "bidirectional"
+passage_name: "puerta_hierro"
+passage_description: "La Puerta de Hierro de la choza del Sabio"
+open: true

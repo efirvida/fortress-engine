@@ -1,0 +1,9 @@
+entity_id: "sabio"
+type: "npc"
+name: "sabio"
+components:
+  description: "Un hombre pequeño con espejuelos enormes, muy distraído haciendo un anillo de papel algo torcido en medio del caos."
+  is_troll: true
+  wants_item: "esqueleto_de_murcielago"
+  gift_flag: "sabio_happy"
+spatial_anchor: "choza_del_sabio"

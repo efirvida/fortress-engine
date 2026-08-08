@@ -1,0 +1,7 @@
+entity_id: "inscripcion_salon_fumar"
+type: "item"
+name: "Inscripción del Salón de Fumar"
+components:
+  weight: 1
+  description: "Profecía de la Bestia sobre su venganza. La muerte es un acto de la vida. Yo, la Bestia, he de morir como he vivido..."
+spatial_anchor: "salon_de_fumar"

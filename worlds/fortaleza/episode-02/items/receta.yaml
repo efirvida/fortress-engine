@@ -1,0 +1,7 @@
+entity_id: "receta"
+type: "item"
+name: "Receta"
+components:
+  weight: 1
+  description: "5 Ojos de rana, 1 Mano de gigante, 2 Cucharadas de puré de lombrices, 1 Hígado de muchacha virgen, 9 Libras de azúcar, 1 Tanque de agua del pantano verde. Útil para dar al Encapuchado en la Celda."
+spatial_anchor: "cocina"

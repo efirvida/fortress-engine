@@ -1,0 +1,7 @@
+macro_edge_id: "me_cuarto_juguetes_ruinas"
+from_anchor: "cuarto_de_juguetes"
+to_anchor: "ruinas"
+direction: "bidirectional"
+passage_name: "puerta_piedra"
+passage_description: "La Puerta de Piedra"
+open: true

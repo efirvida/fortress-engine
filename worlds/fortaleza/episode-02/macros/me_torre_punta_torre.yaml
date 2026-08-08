@@ -1,0 +1,7 @@
+macro_edge_id: "me_torre_punta_torre"
+from_anchor: "exterior_de_la_torre_de_cristal"
+to_anchor: "punta_de_la_torre_de_cristal"
+direction: "bidirectional"
+passage_name: "escalera_caracol"
+passage_description: "Escalera de caracol que asciende a la punta de la Torre"
+open: true

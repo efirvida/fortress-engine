@@ -1,0 +1,7 @@
+entity_id: "anillo_de_plata"
+type: "item"
+name: "Anillo de plata"
+components:
+  weight: 1
+  description: "Muy brillante. NO llevar durante La Prueba."
+spatial_anchor: "comienzo_de_las_cataratas"

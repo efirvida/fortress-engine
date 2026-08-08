@@ -1,0 +1,7 @@
+entity_id: "salon_de_fumar"
+type: "room"
+name: "el Salón de Fumar"
+components:
+  description: "Hay sesenta y seis sillas en el salón. Al lado de cada silla crece un tentáculo rosado con un pitillo en el extremo. Los pitillos humean."
+  visited: false
+spatial_anchor: null

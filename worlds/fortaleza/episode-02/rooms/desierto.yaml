@@ -1,0 +1,7 @@
+entity_id: "desierto"
+type: "room"
+name: "el Desierto"
+components:
+  description: "El calor lo asfixia. Usted no comprende cómo es posible que el clima varíe tanto de un lugar a otro de la Fortaleza."
+  visited: false
+spatial_anchor: null

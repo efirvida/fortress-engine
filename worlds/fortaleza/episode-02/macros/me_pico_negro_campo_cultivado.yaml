@@ -1,0 +1,7 @@
+macro_edge_id: "me_pico_negro_campo_cultivado"
+from_anchor: "cima_del_pico_negro"
+to_anchor: "campo_cultivado"
+direction: "bidirectional"
+passage_name: "ladera"
+passage_description: "La ladera que desciende al campo cultivado"
+open: true

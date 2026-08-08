@@ -1,0 +1,7 @@
+macro_edge_id: "me_desierto_valle"
+from_anchor: "desierto"
+to_anchor: "extenso_valle"
+direction: "bidirectional"
+passage_name: "avenida_flores"
+passage_description: "La Avenida de las flores al otro lado de la muralla"
+open: true

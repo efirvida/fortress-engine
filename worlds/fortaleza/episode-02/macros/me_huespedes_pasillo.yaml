@@ -1,0 +1,7 @@
+macro_edge_id: "me_huespedes_pasillo"
+from_anchor: "habitacion_para_huespedes"
+to_anchor: "pasillo"
+direction: "bidirectional"
+passage_name: "puerta"
+passage_description: "Una puerta tenue con un hilo de luz plateada"
+open: true

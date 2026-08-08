@@ -1,0 +1,8 @@
+macro_edge_id: "me_jardines_tesoros"
+from_anchor: "jardines_del_hechicero"
+to_anchor: "habitacion_de_los_tesoros"
+direction: "bidirectional"
+passage_name: "puerta_amarilla"
+passage_description: "La Puerta Amarilla que guarda los tesoros"
+open: false
+requires_text: "Omicuos Ihanti"

@@ -1,0 +1,7 @@
+macro_edge_id: "me_jardines_comedor"
+from_anchor: "jardines_del_hechicero"
+to_anchor: "comedor"
+direction: "bidirectional"
+passage_name: "puerta_madera"
+passage_description: "La Puerta de Madera"
+open: true

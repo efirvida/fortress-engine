@@ -1,0 +1,7 @@
+entity_id: "sastreria"
+type: "room"
+name: "la Sastrería"
+components:
+  description: "Parece la casa de una araña gigantesca. Hay hilos por todas partes."
+  visited: false
+spatial_anchor: null

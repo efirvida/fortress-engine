@@ -1,0 +1,9 @@
+macro_edge_id: "me_campo_cultivado_torre"
+from_anchor: "campo_cultivado"
+to_anchor: "exterior_de_la_torre_de_cristal"
+direction: "bidirectional"
+passage_name: "rio"
+passage_description: "El río que desciende a la Torre de Cristal"
+open: false
+requires_item: "cuerda"
+death_message: "La corriente te arrastra sin remedio. Sin una cuerda, mueres ahogado."

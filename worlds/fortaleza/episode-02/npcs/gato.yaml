@@ -1,0 +1,9 @@
+entity_id: "gato"
+type: "npc"
+name: "gato"
+components:
+  description: "Un gato enorme que maúlla suavemente mientras observa el interior del baúl con curiosidad."
+  is_troll: true
+  wants_item: "pescado"
+  gift_flag: "gato_happy"
+spatial_anchor: "interior_del_baul"

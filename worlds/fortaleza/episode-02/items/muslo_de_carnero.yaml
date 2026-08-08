@@ -1,0 +1,7 @@
+entity_id: "muslo_de_carnero"
+type: "item"
+name: "Muslo de carnero"
+components:
+  weight: 10
+  description: "Parece muslo de persona. Útil para dar al Monstruo en el Calabozo."
+spatial_anchor: "cocina"

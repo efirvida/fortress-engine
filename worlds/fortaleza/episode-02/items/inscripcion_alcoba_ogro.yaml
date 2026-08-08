@@ -1,0 +1,7 @@
+entity_id: "inscripcion_alcoba_ogro"
+type: "item"
+name: "Inscripción de la Alcoba del Ogro"
+components:
+  weight: 1
+  description: "¡BUUUU!"
+spatial_anchor: "alcoba_del_ogro"

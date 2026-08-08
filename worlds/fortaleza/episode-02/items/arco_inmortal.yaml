@@ -1,0 +1,7 @@
+entity_id: "arco_inmortal"
+type: "item"
+name: "Arco"
+components:
+  weight: 5
+  description: "Con este arco mataron a Hycrk, uno de los doce inmortales. Arma letal contra el Inmortal y protección para túneles de murciélagos."
+spatial_anchor: "antesala_de_la_prueba"

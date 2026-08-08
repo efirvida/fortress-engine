@@ -1,0 +1,7 @@
+macro_edge_id: "me_ciudad_abandonada_tunel_ruinas"
+from_anchor: "ciudad_abandonada"
+to_anchor: "ruinas"
+direction: "bidirectional"
+passage_name: "tunel"
+passage_description: "Túnel que conecta con las Ruinas"
+open: true

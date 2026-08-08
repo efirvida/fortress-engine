@@ -1,0 +1,9 @@
+macro_edge_id: "me_salon_blanco_limites"
+from_anchor: "salon_blanco"
+to_anchor: "limites_de_la_fortaleza"
+direction: "bidirectional"
+passage_name: "puerta_triangular"
+passage_description: "La Puerta Triangular que necesita la Cinta de Moebius"
+open: false
+requires_item: "cinta_de_moebius"
+death_message: "La puerta triangular no cede. Sin la Cinta de Moebius, quedas atrapado para siempre."

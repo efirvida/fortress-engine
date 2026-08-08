@@ -1,0 +1,7 @@
+macro_edge_id: "me_calabozos_antesala"
+from_anchor: "calabozos"
+to_anchor: "antesala_de_la_prueba"
+direction: "bidirectional"
+passage_name: "puerta_gris"
+passage_description: "La Puerta Gris de la Antesala"
+open: true

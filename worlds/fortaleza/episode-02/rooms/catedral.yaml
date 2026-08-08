@@ -1,0 +1,7 @@
+entity_id: "catedral"
+type: "room"
+name: "la Catedral"
+components:
+  description: "Es un lugar impresionante. Las paredes crecen hasta una altura increíble y se unen en una serie de simétricas torres. Usted se siente oprimido por la arquitectura, como si en realidad estuviese ante los ojos de Dios, en el día del juicio final."
+  visited: false
+spatial_anchor: null

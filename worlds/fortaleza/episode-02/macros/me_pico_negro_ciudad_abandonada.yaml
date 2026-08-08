@@ -1,0 +1,9 @@
+macro_edge_id: "me_pico_negro_ciudad_abandonada"
+from_anchor: "cima_del_pico_negro"
+to_anchor: "ciudad_abandonada"
+direction: "bidirectional"
+passage_name: "precipicio"
+passage_description: "El precipicio que desciende a la Ciudad Abandonada"
+open: false
+requires_item: "saltador"
+death_message: "La caída es demasiado larga. Sin algo que amortigüe el golpe, te estrellas contra las rocas."

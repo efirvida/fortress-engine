@@ -1,0 +1,7 @@
+macro_edge_id: "me_patio_alcoba_ogro"
+from_anchor: "patio_interior"
+to_anchor: "alcoba_del_ogro"
+direction: "bidirectional"
+passage_name: "puerta_negra"
+passage_description: "La Puerta Negra del patio"
+open: true
