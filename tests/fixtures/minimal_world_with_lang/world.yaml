@@ -1,0 +1,9 @@
+world_id: "test_world"
+name: "Test World"
+language: "es"
+parser:
+  plugin: "classic"
+  options: {}
+narrator:
+  plugin: "template"
+  options: {}

@@ -9,11 +9,12 @@ Pydantic is used ONLY at load time — runtime objects are plain dataclasses.
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, field as dc_field
 from pathlib import Path
 from typing import Any, cast
 
 import yaml
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 
 from fortress_engine.entities.entity import (
     CarryOver,
@@ -68,10 +69,44 @@ class EpisodeYAML(BaseModel):
     carry_over: CarryOverYAML
 
 
+class PluginConfigYAML(BaseModel):
+    """Pydantic model for plugin configuration in world.yaml.
+
+    The YAML model uses ``plugin`` as the field name (per approved spec).
+    The runtime ``PluginConfig`` (factory.py) uses ``name`` — the
+    conversion between them happens in the factory/bootstrap layer.
+    """
+    model_config = ConfigDict(extra="forbid")
+
+    plugin: str
+    options: dict[str, Any] = {}
+
+
 class WorldYAML(BaseModel):
     """Pydantic model for world.yaml."""
     world_id: str
     name: str
+    language: str = "es"
+    parser: str | PluginConfigYAML = PluginConfigYAML(plugin="classic")  # type: ignore[assignment]
+    narrator: str | PluginConfigYAML = PluginConfigYAML(plugin="template")  # type: ignore[assignment]
+
+    @field_validator("parser", "narrator", mode="before")
+    @classmethod
+    def _coerce_string_to_plugin_config(cls, v: Any) -> Any:
+        """Coerce a bare string value to ``PluginConfigYAML(plugin=v)``.
+
+        Passes through dicts (for normal Pydantic validation of the
+        PluginConfigYAML model) and PluginConfigYAML instances unchanged.
+        """
+        if isinstance(v, str):
+            return PluginConfigYAML(plugin=v)
+        if isinstance(v, dict):
+            return v
+        if isinstance(v, PluginConfigYAML):
+            return v
+        raise ValueError(
+            f"Plugin config must be a string or a mapping, got {type(v).__name__}"
+        )
 
 
 class EntityYAML(BaseModel):
@@ -131,6 +166,43 @@ class MacroEdgeYAML(BaseModel):
     forbids_flag: str | None = None
     death_message: str | None = None
     open: bool = True
+
+
+class VocabularyYAML(BaseModel):
+    """Pydantic model for ``shared/vocabulary.yaml``.
+
+    Defines per-world vocabulary: verb synonyms, stopwords, routing
+    prepositions, speech markers, and speech verbs.
+    """
+    model_config = ConfigDict(extra="forbid")
+
+    language: str | None = None
+    verbs: dict[str, list[str]]
+    stopwords: list[str]
+    prepositions: dict[str, list[str]]
+    speech_markers: list[str]
+    speech_verbs: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Runtime dataclasses (no Pydantic)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class Vocabulary:
+    """Runtime vocabulary — plain dataclass, never Pydantic.
+
+    Mirrors the six sections of ``VocabularyYAML`` with the same semantics
+    but no validation overhead at runtime.
+    """
+
+    language: str | None
+    verbs: dict[str, list[str]]
+    stopwords: list[str]
+    prepositions: dict[str, list[str]]
+    speech_markers: list[str]
+    speech_verbs: list[str]
 
 
 # ---------------------------------------------------------------------------
@@ -322,6 +394,42 @@ class EntityLoader:
         raw = _load_yaml(path)
         model = _validate_pydantic(WorldYAML, raw, path, "world config")
         return cast(WorldYAML, model).model_dump()
+
+    # -------------------------------------------------------------------
+    # Vocabulary
+    # -------------------------------------------------------------------
+
+    def load_vocabulary(self, world_path: Path | None = None) -> Vocabulary | None:
+        """Load per-world vocabulary from ``<world>/shared/vocabulary.yaml``.
+
+        When *world_path* is given, that directory is used instead of
+        the loader's configured world path.
+
+        Returns ``None`` when the vocabulary file is absent (allowing
+        the parser's default-vocabulary cascade).  Raises ``ValueError``
+        when the file exists but is malformed or fails validation.
+
+        Vocabulary precedence (per design, §3): constructor override >
+        world file > DEFAULT constant.  This loader only handles the
+        world-file tier; controller/bootstrap maps the cascade.
+        """
+        target = (world_path or self._world_path) / "shared" / "vocabulary.yaml"
+        if not target.is_file():
+            return None
+
+        raw = _load_yaml(target)
+        model = _validate_pydantic(
+            VocabularyYAML, raw, target, "vocabulary"
+        )
+        v = cast(VocabularyYAML, model)
+        return Vocabulary(
+            language=v.language,
+            verbs={k: list(w) for k, w in v.verbs.items()},
+            stopwords=list(v.stopwords),
+            prepositions={k: list(w) for k, w in v.prepositions.items()},
+            speech_markers=list(v.speech_markers),
+            speech_verbs=list(v.speech_verbs),
+        )
 
     # -------------------------------------------------------------------
     # Episodes
