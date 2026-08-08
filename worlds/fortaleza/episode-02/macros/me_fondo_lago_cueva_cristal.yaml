@@ -1,0 +1,9 @@
+macro_edge_id: "me_fondo_lago_cueva_cristal"
+from_anchor: "fondo_del_lago"
+to_anchor: "cueva_de_cristal"
+direction: "bidirectional"
+passage_name: "grieta"
+passage_description: "La grieta que lleva a la Cueva de Cristal"
+open: false
+requires_item: "talisman_de_nieve"
+death_message: "El agua helada te congela al instante. Sin el talismán, la muerte es inevitable."

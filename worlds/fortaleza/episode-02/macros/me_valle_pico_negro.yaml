@@ -1,0 +1,7 @@
+macro_edge_id: "me_valle_pico_negro"
+from_anchor: "extenso_valle"
+to_anchor: "cima_del_pico_negro"
+direction: "bidirectional"
+passage_name: "montanas"
+passage_description: "Las montañas que conducen al Pico Negro"
+open: true

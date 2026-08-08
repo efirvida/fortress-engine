@@ -1,0 +1,7 @@
+macro_edge_id: "me_ruinas_salon_recepciones"
+from_anchor: "ruinas"
+to_anchor: "salon_de_recepciones"
+direction: "bidirectional"
+passage_name: "puerta_hierro"
+passage_description: "La Puerta de Hierro"
+open: true

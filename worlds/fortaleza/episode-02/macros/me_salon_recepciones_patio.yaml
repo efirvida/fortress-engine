@@ -1,0 +1,7 @@
+macro_edge_id: "me_salon_recepciones_patio"
+from_anchor: "salon_de_recepciones"
+to_anchor: "patio_interior"
+direction: "bidirectional"
+passage_name: "puerta_gris"
+passage_description: "La Puerta Gris"
+open: true

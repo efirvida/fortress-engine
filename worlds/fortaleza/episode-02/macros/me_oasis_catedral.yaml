@@ -1,0 +1,7 @@
+macro_edge_id: "me_oasis_catedral"
+from_anchor: "oasis"
+to_anchor: "catedral"
+direction: "bidirectional"
+passage_name: "ruta_camellos"
+passage_description: "La Ruta de los Camellos"
+open: true

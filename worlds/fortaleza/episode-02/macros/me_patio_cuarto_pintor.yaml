@@ -1,0 +1,7 @@
+macro_edge_id: "me_patio_cuarto_pintor"
+from_anchor: "patio_interior"
+to_anchor: "cuarto_de_un_pintor"
+direction: "bidirectional"
+passage_name: "puerta_azul"
+passage_description: "La Puerta Azul del patio"
+open: true

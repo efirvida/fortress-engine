@@ -1,0 +1,7 @@
+macro_edge_id: "me_orilla_lago_desierto"
+from_anchor: "orilla_del_lago"
+to_anchor: "desierto"
+direction: "bidirectional"
+passage_name: "camino"
+passage_description: "Camino que conduce al desierto"
+open: true
