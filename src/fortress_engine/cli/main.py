@@ -46,65 +46,6 @@ class EngineBundle:
 # ---------------------------------------------------------------------------
 
 
-def _copy_hyper_edges_to_all_rooms(graph, state, episodes, path):
-    """Copy hyper edges from start_anchor to all other rooms.
-
-    EpisodeManager.start_episode() registers all hyper edges under the
-    episode's start_anchor only.  Since the engine resolves hyper edges
-    by anchor, edges defined at the start room would be unreachable from
-    any other room.  This copies every registered hyper edge to every
-    room in the episode so actions (take, give, kill, break, etc.) work
-    regardless of where the protagonist currently is.
-
-    This mirrors the _OrchFixture pattern from test_walkthrough.py but
-    generalizes it from "escape edges" to ALL edges.
-    """
-    import yaml
-
-    start_anchor = state.get_entity("hero").spatial_anchor
-    if not start_anchor:
-        return
-
-    # Collect ALL hyper edges registered under start_anchor.
-    all_edges: list = []
-    for verb in [
-        "tomar", "coger", "dejar", "soltar",
-        "abrir", "matar", "asesinar", "destrozar",
-        "romper", "forzar", "preguntar", "interrogar",
-        "dar", "regalar", "ver", "leer", "mirar", "observar",
-        "inventario", "abandonar", "terminar",
-        "huir", "escapar", "ir", "atravesar", "cruzar", "pasar",
-        "responder", "diciendo", "ejecutar", "salvar", "cargar",
-        "pesar",
-    ]:
-        try:
-            edges = graph.get_hyper_edges_for_verb(start_anchor, verb)
-            if edges:
-                all_edges.extend(edges)
-        except Exception:
-            continue
-
-    if not all_edges:
-        return
-
-    # Copy every edge to every room in every episode.
-    for ep in episodes:
-        ep_num = ep.id.split("-")[-1]
-        rooms_path = path / f"episode-{ep_num}" / "rooms"
-        if not rooms_path.is_dir():
-            continue
-
-        for room_file in rooms_path.glob("*.yaml"):
-            with open(room_file) as f:
-                room_data = yaml.safe_load(f)
-            if not room_data:
-                continue
-            room_id = room_data.get("entity_id")
-            if room_id and room_id != start_anchor:
-                for edge in all_edges:
-                    graph.add_hyper_edge(room_id, edge)
-
-
 def _build_engine(
     world_path: str,
     parser_name: str = "classic",
@@ -168,13 +109,14 @@ def _build_engine(
             turn_number=0,
         )
 
-        # Start episode
+        # Start episode.
+        # EpisodeManager.distribute_hyper_edges_to_anchors() copies all
+        # hyper edges from start_anchor to every spatial_anchor in the
+        # episode, so actions work regardless of protagonist position.
+        # The engine is entity-agnostic: no "rooms", no hardcoded verbs.
         ep_mgr = EpisodeManager(episodes, str(path), bus)
         graph = ep_mgr.start_episode("episode-01", state)
-
-        # Copy escape edges from start_anchor to all other rooms.
-        # This mirrors the _OrchFixture pattern from test_walkthrough.py.
-        _copy_hyper_edges_to_all_rooms(graph, state, episodes, path)
+        ep_mgr.distribute_hyper_edges_to_anchors(graph, state, "episode-01")
 
         # Build goal evaluator
         episode = episodes[0]

@@ -15,6 +15,7 @@ from fortress_engine.engine.orchestrator import TurnOrchestrator
 from fortress_engine.engine.state import WorldState
 from fortress_engine.events.event_bus import EventBus
 from fortress_engine.plugins.narrator_interface import NarratorInterface
+from fortress_engine.entities.entity import Episode, GoalConditions, CarryOver
 
 
 _WORLD_PATH = Path(__file__).resolve().parent.parent.parent / "worlds" / "_test_minimal"
@@ -245,213 +246,103 @@ class TestBuildEngine:
             _build_engine(str(world_dir))
         assert exc_info.value.code == 1
 
-    def test_copy_hyper_edges_to_all_rooms_no_escape_edges(self):
-        """_copy_hyper_edges_to_all_rooms handles no escape edges gracefully."""
-        from fortress_engine.cli.main import _copy_hyper_edges_to_all_rooms
+    def test_distribute_hyper_edges_spatial_anchors(self):
+        """EpisodeManager.distribute_hyper_edges_to_anchors copies to all anchors."""
+        from fortress_engine.engine.episode_manager import EpisodeManager
         from fortress_engine.engine.state import WorldState
-        from fortress_engine.entities.entity import Entity
+        from fortress_engine.entities.entity import Entity, Episode, GoalConditions, CarryOver
         from fortress_engine.events.event_bus import EventBus
 
+        # Entities with spatial_anchors (entity-agnostic: not "rooms").
+        # Rooms use their own entity_id as spatial_anchor (self-anchored).
+        room_a = Entity("anchor_a", "type_a", "Anchor A", {}, "anchor_a")
+        room_b = Entity("anchor_b", "type_b", "Anchor B", {}, "anchor_b")
+        room_c = Entity("anchor_c", "type_c", "Anchor C", {}, "anchor_c")
+
         state = WorldState(
-            entities={"hero": Entity("hero", "player", "Hero", {}, None)},
+            entities={
+                "hero": Entity("hero", "player", "Hero", {}, "anchor_a"),
+                "anchor_a": room_a,
+                "anchor_b": room_b,
+                "anchor_c": room_c,
+            },
             player_controlled_entities=["hero"],
             active_protagonist_id="hero",
         )
-        state.get_entity("hero").spatial_anchor = "cell"
 
-        bus = EventBus()
-
-        # Mock graph with no escape edges
-        class MockGraph:
-            def get_hyper_edges_for_verb(self, anchor, verb):
-                return []
-
-        graph = MockGraph()
-
-        # This should not raise an exception
-        _copy_hyper_edges_to_all_rooms(graph, state, [], Path("/tmp"))
-
-    def test_copy_hyper_edges_to_all_rooms_with_escape_edges(self, tmp_path):
-        """_copy_hyper_edges_to_all_rooms copies edges to other rooms."""
-        from fortress_engine.cli.main import _copy_hyper_edges_to_all_rooms
-        from fortress_engine.engine.state import WorldState
-        from fortress_engine.entities.entity import Entity
-        from fortress_engine.events.event_bus import EventBus
-
-        state = WorldState(
-            entities={"hero": Entity("hero", "player", "Hero", {}, None)},
-            player_controlled_entities=["hero"],
-            active_protagonist_id="hero",
+        # Episode with anchor_a as start
+        episode = Episode(
+            id="ep1", name="Test", order=1, description="",
+            requires=[], start_anchor="anchor_a",
+            goal=GoalConditions(conditions=[], output="", side_effects=[]),
+            carry_over=CarryOver(),
         )
-        state.get_entity("hero").spatial_anchor = "cell"
 
         bus = EventBus()
+        mgr = EpisodeManager([episode], "/tmp", bus)
 
-        # Mock graph with escape edges
-        class MockEdge:
-            pass
-
-        escape_edge = MockEdge()
+        # Mock graph with hyper edges at start_anchor
+        class MockHyperEdge:
+            def __init__(self, name):
+                self.name = name
 
         class MockGraph:
             def __init__(self):
+                self._hyper_edges = {"anchor_a": {"verb1": [MockEdge("e1")]}}
                 self.added = []
 
             def get_hyper_edges_for_verb(self, anchor, verb):
-                if anchor == "cell" and verb == "huir":
-                    return [escape_edge]
-                return []
+                return self._hyper_edges.get(anchor, {}).get(verb, [])
+
+            def add_hyper_edge(self, anchor, edge):
+                self.added.append((anchor, edge))
+
+        MockEdge = MockHyperEdge
+        graph = MockGraph()
+
+        mgr.distribute_hyper_edges_to_anchors(graph, state, "ep1")
+
+        # Edge should be copied to anchor_b and anchor_c (not anchor_a)
+        added_anchors = [a for a, _ in graph.added]
+        assert "anchor_b" in added_anchors
+        assert "anchor_c" in added_anchors
+        assert "anchor_a" not in added_anchors  # not copied to self
+
+    def test_distribute_hyper_edges_no_edges(self):
+        """distribute_hyper_edges_to_anchors handles no edges gracefully."""
+        from fortress_engine.engine.episode_manager import EpisodeManager
+        from fortress_engine.engine.state import WorldState
+        from fortress_engine.entities.entity import Entity, Episode, GoalConditions, CarryOver
+        from fortress_engine.events.event_bus import EventBus
+
+        state = WorldState(
+            entities={"hero": Entity("hero", "player", "Hero", {}, None)},
+            player_controlled_entities=["hero"],
+            active_protagonist_id="hero",
+        )
+        state.get_entity("hero").spatial_anchor = "start"
+
+        episode = Episode(
+            id="ep1", name="Test", order=1, description="",
+            requires=[], start_anchor="start",
+            goal=GoalConditions(conditions=[], output="", side_effects=[]),
+            carry_over=CarryOver(),
+        )
+
+        bus = EventBus()
+        mgr = EpisodeManager([episode], "/tmp", bus)
+
+        class MockGraph:
+            def __init__(self):
+                self._hyper_edges = {"start": {}}
+                self.added = []
+
+            def get_hyper_edges_for_verb(self, anchor, verb):
+                return self._hyper_edges.get(anchor, {}).get(verb, [])
 
             def add_hyper_edge(self, anchor, edge):
                 self.added.append((anchor, edge))
 
         graph = MockGraph()
-
-        # Create a world with rooms
-        world_dir = tmp_path / "escape_world"
-        world_dir.mkdir()
-        (world_dir / "world.yaml").write_text("world_id: escape_world\nname: Escape World\n")
-        episodes_dir = world_dir / "episodes"
-        episodes_dir.mkdir()
-        (episodes_dir / "episode-01.yaml").write_text(
-            "id: episode-01\n"
-            "name: Escape Episode\n"
-            "order: 1\n"
-            "description: An episode with escape\n"
-            "requires: []\n"
-            "start_anchor: cell\n"
-            "goal:\n"
-            "  conditions: []\n"
-            "  output: ''\n"
-            "  side_effects: []\n"
-            "carry_over:\n"
-            "  inventory: []\n"
-            "  flags: []\n"
-        )
-        rooms_dir = world_dir / "episode-01" / "rooms"
-        rooms_dir.mkdir(parents=True)
-        (rooms_dir / "cell.yaml").write_text(
-            "entity_id: cell\n"
-            "type: room\n"
-            "name: Cell\n"
-            "components: {}\n"
-        )
-        (rooms_dir / "hall.yaml").write_text(
-            "entity_id: hall\n"
-            "type: room\n"
-            "name: Hall\n"
-            "components: {}\n"
-        )
-
-        # Mock episodes
-        class MockEpisode:
-            id = "episode-01"
-
-        _copy_hyper_edges_to_all_rooms(graph, state, [MockEpisode()], world_dir)
-
-        # Should have copied edge to hall but not cell
-        assert len(graph.added) == 1
-        assert graph.added[0][0] == "hall"
-        assert graph.added[0][1] is escape_edge
-
-    def test_copy_hyper_edges_to_all_rooms_missing_rooms_dir(self, tmp_path):
-        """_copy_hyper_edges_to_all_rooms handles missing rooms dir for episode with escape edges."""
-        from fortress_engine.cli.main import _copy_hyper_edges_to_all_rooms
-        from fortress_engine.engine.state import WorldState
-        from fortress_engine.entities.entity import Entity
-
-        state = WorldState(
-            entities={"hero": Entity("hero", "player", "Hero", {}, None)},
-            player_controlled_entities=["hero"],
-            active_protagonist_id="hero",
-        )
-        state.get_entity("hero").spatial_anchor = "cell"
-
-        class MockEdge:
-            pass
-
-        escape_edge = MockEdge()
-
-        class MockGraph:
-            def get_hyper_edges_for_verb(self, anchor, verb):
-                if anchor == "cell" and verb == "huir":
-                    return [escape_edge]
-                return []
-
-        graph = MockGraph()
-
-        world_dir = tmp_path / "no_rooms_dir"
-        world_dir.mkdir()
-
-        class MockEpisode:
-            id = "episode-01"
-
-        # rooms dir does NOT exist → line 73 (continue) should be hit
-        _copy_hyper_edges_to_all_rooms(graph, state, [MockEpisode()], world_dir)
-
-    def test_copy_hyper_edges_to_all_rooms_exception_handler(self, tmp_path):
-        """_copy_hyper_edges_to_all_rooms handles exceptions gracefully."""
-        from fortress_engine.cli.main import _copy_hyper_edges_to_all_rooms
-        from fortress_engine.engine.state import WorldState
-        from fortress_engine.entities.entity import Entity
-
-        state = WorldState(
-            entities={"hero": Entity("hero", "player", "Hero", {}, None)},
-            player_controlled_entities=["hero"],
-            active_protagonist_id="hero",
-        )
-        state.get_entity("hero").spatial_anchor = "cell"
-
-        class MockEdge:
-            pass
-
-        escape_edge = MockEdge()
-
-        class MockGraph:
-            def get_hyper_edges_for_verb(self, anchor, verb):
-                if anchor == "cell" and verb == "huir":
-                    return [escape_edge]
-                # For "escapar" and "fuir" raise an exception
-                raise RuntimeError("Graph error")
-
-        graph = MockGraph()
-
-        world_dir = tmp_path / "exception_world"
-        world_dir.mkdir()
-        episodes_dir = world_dir / "episodes"
-        episodes_dir.mkdir()
-        (episodes_dir / "episode-01.yaml").write_text(
-            "id: episode-01\nname: Test\norder: 1\ndescription: ''\n"
-            "requires: []\nstart_anchor: cell\n"
-            "goal:\n  conditions: []\n  output: ''\n  side_effects: []\n"
-            "carry_over:\n  inventory: []\n  flags: []\n"
-        )
-        rooms_dir = world_dir / "episode-01" / "rooms"
-        rooms_dir.mkdir(parents=True)
-        (rooms_dir / "cell.yaml").write_text(
-            "entity_id: cell\ntype: room\nname: Cell\ncomponents: {}\n"
-        )
-
-        class MockEpisode:
-            id = "episode-01"
-
-        # Should not raise — exception is caught
-        _copy_hyper_edges_to_all_rooms(graph, state, [MockEpisode()], world_dir)
-
-    def test_copy_hyper_edges_to_all_rooms_null_anchor(self):
-        """_copy_hyper_edges_to_all_rooms returns early when start_anchor is None."""
-        from fortress_engine.cli.main import _copy_hyper_edges_to_all_rooms
-        from fortress_engine.engine.state import WorldState
-        from fortress_engine.entities.entity import Entity
-
-        state = WorldState(
-            entities={"hero": Entity("hero", "player", "Hero", {}, None)},
-            player_controlled_entities=["hero"],
-            active_protagonist_id="hero",
-        )
-        # hero has no spatial_anchor (None)
-        class MockGraph:
-            pass
-
-        # Should return early without error — line 60
-        _copy_hyper_edges_to_all_rooms(MockGraph(), state, [], Path("/tmp"))
+        mgr.distribute_hyper_edges_to_anchors(graph, state, "ep1")
+        assert len(graph.added) == 0  # nothing to distribute

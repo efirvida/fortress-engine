@@ -1,6 +1,9 @@
 """EpisodeManager — load and transition between story episodes.
 
 Follows tdd.md §4.6 and turn-orchestrator spec (episode transitions, carry_over).
+The engine is entity-agnostic: it knows about ``spatial_anchor`` and
+``anchor``, never about "rooms", "items", or "npcs".  World-level
+vocabulary lives in world data, not in the engine.
 """
 
 from __future__ import annotations
@@ -85,15 +88,15 @@ class EpisodeManager:
         graph = DualGraphEngine()
         graph.build_macro_graph(data["rooms"], data["macro_edges"])
 
-        # Register hyper edges.
+        # Register hyper edges under start_anchor, then distribute to all
+        # anchors so actions work regardless of protagonist position.
         for he in data["hyper_edges"]:
-            # Determine the anchor.  If the hyper edge's clique.subject
-            # resolves to the active protagonist, use the protagonist's
-            # current anchor; otherwise use the subject's spatial_anchor.
-            # For episode start the protagonist hasn't been placed yet,
-            # so we anchor everything under the episode's start_anchor.
-            anchor_id = episode.start_anchor
-            graph.add_hyper_edge(anchor_id, he)
+            graph.add_hyper_edge(episode.start_anchor, he)
+
+        # Distribute hyper edges to all spatial_anchors in the episode.
+        # The engine is entity-agnostic: we iterate spatial_anchor values
+        # without referencing world-level concepts like "rooms" or "items".
+        self.distribute_hyper_edges_to_anchors(graph, state, episode_id)
 
         # Teleport the active protagonist to the episode start_anchor.
         protagonist = state.get_entity(state.active_protagonist_id)
@@ -216,6 +219,56 @@ class EpisodeManager:
         protagonist.spatial_anchor = next_ep.start_anchor
 
         return new_graph  # type: ignore[return-value]
+
+    def distribute_hyper_edges_to_anchors(
+        self,
+        graph: "DualGraphEngine",
+        state: WorldState,
+        episode_id: str,
+    ) -> None:
+        """Distribute hyper edges from the episode start_anchor to all anchors.
+
+        ``start_episode()`` registers all hyper edges under the episode's
+        ``start_anchor`` only.  Because the engine resolves hyper edges by
+        anchor, edges defined at the start anchor would be unreachable from
+        any other anchor.  This copies every registered hyper edge to every
+        spatial_anchor present in the episode's entities so actions work
+        regardless of the protagonist's current anchor.
+
+        The engine is entity-agnostic: this method iterates over
+        ``spatial_anchor`` values in ``state.entities`` — it does NOT
+        reference "rooms", "items", "npcs", or any world-level vocabulary.
+
+        Args:
+            graph: The graph built by ``start_episode()``.
+            state: Current world state (contains all entities).
+            episode_id: The active episode ID (unused, kept for symmetry
+                with ``start_episode`` and future per-episode filtering).
+        """
+        _ = episode_id  # reserved for future per-episode filtering
+
+        start_anchor = self._episodes[episode_id].start_anchor
+
+        # Collect ALL unique hyper edges registered under start_anchor.
+        start_edges: list[object] = []
+        for verb_edges in graph._hyper_edges.get(start_anchor, {}).values():
+            start_edges.extend(verb_edges)
+
+        if not start_edges:
+            return
+
+        # Collect all unique spatial_anchors from entities in state.
+        target_anchors: set[str] = set()
+        for entity in state.entities.values():
+            if entity.spatial_anchor is not None:
+                target_anchors.add(entity.spatial_anchor)
+
+        # Distribute: copy every edge from start_anchor to every other anchor.
+        for anchor_id in target_anchors:
+            if anchor_id == start_anchor:
+                continue
+            for edge in start_edges:
+                graph.add_hyper_edge(anchor_id, edge)
 
     def apply_carry_over(self, carry_over: CarryOver, state: WorldState) -> None:
         """Apply carry-over rules to *state*.
