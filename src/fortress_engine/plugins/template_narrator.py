@@ -20,16 +20,51 @@ if TYPE_CHECKING:
 
 
 # ---------------------------------------------------------------------------
-# Default templates (9 keys per design)
+# Default Spanish messages — code-driven dispatch (design.md table)
+# ---------------------------------------------------------------------------
+
+DEFAULT_SPANISH_MESSAGES: dict[str, str] = {
+    # --- error_output codes ---
+    "error_output.no_action": "No entiendes cómo hacer '{verb}' aquí.",
+    "error_output.blocked": "No puedes ir por ahí.",
+    "error_output.no_repository": "Guardar no está disponible.",
+    "error_output.invalid_slot": "Ranura inválida. Usá 1, 2, o 3.",
+    "error_output.missing_slot": "No hay partida guardada en la ranura {slot}.",
+    "error_output.invalid_protagonist": "No se encuentra a '{name}'.",
+    "error_output.operator_failed": "No puedes hacer eso.",
+    "error_output.text_closed": "{passage_name} está cerrada.",
+    "error_output.requires_item": "No puedes pasar por {passage_name} aún.",
+    "error_output.forbids_item": "{passage_name} está sellada.",
+    "error_output.requires_flag": "No puedes pasar por {passage_name} aún.",
+    "error_output.forbids_flag": "{passage_name} está sellada.",
+    "error_output.not_portable": "Usted no puede cargar con eso.",
+    "error_output.too_heavy": "Sería demasiado peso.",
+    "error_output.entity_not_found": "No se encuentra.",
+    "error_output.entity_not_in_container": "No está donde lo buscas.",
+    "error_output.container_not_found": "No se encuentra el destino.",
+    "error_output.transform_component_missing": "No puedes hacer eso.",
+    "error_output.combine_inputs_missing": "Faltan objetos para combinar.",
+    "error_output.teleport_entity_not_found": "No se encuentra.",
+    "error_output.teleport_anchor_not_found": "No puedes ir ahí.",
+    "error_output.unknown_operator": "No puedes hacer eso.",
+    "error_output.unhandled_operator": "No puedes hacer eso.",
+    # --- system_message codes ---
+    "system_message.game_saved": "Partida guardada en la ranura {slot}.",
+    "system_message.game_loaded": "Partida cargada de la ranura {slot}.",
+    "system_message.protagonist_switched": "Ahora controlas a {name}.",
+    "system_message.protagonists_listed": "Grupo: {names}.",
+}
+
+# ---------------------------------------------------------------------------
+# Default templates (7 keys — error_output + system_message now use the
+# messages dispatch above)
 # ---------------------------------------------------------------------------
 
 _DEFAULT_TEMPLATES: dict[str, str] = {
     "entity_entered": "Entras en {entity_name}.",
     "action_output": "{text}",
-    "error_output": "{message}",
     "episode_completed": "{victory_text}",
     "game_over": "Fin del juego.",
-    "system_message": "{message}",
     "entity_described": "{description}",
     "entity_examined": "{description}",
     "inventory_listed": "Tienes: {items}.",
@@ -83,11 +118,15 @@ class TemplateNarrator(NarratorInterface):
         self,
         language: str = "es",
         templates: dict[str, str] | None = None,
+        messages: dict[str, str] | None = None,
     ) -> None:
         super().__init__(language)
         self._templates = dict(_DEFAULT_TEMPLATES)
         if templates:
             self._templates.update(templates)
+        self._messages = dict(DEFAULT_SPANISH_MESSAGES)
+        if messages:
+            self._messages.update(messages)
         self._initialized = False
 
     # ------------------------------------------------------------------
@@ -162,10 +201,14 @@ class TemplateNarrator(NarratorInterface):
     def _handle_error_output(
         self, event: EngineEvent, world_state: WorldState | None
     ) -> str:
-        message = event.payload.get("message")
-        if message:
-            return self._templates["error_output"].format(message=str(message))
-        return _FALLBACK_TEXT["error_output"]
+        code = event.payload.get("error_code", "")
+        data = event.payload.get("data", {}) or {}
+        key = f"error_output.{code}"
+        template = self._messages.get(key) or _FALLBACK_TEXT["error_output"]
+        try:
+            return template.format(**data)
+        except (KeyError, IndexError, ValueError):
+            return template  # deterministic fallback, no crash
 
     def _handle_episode_completed(
         self, event: EngineEvent, world_state: WorldState | None
@@ -187,10 +230,14 @@ class TemplateNarrator(NarratorInterface):
     def _handle_system_message(
         self, event: EngineEvent, world_state: WorldState | None
     ) -> str:
-        message = event.payload.get("message")
-        if message:
-            return self._templates["system_message"].format(message=str(message))
-        return _FALLBACK_TEXT["system_message"]
+        code = event.payload.get("code", "")
+        data = event.payload.get("data", {}) or {}
+        key = f"system_message.{code}"
+        template = self._messages.get(key) or _FALLBACK_TEXT["system_message"]
+        try:
+            return template.format(**data)
+        except (KeyError, IndexError, ValueError):
+            return template  # deterministic fallback, no crash
 
     def _handle_entity_described(
         self, event: EngineEvent, world_state: WorldState | None

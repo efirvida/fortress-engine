@@ -24,6 +24,7 @@ from fortress_engine.events.event_types import (
     ACTION_RESOLVED,
     ENTITY_ENTERED,
     ENTITY_TELEPORTED,
+    EPISODE_COMPLETED,
     ERROR_OUTPUT,
     GAME_COMPLETED,
     GAME_LOADED,
@@ -47,6 +48,7 @@ if TYPE_CHECKING:
     from fortress_engine.plugins.narrator_interface import NarratorInterface
     from fortress_engine.persistence.repository import WorldStateRepository
     from fortress_engine.persistence.event_log import EventSourcingSaveSystem
+    from fortress_engine.entities.loader import Vocabulary
 
 
 # ---------------------------------------------------------------------------
@@ -77,28 +79,32 @@ _PAYLOAD_KEY_TO_EVENT: dict[tuple[str, ...], str] = {
 # System command patterns (case-insensitive, stripped)
 # ---------------------------------------------------------------------------
 
-_SYSTEM_COMMANDS: set[str] = {
-    "guardar", "cargar", "terminar", "esperar", "grupo",
-    "save", "load",
+DEFAULT_MOVEMENT_VERBS: frozenset[str] = frozenset({"ir", "abrir"})
+DEFAULT_SYSTEM_COMMANDS: dict[str, list[str]] = {
+    "save":   ["guardar", "save"],
+    "load":   ["cargar", "load"],
+    "quit":   ["terminar", "abandonar", "quit"],
+    "wait":   ["esperar", "wait"],
+    "group":  ["grupo", "group"],
+    "switch": ["cambiar a"],   # prefix command
 }
-_SYSTEM_PREFIXES: list[tuple[str, str]] = [
-    ("guardar ", "save"),
-    ("cargar ", "load"),
-    ("save ", "save"),
-    ("load ", "load"),
-    ("cambiar a ", "switch"),
-]
 
 
-def _parse_save_slot(raw_lower: str) -> str | None:
+def _parse_save_slot(
+    raw_lower: str,
+    surfaces: set[str] | None = None,
+) -> str | None:
     """Extract a valid save-slot name from a lowercased command string.
 
     Returns:
         ``"slot_1"``, ``"slot_2"``, ``"slot_3"`` for valid slots,
         or ``None`` for invalid slot numbers.
     """
-    # Strip the command prefix to get the slot number part.
-    for prefix in ("guardar", "cargar", "save", "load"):
+    # Build the set of prefix surfaces to try.
+    prefixes = surfaces or {"guardar", "cargar", "save", "load"}
+    # Sort longest-first to avoid partial prefix matches.
+    sorted_prefixes = sorted(prefixes, key=len, reverse=True)
+    for prefix in sorted_prefixes:
         if raw_lower.startswith(prefix):
             rest = raw_lower[len(prefix):].strip()
             if not rest:
@@ -127,6 +133,7 @@ class TurnOrchestrator:
         episode_manager: EpisodeManager,
         repository: WorldStateRepository | None = None,
         save_system: EventSourcingSaveSystem | None = None,
+        vocabulary: "Vocabulary | None" = None,
     ) -> None:
         self._state = state
         self._graph = graph
@@ -137,6 +144,28 @@ class TurnOrchestrator:
         self._episode_manager = episode_manager
         self._repository = repository
         self._save_system = save_system
+        self._vocabulary = vocabulary
+
+    # ------------------------------------------------------------------
+    # Vocabulary accessors
+    # ------------------------------------------------------------------
+
+    def _movement_verbs(self) -> frozenset[str]:
+        """Return movement verb set from vocabulary or default."""
+        if self._vocabulary is None or not self._vocabulary.movement_verbs:
+            return DEFAULT_MOVEMENT_VERBS
+        return frozenset(self._vocabulary.movement_verbs)
+
+    def _system_commands(self) -> dict[str, list[str]]:
+        """Return system command surface map from vocabulary or default."""
+        if self._vocabulary is None or not self._vocabulary.system_commands:
+            return dict(DEFAULT_SYSTEM_COMMANDS)
+        result = dict(self._vocabulary.system_commands)
+        # Ensure all canonical kinds are present (fill from defaults)
+        for kind, surfaces in DEFAULT_SYSTEM_COMMANDS.items():
+            if kind not in result or not result[kind]:
+                result[kind] = list(surfaces)
+        return result
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -208,7 +237,7 @@ class TurnOrchestrator:
                 ERROR_OUTPUT,
                 {
                     "error_code": "no_action",
-                    "message": f"No entiendes cómo hacer '{parsed.verb}' aquí.",
+                    "data": {"verb": parsed.verb, "protagonist_id": protagonist_id},
                     "protagonist_id": protagonist_id,
                 },
             )
@@ -346,11 +375,17 @@ class TurnOrchestrator:
                 ops_executed.append(op_type)
             else:
                 # Operator failed → emit error and stop.
+                op_code = result.code
+                op_data = result.data
                 self._emit(
                     ERROR_OUTPUT,
                     {
                         "error_code": "operator_failed",
-                        "message": result.error_message or "No puedes hacer eso.",
+                        "data": (
+                            {"op_code": op_code, **op_data}
+                            if op_code
+                            else {}
+                        ),
                         "protagonist_id": protagonist_id,
                     },
                 )
@@ -377,7 +412,7 @@ class TurnOrchestrator:
 
         # Emit episode_completed.
         self._emit(
-            "episode_completed",
+            EPISODE_COMPLETED,
             {
                 "episode_id": self._state.current_episode_id,
                 "victory_text": goal.output,
@@ -421,13 +456,9 @@ class TurnOrchestrator:
     ) -> MacroEdge | None:
         """If *parsed* is a movement command, find the matching macro edge.
 
-        Movement is detected when:
-        - verb is ``"ir"`` or ``"abrir"`` (ABRIR ... DICIENDO/RESPONDIENDO
-          unlocks a closed edge with a ``requires_text`` gate)
-        - target is not None
-        - The target matches a passage_name from ``anchor_id``.
+        Movement verbs come from vocabulary (or defaults {"ir", "abrir"}).
         """
-        if parsed.verb not in ("ir", "abrir") or parsed.target is None:
+        if parsed.verb not in self._movement_verbs() or parsed.target is None:
             return None
         if anchor_id == "":  # pragma: no cover — unreachable (see above)
             return None
@@ -460,17 +491,24 @@ class TurnOrchestrator:
             },
         )
 
-        # Validate macro edge.
-        is_valid, death_msg = self._graph.validate_macro_edge(
+        # Validate macro edge — returns structured MacroGateResult (L4).
+        gate = self._graph.validate_macro_edge(
             edge, self._state, text
         )
 
-        if not is_valid:
-            if edge.death_message is not None and death_msg == edge.death_message:
-                # Fatal gate (edge with death_message) → game_over.
+        if not gate.is_valid:
+            if gate.is_fatal:
+                # Fatal gate → game_over with stable reason code.  The
+                # world-authored death_message flows through gate.data so a
+                # narrator can render it (structured + data, never a string
+                # constructed by the engine).
                 self._emit(
                     GAME_OVER,
-                    {"reason": death_msg, "turn_number": self._state.turn_number},
+                    {
+                        "reason": "player_death",
+                        "turn_number": self._state.turn_number,
+                        **gate.data,
+                    },
                 )
                 self._emit(
                     TURN_ENDED,
@@ -480,12 +518,16 @@ class TurnOrchestrator:
                     },
                 )
             else:
-                # Non-fatal block (edge without death_message) → error_output.
+                # Non-fatal block → error_output with full gate data.
+                blocked_data: dict[str, object] = {
+                    **gate.data,
+                    "gate_code": gate.gate_code,
+                }
                 self._emit(
                     ERROR_OUTPUT,
                     {
                         "error_code": "blocked",
-                        "message": death_msg or "No puedes ir por ahí.",
+                        "data": blocked_data,
                         "protagonist_id": protagonist_id,
                     },
                 )
@@ -539,24 +581,63 @@ class TurnOrchestrator:
         self._post_action_checks(protagonist_id)
 
     # ------------------------------------------------------------------
-    # Private: system commands
+    # Private: system commands (vocabulary-driven)
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _detect_system_command(raw_text: str) -> str | None:
-        """Return the system command kind, or None if *raw_text* is a regular turn."""
+    def _detect_system_command(self, raw_text: str) -> str | None:
+        """Return the canonical system command kind, or None.
+
+        Builds a flat surface→kind map from ``_system_commands()``.
+        ``switch`` surfaces are matched as PREFIX (strip surface + trailing
+        space).  ``save``/``load`` surfaces also allow a trailing space
+        (for slot numbers like ``guardar 1``). Longest-surface-first
+        ordering avoids prefix collisions.
+        """
         lower = raw_text.strip().lower()
+        if not lower:
+            return None
 
-        # Exact matches.
-        if lower in _SYSTEM_COMMANDS:
-            return lower
+        sys_cmds = self._system_commands()
+        # Build (surface, kind, is_switch) triples sorted longest-first.
+        entries: list[tuple[str, str, bool]] = []
+        for kind, surfaces in sys_cmds.items():
+            for surface in surfaces:
+                sl = surface.lower()
+                is_switch = kind == "switch"
+                entries.append((sl, kind, is_switch))
 
-        # Prefixed commands (GUARDAR 1, CARGAR 2, CAMBIAR A X).
-        for prefix, kind in _SYSTEM_PREFIXES:
-            if lower.startswith(prefix):
-                return kind
+        # Sort longest surface first to avoid partial matches.
+        entries.sort(key=lambda e: len(e[0]), reverse=True)
+
+        for surface, kind, is_switch in entries:
+            if is_switch:
+                # Prefix match: the surface must be followed by a space or end exactly.
+                if lower.startswith(surface):
+                    if len(lower) == len(surface):
+                        return kind
+                    if lower[len(surface)] == " ":
+                        return kind
+            elif kind in ("save", "load"):
+                # save/load can be bare ("guardar") or with slot ("guardar 1")
+                if lower == surface:
+                    return kind
+                if lower.startswith(surface) and len(lower) > len(surface) and lower[len(surface)] == " ":
+                    return kind
+            else:
+                # Exact match only for quit, wait, group.
+                if lower == surface:
+                    return kind
 
         return None
+
+    def _get_save_surfaces(self) -> set[str]:
+        """Collect all save/load surface words for _parse_save_slot."""
+        sc = self._system_commands()
+        surfaces: set[str] = set()
+        for kind in ("save", "load"):
+            for s in sc.get(kind, []):
+                surfaces.add(s.lower())
+        return surfaces
 
     def _handle_system_command(
         self, raw_text: str, kind: str, protagonist_id: str
@@ -568,7 +649,7 @@ class TurnOrchestrator:
         # Match system command kind.  Each branch returns after emitting
         # to avoid the coverage false-negative of if/elif chains where only
         # one branch fires per call.
-        if kind == "terminar":
+        if kind == "quit":
             self._emit(
                 GAME_OVER,
                 {"reason": "player_quit", "turn_number": state.turn_number},
@@ -579,29 +660,25 @@ class TurnOrchestrator:
             )
             return
 
-        if kind in ("guardar", "save"):
+        if kind == "save":
             if self._repository is None or self._save_system is None:
                 self._emit(
                     ERROR_OUTPUT,
                     {
                         "error_code": "no_repository",
-                        "message": (
-                            "Guardar no está disponible."
-                            if kind in ("guardar", "save")
-                            else "Guardar no está disponible."
-                        ),
+                        "data": {"command": "save"},
                         "protagonist_id": protagonist_id,
                     },
                 )
                 return
 
-            slot = _parse_save_slot(lower)
+            slot = _parse_save_slot(lower, surfaces=self._get_save_surfaces())
             if slot is None:
                 self._emit(
                     ERROR_OUTPUT,
                     {
                         "error_code": "invalid_slot",
-                        "message": "Ranura inválida. Usá 1, 2, o 3.",
+                        "data": {"slot": lower},
                         "protagonist_id": protagonist_id,
                     },
                 )
@@ -616,29 +693,25 @@ class TurnOrchestrator:
             )
             return
 
-        if kind in ("cargar", "load"):
+        if kind == "load":
             if self._repository is None or self._save_system is None:
                 self._emit(
                     ERROR_OUTPUT,
                     {
                         "error_code": "no_repository",
-                        "message": (
-                            "Cargar no está disponible."
-                            if kind in ("cargar", "load")
-                            else "Cargar no está disponible."
-                        ),
+                        "data": {"command": "load"},
                         "protagonist_id": protagonist_id,
                     },
                 )
                 return
 
-            slot = _parse_save_slot(lower)
+            slot = _parse_save_slot(lower, surfaces=self._get_save_surfaces())
             if slot is None:
                 self._emit(
                     ERROR_OUTPUT,
                     {
                         "error_code": "invalid_slot",
-                        "message": "Ranura inválida. Usá 1, 2, o 3.",
+                        "data": {"slot": lower},
                         "protagonist_id": protagonist_id,
                     },
                 )
@@ -653,7 +726,7 @@ class TurnOrchestrator:
                         ERROR_OUTPUT,
                         {
                             "error_code": "missing_slot",
-                            "message": f"No hay partida guardada en la ranura {slot}.",
+                            "data": {"slot": slot},
                             "protagonist_id": protagonist_id,
                         },
                     )
@@ -675,8 +748,20 @@ class TurnOrchestrator:
             return
 
         if kind == "switch":
-            # "CAMBIAR A <name>"
-            name_part = lower.split("cambiar a ", 1)[-1].strip()
+            # Extract name from the raw text using the matched vocabulary surface.
+            sys_cmds = self._system_commands()
+            switch_surfaces = sys_cmds.get("switch", [])
+            name_part = ""
+            for surface in sorted(switch_surfaces, key=len, reverse=True):
+                # pragma: no branch — _detect_system_command already
+                # matched a surface, so at least one surface must match.
+                sl = surface.lower()
+                if lower.startswith(sl):  # pragma: no branch — entry is unreachable when empty surfaces
+                    name_part = lower[len(sl):].strip()
+                    break
+            if not name_part:  # pragma: no cover — unreachable; detection already matched
+                name_part = lower  # fallback
+
             # Find protagonist by name (case-insensitive)
             new_id: str | None = None
             for p_id in state.player_controlled_entities:
@@ -701,13 +786,13 @@ class TurnOrchestrator:
                     ERROR_OUTPUT,
                     {
                         "error_code": "invalid_protagonist",
-                        "message": f"No se encuentra a '{name_part}'.",
+                        "data": {"name": name_part},
                         "protagonist_id": protagonist_id,
                     },
                 )
             return
 
-        if kind == "esperar":
+        if kind == "wait":
             # No-op — pass turn silently. Still emit turn_structure events.
             self._emit(
                 TURN_ENDED,
@@ -715,7 +800,7 @@ class TurnOrchestrator:
             )
             return
 
-        if kind == "grupo":
+        if kind == "group":
             # List all protagonists.
             prots: list[dict[str, object]] = []
             for p_id in state.player_controlled_entities:
@@ -724,7 +809,7 @@ class TurnOrchestrator:
                     prots.append({
                         "id": p_id,
                         "name": ent.name,
-                        "location": ent.spatial_anchor or "limbo",
+                        "location": ent.spatial_anchor,
                         "status": "active" if p_id == protagonist_id else "inactive",
                     })
             self._emit(

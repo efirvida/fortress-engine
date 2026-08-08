@@ -142,6 +142,36 @@ class MacroEdge:
 
 
 # ---------------------------------------------------------------------------
+# MacroGateResult — structured gate validation result
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class MacroGateResult:
+    """Structured result of macro edge gate validation.
+
+    Replaces ``(bool, str | None)`` so that the engine can route death-vs-block
+    without string equality and the narrator receives stable codes for rendering.
+
+    Attributes:
+        is_valid: ``True`` iff all gates passed.
+        is_fatal: ``True`` iff a gate failed AND ``edge.death_message is not None``.
+        gate_code: Empty string when ``is_valid``; otherwise one of the five
+            flat codes: ``text_closed``, ``requires_item``, ``forbids_item``,
+            ``requires_flag``, ``forbids_flag``.
+        data: Always carries ``passage_name``.  Also carries the relevant
+            predicate value (``required_text``, ``required_item``,
+            ``forbids_item``, ``required_flag``, ``forbids_flag``) and
+            optionally ``death_message``.
+    """
+
+    is_valid: bool
+    is_fatal: bool
+    gate_code: str
+    data: dict[str, object]
+
+
+# ---------------------------------------------------------------------------
 # DualGraphEngine
 # ---------------------------------------------------------------------------
 
@@ -432,31 +462,25 @@ class DualGraphEngine:
 
     def validate_macro_edge(
         self, edge: MacroEdge, state: WorldState, text: str | None = None
-    ) -> tuple[bool, str | None]:
+    ) -> MacroGateResult:
         """Evaluate *edge*'s gates against *state*.
 
-        Returns ``(is_valid, error_or_death_message)``.
+        Returns a structured :class:`MacroGateResult` with ``is_valid``,
+        ``is_fatal``, ``gate_code``, and ``data``.  The engine routes
+        death-vs-block via ``is_fatal``; the narrator renders text from
+        the flat ``gate_code`` and ``data`` fields.
 
         Gates are evaluated uniformly, in order: text gate, item gates,
-        then flag gates.  ``death_message`` decides fatal vs blocked: when
-        a gate fails AND ``edge.death_message`` is set, the returned
-        message IS the death message (fatal); otherwise a Spanish
-        "blocked" message is returned.
-
-        Semantics are decided by which predicates the world creator sets,
-        never by a connection type name.  For example:
-
-        - ``requires_text`` + ``open=False`` = a password or riddle gate;
-          a correct match flips ``edge.open`` to ``True``.
-        - ``requires_item`` + ``death_message`` = a lethal danger gate.
-        - ``forbids_item`` + ``death_message`` = a lethal inverse gate.
-        - ``requires_flag`` / ``forbids_flag`` without ``death_message``
-          = a conditional (blocked) gate.
+        then flag gates.  Semantics are decided by which predicates the
+        world creator sets, never by a connection type name.
 
         A plain edge with no predicates is always passable.
         """
         protagonist_id = state.active_protagonist_id
         inv = set(e.entity_id for e in state.get_player_inventory(protagonist_id))
+
+        is_fatal = edge.death_message is not None
+        passage = edge.passage_name
 
         # Text gate: a closed edge unlocks when the player says the right text.
         if edge.requires_text is not None and not edge.open:
@@ -465,41 +489,71 @@ class DualGraphEngine:
             ):
                 edge.open = True
             else:
-                return False, (
-                    edge.death_message
-                    if edge.death_message is not None
-                    else f"{edge.passage_name} está cerrada."
+                return MacroGateResult(
+                    is_valid=False,
+                    is_fatal=is_fatal,
+                    gate_code="text_closed",
+                    data=_gate_data(
+                        passage_name=passage,
+                        required_text=edge.requires_text,
+                        death_message=edge.death_message,
+                    ),
                 )
 
         # Item gates.
         if edge.requires_item is not None and edge.requires_item not in inv:
-            return False, (
-                edge.death_message
-                if edge.death_message is not None
-                else f"No puedes pasar por {edge.passage_name} aún."
+            return MacroGateResult(
+                is_valid=False,
+                is_fatal=is_fatal,
+                gate_code="requires_item",
+                data=_gate_data(
+                    passage_name=passage,
+                    required_item=edge.requires_item,
+                    death_message=edge.death_message,
+                ),
             )
         if edge.forbids_item is not None and edge.forbids_item in inv:
-            return False, (
-                edge.death_message
-                if edge.death_message is not None
-                else f"{edge.passage_name} está sellada."
+            return MacroGateResult(
+                is_valid=False,
+                is_fatal=is_fatal,
+                gate_code="forbids_item",
+                data=_gate_data(
+                    passage_name=passage,
+                    forbids_item=edge.forbids_item,
+                    death_message=edge.death_message,
+                ),
             )
 
         # Flag gates.
         if edge.requires_flag is not None and not state.get_flag(edge.requires_flag):
-            return False, (
-                edge.death_message
-                if edge.death_message is not None
-                else f"No puedes pasar por {edge.passage_name} aún."
+            return MacroGateResult(
+                is_valid=False,
+                is_fatal=is_fatal,
+                gate_code="requires_flag",
+                data=_gate_data(
+                    passage_name=passage,
+                    required_flag=edge.requires_flag,
+                    death_message=edge.death_message,
+                ),
             )
         if edge.forbids_flag is not None and state.get_flag(edge.forbids_flag):
-            return False, (
-                edge.death_message
-                if edge.death_message is not None
-                else f"{edge.passage_name} está sellada."
+            return MacroGateResult(
+                is_valid=False,
+                is_fatal=is_fatal,
+                gate_code="forbids_flag",
+                data=_gate_data(
+                    passage_name=passage,
+                    forbids_flag=edge.forbids_flag,
+                    death_message=edge.death_message,
+                ),
             )
 
-        return True, None
+        return MacroGateResult(
+            is_valid=True,
+            is_fatal=False,
+            gate_code="",
+            data={"passage_name": passage},
+        )
 
     # -------------------------------------------------------------------
     # Special values
@@ -526,6 +580,15 @@ class DualGraphEngine:
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
+
+def _gate_data(**kwargs: object) -> dict[str, object]:
+    """Build the ``data`` dict for a :class:`MacroGateResult`.
+
+    Only non-``None`` values are included so the dict is always minimal.
+    ``passage_name`` is always present.
+    """
+    return {k: v for k, v in kwargs.items() if v is not None}
 
 
 def _normalize_text(s: str) -> str:

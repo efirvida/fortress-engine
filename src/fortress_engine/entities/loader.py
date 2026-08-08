@@ -172,7 +172,8 @@ class VocabularyYAML(BaseModel):
     """Pydantic model for ``shared/vocabulary.yaml``.
 
     Defines per-world vocabulary: verb synonyms, stopwords, routing
-    prepositions, speech markers, and speech verbs.
+    prepositions, speech markers, speech verbs, narrator messages,
+    movement verbs, and system command surfaces.
     """
     model_config = ConfigDict(extra="forbid")
 
@@ -182,6 +183,9 @@ class VocabularyYAML(BaseModel):
     prepositions: dict[str, list[str]]
     speech_markers: list[str]
     speech_verbs: list[str]
+    messages: dict[str, str] = {}
+    movement_verbs: list[str] = []
+    system_commands: dict[str, list[str]] = {}
 
 
 # ---------------------------------------------------------------------------
@@ -193,7 +197,7 @@ class VocabularyYAML(BaseModel):
 class Vocabulary:
     """Runtime vocabulary — plain dataclass, never Pydantic.
 
-    Mirrors the six sections of ``VocabularyYAML`` with the same semantics
+    Mirrors all sections of ``VocabularyYAML`` with the same semantics
     but no validation overhead at runtime.
     """
 
@@ -203,6 +207,9 @@ class Vocabulary:
     prepositions: dict[str, list[str]]
     speech_markers: list[str]
     speech_verbs: list[str]
+    messages: dict[str, str]
+    movement_verbs: list[str]
+    system_commands: dict[str, list[str]]
 
 
 # ---------------------------------------------------------------------------
@@ -429,6 +436,9 @@ class EntityLoader:
             prepositions={k: list(w) for k, w in v.prepositions.items()},
             speech_markers=list(v.speech_markers),
             speech_verbs=list(v.speech_verbs),
+            messages=dict(v.messages),
+            movement_verbs=list(v.movement_verbs),
+            system_commands={k: list(w) for k, w in v.system_commands.items()},
         )
 
     # -------------------------------------------------------------------
