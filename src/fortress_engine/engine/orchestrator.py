@@ -194,7 +194,30 @@ class TurnOrchestrator:
             return
 
         # 3. Parse input.
-        parsed = self._parser.parse(raw_text, state)
+        # Plugin error isolation (tdd.md §9.3): a throwing parser must not
+        # take down the engine.  The failure is surfaced as a structured
+        # error_output; the traceback goes to stderr in debug mode only.
+        try:
+            parsed = self._parser.parse(raw_text, state)
+        except Exception:
+            self._emit(
+                ERROR_OUTPUT,
+                {
+                    "error_code": "parser_error",
+                    "data": {},
+                    "protagonist_id": protagonist_id,
+                },
+            )
+            if __debug__:
+                import traceback
+
+                traceback.print_exc()
+            state.turn_number += 1
+            self._emit(
+                TURN_ENDED,
+                {"turn_number": state.turn_number, "actions_resolved": 0},
+            )
+            return
 
         # 4. Emit input_received.
         self._emit(
@@ -774,11 +797,13 @@ class TurnOrchestrator:
             if new_id is not None and new_id != protagonist_id:
                 old_id = state.active_protagonist_id
                 state.active_protagonist_id = new_id
+                new_ent = state.get_entity(new_id)
                 self._emit(
                     PROTAGONIST_SWITCHED,
                     {
                         "from_protagonist_id": old_id,
                         "to_protagonist_id": new_id,
+                        "name": new_ent.name,
                     },
                 )
             else:

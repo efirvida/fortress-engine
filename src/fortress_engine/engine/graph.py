@@ -405,9 +405,10 @@ class DualGraphEngine:
         ) - {subject_id}
 
         if clique.instrument_any:
-            # At least one portable item in inventory
+            # At least one portable item in inventory.  'portable' defaults
+            # to True per GDD 2.3 (same default as the TRANSFER operator).
             portable = any(
-                state.get_entity(eid).components.get("portable", False) for eid in inv
+                state.get_entity(eid).components.get("portable", True) for eid in inv
             )
             if not portable:
                 return False

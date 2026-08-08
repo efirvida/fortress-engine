@@ -2,7 +2,7 @@
 
 Follows narrator-template-v1 spec and TDD §4.16.
 Dispatches exactly nine events: entity_entered, action_output, error_output,
-episode_completed, game_over, system_message, entity_described, item_examined,
+episode_completed, game_over, system_message, entity_described, entity_examined,
 inventory_listed. Uses payload keys, world-state descriptions, then
 deterministic fallbacks. Unrelated events return None.
 """
@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 DEFAULT_SPANISH_MESSAGES: dict[str, str] = {
     # --- error_output codes ---
+    "error_output.parser_error": "No entiendo ese comando.",
     "error_output.no_action": "No entiendes cómo hacer '{verb}' aquí.",
     "error_output.blocked": "No puedes ir por ahí.",
     "error_output.no_repository": "Guardar no está disponible.",
@@ -100,6 +101,10 @@ _TEMPLATE_EVENTS: tuple[str, ...] = (
     "entity_described",
     "entity_examined",
     "inventory_listed",
+    "game_saved",
+    "game_loaded",
+    "protagonist_switched",
+    "protagonists_listed",
 )
 
 
@@ -263,6 +268,58 @@ class TemplateNarrator(NarratorInterface):
             return self._templates["inventory_listed"].format(items=str(items))
         return _FALLBACK_TEXT["inventory_listed"]
 
+    # ------------------------------------------------------------------
+    # System-command feedback handlers (W4 — wire save/load/switch/group)
+    # ------------------------------------------------------------------
+
+    def _handle_game_saved(
+        self, event: EngineEvent, world_state: WorldState | None
+    ) -> str:
+        payload = dict(event.payload)
+        if "save_slot" in payload and "slot" not in payload:
+            payload["slot"] = payload["save_slot"]
+        return self._render_system("game_saved", event, payload)
+
+    def _handle_game_loaded(
+        self, event: EngineEvent, world_state: WorldState | None
+    ) -> str:
+        payload = dict(event.payload)
+        if "save_slot" in payload and "slot" not in payload:
+            payload["slot"] = payload["save_slot"]
+        return self._render_system("game_loaded", event, payload)
+
+    def _handle_protagonist_switched(
+        self, event: EngineEvent, world_state: WorldState | None
+    ) -> str:
+        return self._render_system("protagonist_switched", event)
+
+    def _handle_protagonists_listed(
+        self, event: EngineEvent, world_state: WorldState | None
+    ) -> str:
+        prots = event.payload.get("protagonists") or []
+        names = ", ".join(
+            str(p.get("name", "")) for p in prots if p.get("name")
+        )
+        payload = {**event.payload, "names": names}
+        key = "system_message.protagonists_listed"
+        template = self._messages.get(key) or _FALLBACK_TEXT["system_message"]
+        try:
+            return template.format(**payload)
+        except (KeyError, IndexError, ValueError):
+            return template  # deterministic fallback, no crash
+
+    def _render_system(
+        self, code: str, event: EngineEvent, payload: dict | None = None
+    ) -> str:
+        """Render a system_message.<code> template from the event payload."""
+        key = f"system_message.{code}"
+        template = self._messages.get(key) or _FALLBACK_TEXT["system_message"]
+        data = payload if payload is not None else event.payload
+        try:
+            return template.format(**data)
+        except (KeyError, IndexError, ValueError):
+            return template  # deterministic fallback, no crash
+
 
 # ---------------------------------------------------------------------------
 # Dispatch table (built after class definition to reference bound methods)
@@ -278,4 +335,8 @@ _DISPATCH: dict[str, str] = {
     "entity_described": "_handle_entity_described",
     "entity_examined": "_handle_entity_examined",
     "inventory_listed": "_handle_inventory_listed",
+    "game_saved": "_handle_game_saved",
+    "game_loaded": "_handle_game_loaded",
+    "protagonist_switched": "_handle_protagonist_switched",
+    "protagonists_listed": "_handle_protagonists_listed",
 }

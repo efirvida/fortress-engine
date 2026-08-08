@@ -26,7 +26,7 @@ The engine MUST NOT construct or emit any user-facing text string. All `error_ou
 
 ### Requirement: Flat error code contract
 
-`error_output` codes SHALL be flat strings with no namespace. The narrator dispatches templates keyed directly by the code. Valid codes include: `no_action`, `blocked`, `requires_item`, `forbids_item`, `requires_flag`, `forbids_flag`, `text_closed`, `operator_failed`, `not_portable`, `too_heavy`, `entity_not_found`, `entity_not_in_container`, `container_not_found`, `transform_component_missing`, `combine_inputs_missing`, `teleport_entity_not_found`, `teleport_anchor_not_found`, `unknown_operator`, `unhandled_operator`, `no_repository`, `invalid_slot`, `missing_slot`, `invalid_protagonist`.
+`error_output` codes SHALL be flat strings with no namespace. The narrator dispatches templates keyed directly by the code. Valid codes include: `parser_error`, `no_action`, `blocked`, `requires_item`, `forbids_item`, `requires_flag`, `forbids_flag`, `text_closed`, `operator_failed`, `not_portable`, `too_heavy`, `entity_not_found`, `entity_not_in_container`, `container_not_found`, `transform_component_missing`, `combine_inputs_missing`, `teleport_entity_not_found`, `teleport_anchor_not_found`, `unknown_operator`, `unhandled_operator`, `no_repository`, `invalid_slot`, `missing_slot`, `invalid_protagonist`.
 
 #### Scenario: Narrator dispatches by flat code
 

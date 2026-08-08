@@ -44,6 +44,22 @@ Make `TemplateNarrator` the owner of localized text: it dispatches `error_output
 - WHEN the narrator handles it
 - THEN it renders the `system_message.game_saved` template formatted with data
 
+### Requirement: System-command feedback events (W4)
+
+`TemplateNarrator` SHALL also subscribe to and render the four system-command feedback event types: `game_saved`, `game_loaded`, `protagonist_switched`, `protagonists_listed`. The handlers SHALL render `system_message.<code>` templates from the event payload; `save_slot` payload keys SHALL alias to `slot`; `protagonists_listed` SHALL build a `names` string from the `protagonists` list. Missing or broken templates SHALL fall back deterministically without crashing.
+
+#### Scenario: Save feedback renders
+
+- GIVEN a `game_saved` event with `payload={"save_slot": "slot_1"}`
+- WHEN the narrator handles it
+- THEN it renders `"Partida guardada en la ranura slot_1."` (slot aliased from save_slot)
+
+#### Scenario: Switch feedback renders protagonist name
+
+- GIVEN a `protagonist_switched` event with `payload={"name": "Ana"}`
+- WHEN the narrator handles it
+- THEN it renders a template containing "Ana"
+
 ### Requirement: Default Spanish messages constant
 
 `DEFAULT_SPANISH_MESSAGES` SHALL be an in-code dict covering every engine error code and system code, so a world without a `messages` section still renders Spanish text.
