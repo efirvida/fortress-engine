@@ -684,8 +684,134 @@ def test_fortaleza_part1_pending_l2_documented():
 
 
 # ====================================================================
-# Fortaleza acceptance walkthrough — Part I L2 world corrections
+# Fortaleza robustness battery — per-anchor safe failure (Slice L3)
 # ====================================================================
+# Each row probes an invalid input at a given anchor. Expected contract:
+# exact error_output code, no game_over, one turn_ended, world state
+# unchanged except the turn counter, and the canonical path recovers.
+
+
+@dataclass(frozen=True)
+class _RobustnessRow:
+    anchor: str
+    command: str
+    expected_code: str
+    expected_data: dict[str, object] | None = None
+
+
+_ROBUSTNESS_ROWS: tuple[_RobustnessRow, ...] = (
+    # Unknown verb → no_action with the verb in data.
+    _RobustnessRow(
+        "el_exterior_de_la_fortaleza",
+        "xyzzy",
+        "no_action",
+        {"verb": "xyzzy"},
+    ),
+    # Nonexistent object → no_action.
+    _RobustnessRow(
+        "el_exterior_de_la_fortaleza",
+        "tomar objeto_inexistente",
+        "no_action",
+        {"verb": "tomar"},
+    ),
+    # Wrong-room object (an object that exists elsewhere) → no_action at
+    # the exterior because the item is not in this anchor.
+    _RobustnessRow(
+        "el_exterior_de_la_fortaleza",
+        "tomar espada",
+        "no_action",
+        {"verb": "tomar"},
+    ),
+    # Wrong password on a closed gate → blocked + text_closed data.
+    _RobustnessRow(
+        "el_exterior_de_la_fortaleza",
+        "ir puerta_principal diciendo incorrecta",
+        "blocked",
+        {"gate_code": "text_closed"},
+    ),
+    # Wrong weapon (no fatal gate) → no_action at the exterior (the
+    # cyclops is elsewhere; the action simply does not resolve).
+    _RobustnessRow(
+        "el_exterior_de_la_fortaleza",
+        "matar ciclope con daga",
+        "no_action",
+        {"verb": "matar"},
+    ),
+)
+
+
+@pytest.mark.parametrize("row", _ROBUSTNESS_ROWS, ids=lambda r: r.command)
+def test_fortaleza_robustness_invalid_input(row: _RobustnessRow):
+    """An invalid command at a tested anchor fails with the exact error
+    code, never emits game_over, leaves the world state unchanged (except
+    the turn counter), and emits exactly one turn_ended."""
+    fx = _FortalezaFixture()
+    assert fx.hero_anchor() == row.anchor
+
+    # Snapshot the mutable world state (anchors, flags, inventory).
+    before_anchor = fx.hero_anchor()
+    before_inv = fx.inventory_ids()
+
+    turn_events = fx.turn(row.command)
+
+    # Exact error output code.
+    error = fx.last_error(turn_events)
+    assert error == row.expected_code, (
+        f"{row.command!r}: expected error {row.expected_code!r}, "
+        f"got {error!r}"
+    )
+    if row.expected_data:
+        err = next(
+            e for e in turn_events if e.type == ERROR_OUTPUT
+        )
+        for key, value in row.expected_data.items():
+            assert err.payload["data"].get(key) == value, (
+                f"{row.command!r}: expected data[{key}]={value!r}, "
+                f"got {err.payload['data']!r}"
+            )
+
+    # No game_over, exactly one turn_ended.
+    assert GAME_OVER not in [e.type for e in turn_events]
+    assert sum(1 for e in turn_events if e.type == TURN_ENDED) == 1
+
+    # World state unchanged except the turn counter.
+    assert fx.hero_anchor() == before_anchor
+    assert fx.inventory_ids() == before_inv
+
+
+def test_fortaleza_robustness_recovers_canonical_path():
+    """After a battery of invalid inputs, the canonical walkthrough still
+    succeeds — invalid commands never poison the world."""
+    fx = _FortalezaFixture()
+
+    # Fire every invalid row at the exterior first.
+    for row in _ROBUSTNESS_ROWS:
+        fx.turn(row.command)
+
+    # Then the canonical path still works end to end.
+    for row in _PART1_CANONICAL:
+        turn_events = fx.turn(_command_surface(row))
+        assert fx.last_error(turn_events) is None, (
+            f"canonical {row.verb} {row.target} failed after robustness "
+            f"battery at {fx.hero_anchor()}"
+        )
+        assert GAME_OVER not in [e.type for e in turn_events]
+
+    assert fx.hero_anchor() == "jardin"
+    assert GAME_OVER not in fx.all_event_types()
+
+
+def test_fortaleza_divergences_documented():
+    """The original-game divergence record exists and lists the agreed
+    deviations."""
+    doc = (
+        Path(__file__).resolve().parent.parent.parent
+        / "docs" / "fortaleza-walkthrough-divergences.md"
+    )
+    assert doc.is_file(), f"Divergence doc missing at {doc}"
+    text = doc.read_text(encoding="utf-8")
+    for topic in ("Abrete Sesamo", "crunch", "maza", "antorcha", "muralla"):
+        assert topic in text, f"Divergence doc missing topic {topic!r}"
 
 
 def test_fortaleza_l2_password_gate_opens_with_decoded_text():
