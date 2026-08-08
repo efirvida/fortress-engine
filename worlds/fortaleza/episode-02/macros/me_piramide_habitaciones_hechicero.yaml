@@ -1,0 +1,8 @@
+macro_edge_id: "me_piramide_habitaciones_hechicero"
+from_anchor: "piramide_del_hechicero"
+to_anchor: "habitaciones_del_hechicero"
+direction: "bidirectional"
+passage_name: "puerta_roble"
+passage_description: "La Puerta de Roble con acertijo"
+open: false
+requires_text: "Yo"

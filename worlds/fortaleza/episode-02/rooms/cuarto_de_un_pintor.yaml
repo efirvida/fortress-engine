@@ -1,0 +1,7 @@
+entity_id: "cuarto_de_un_pintor"
+type: "room"
+name: "el cuarto de un pintor"
+components:
+  description: "Hay muchos cuadros en las paredes, pero ninguno está terminado."
+  visited: false
+spatial_anchor: null

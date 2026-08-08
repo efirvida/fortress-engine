@@ -1,0 +1,7 @@
+entity_id: "cuarto_del_inmortal"
+type: "room"
+name: "el cuarto del Inmortal"
+components:
+  description: "Esta habitación luce más vieja que el resto de la Fortaleza. Hay muchas cosas colgadas de la pared: retratos, cartas, reconocimientos, estandartes y muchas telas de arañas."
+  visited: false
+spatial_anchor: null

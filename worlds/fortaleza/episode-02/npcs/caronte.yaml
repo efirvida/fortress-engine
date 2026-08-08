@@ -1,0 +1,9 @@
+entity_id: "caronte"
+type: "npc"
+name: "caronte"
+components:
+  description: "Una figura encapuchada con una mano descarnada que espera pacientemente en la orilla del Río Negro, junto a un bote."
+  is_troll: true
+  wants_item: "reloj_de_arena"
+  gift_flag: "caronte_happy"
+spatial_anchor: "orilla_del_rio_negro"

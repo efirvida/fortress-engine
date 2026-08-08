@@ -1,0 +1,7 @@
+entity_id: "orilla_del_lago"
+type: "room"
+name: "la orilla del Lago"
+components:
+  description: "Frente a usted se extiende el Lago, de aguas claras y tranquilas."
+  visited: false
+spatial_anchor: null

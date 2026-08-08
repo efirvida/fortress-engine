@@ -1,0 +1,7 @@
+entity_id: "choza_del_sabio"
+type: "room"
+name: "la choza del Sabio"
+components:
+  description: "El lugar se ajusta perfectamente a su concepto de desorden. Usted se pregunta cómo el sabio puede vivir en semejante caos. Hay varios esqueletos, al parecer, una colección incipiente."
+  visited: false
+spatial_anchor: null

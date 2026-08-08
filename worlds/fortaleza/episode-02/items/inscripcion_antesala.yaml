@@ -1,0 +1,7 @@
+entity_id: "inscripcion_antesala"
+type: "item"
+name: "Inscripción de la Antesala de la Prueba"
+components:
+  weight: 1
+  description: "En este punto comienza la prueba de los anillos. Continúa con el que hayas elegido y deja los demás."
+spatial_anchor: "antesala_de_la_prueba"

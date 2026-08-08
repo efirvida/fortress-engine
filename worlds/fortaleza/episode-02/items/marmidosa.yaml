@@ -1,0 +1,7 @@
+entity_id: "marmidosa"
+type: "item"
+name: "Marmidosa"
+components:
+  weight: 5
+  description: "La espada rival de Excalibur. Arma letal contra el Carcelero y el Hechicero. Sirve para abrir la Esfera en la Torre."
+spatial_anchor: "cueva_de_cristal"

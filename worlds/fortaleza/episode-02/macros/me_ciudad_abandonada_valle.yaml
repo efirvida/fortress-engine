@@ -1,0 +1,7 @@
+macro_edge_id: "me_ciudad_abandonada_valle"
+from_anchor: "ciudad_abandonada"
+to_anchor: "extenso_valle"
+direction: "bidirectional"
+passage_name: "escalera"
+passage_description: "Escalera que asciende al valle"
+open: true

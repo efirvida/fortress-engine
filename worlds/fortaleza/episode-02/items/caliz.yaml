@@ -1,0 +1,7 @@
+entity_id: "caliz"
+type: "item"
+name: "Cáliz"
+components:
+  weight: 2
+  description: "Aparece al morir la Hija del Hechicero. Contiene texto codificado, posible segunda mitad del manuscrito."
+spatial_anchor: "alcoba_secreta"

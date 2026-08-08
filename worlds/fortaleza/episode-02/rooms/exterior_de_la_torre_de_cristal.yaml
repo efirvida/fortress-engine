@@ -1,0 +1,7 @@
+entity_id: "exterior_de_la_torre_de_cristal"
+type: "room"
+name: "el exterior de la Torre de Cristal"
+components:
+  description: "La Torre de Cristal crece vertiginosamente hasta perderse entre las nubes."
+  visited: false
+spatial_anchor: null

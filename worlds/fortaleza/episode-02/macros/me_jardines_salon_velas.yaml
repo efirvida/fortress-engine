@@ -1,0 +1,7 @@
+macro_edge_id: "me_jardines_salon_velas"
+from_anchor: "jardines_del_hechicero"
+to_anchor: "salon_de_las_velas"
+direction: "bidirectional"
+passage_name: "puerta_roja"
+passage_description: "La Puerta Roja"
+open: true

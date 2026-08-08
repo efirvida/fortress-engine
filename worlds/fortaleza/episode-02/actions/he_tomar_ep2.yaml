@@ -1,0 +1,759 @@
+# TAKE actions (episode 2) — player picks up items from rooms
+# TRANSFER moves the entity from its spatial_anchor room to the hero inventory
+
+- hyper_edge_id: "he_tomar_aguja_plata"
+  name: "Tomar la aguja"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "aguja_plata"
+  operators:
+    - type: "TRANSFER"
+      entity: "aguja_plata"
+      from_container: "sastreria"
+      to_container: "hero"
+  output: "Tomas la aguja."
+
+- hyper_edge_id: "he_tomar_anillo_de_bronce"
+  name: "Tomar el anillo de bronce"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "anillo_de_bronce"
+  operators:
+    - type: "TRANSFER"
+      entity: "anillo_de_bronce"
+      from_container: "salon_de_recepciones"
+      to_container: "hero"
+  output: "Tomas el anillo de bronce."
+
+- hyper_edge_id: "he_tomar_anillo_de_oro"
+  name: "Tomar el anillo de oro"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "anillo_de_oro"
+  operators:
+    - type: "TRANSFER"
+      entity: "anillo_de_oro"
+      from_container: "habitacion_de_los_tesoros"
+      to_container: "hero"
+  output: "Tomas el anillo de oro."
+
+- hyper_edge_id: "he_tomar_anillo_de_plata"
+  name: "Tomar el anillo de plata"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "anillo_de_plata"
+  operators:
+    - type: "TRANSFER"
+      entity: "anillo_de_plata"
+      from_container: "comienzo_de_las_cataratas"
+      to_container: "hero"
+  output: "Tomas el anillo de plata."
+
+- hyper_edge_id: "he_tomar_antorcha_subterraneos"
+  name: "Tomar la antorcha"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "antorcha_subterraneos"
+  operators:
+    - type: "TRANSFER"
+      entity: "antorcha_subterraneos"
+      from_container: "subterraneos"
+      to_container: "hero"
+  output: "Tomas la antorcha."
+
+- hyper_edge_id: "he_tomar_arco_inmortal"
+  name: "Tomar el arco"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "arco_inmortal"
+  operators:
+    - type: "TRANSFER"
+      entity: "arco_inmortal"
+      from_container: "antesala_de_la_prueba"
+      to_container: "hero"
+  output: "Tomas el arco."
+
+- hyper_edge_id: "he_tomar_arpa"
+  name: "Tomar el arpa"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "arpa"
+  operators:
+    - type: "TRANSFER"
+      entity: "arpa"
+      from_container: "habitacion_de_los_tesoros"
+      to_container: "hero"
+  output: "Tomas el arpa."
+
+- hyper_edge_id: "he_tomar_bolsa_de_semillas"
+  name: "Tomar la bolsa de semillas"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "bolsa_de_semillas"
+  operators:
+    - type: "TRANSFER"
+      entity: "bolsa_de_semillas"
+      from_container: "extenso_valle"
+      to_container: "hero"
+  output: "Tomas la bolsa de semillas."
+
+- hyper_edge_id: "he_tomar_bolsa_oro"
+  name: "Tomar la bolsa"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "bolsa_oro"
+  operators:
+    - type: "TRANSFER"
+      entity: "bolsa_oro"
+      from_container: "habitacion_de_los_tesoros"
+      to_container: "hero"
+  output: "Tomas la bolsa."
+
+- hyper_edge_id: "he_tomar_bote_carante"
+  name: "Tomar el bote"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "bote_carante"
+  operators:
+    - type: "TRANSFER"
+      entity: "bote_carante"
+      from_container: "orilla_del_rio_negro"
+      to_container: "hero"
+  output: "Arrastras el bote de Caronte. Pesa muchísimo (39 kg)."
+
+- hyper_edge_id: "he_tomar_botella_de_vino"
+  name: "Tomar la botella de vino"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "botella_de_vino"
+  operators:
+    - type: "TRANSFER"
+      entity: "botella_de_vino"
+      from_container: "cuarto_del_lenador"
+      to_container: "hero"
+  output: "Tomas la botella de vino."
+
+- hyper_edge_id: "he_tomar_caliz"
+  name: "Tomar el cáliz"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "caliz"
+  operators:
+    - type: "TRANSFER"
+      entity: "caliz"
+      from_container: "alcoba_secreta"
+      to_container: "hero"
+  output: "Tomas el cáliz. En su interior hay un texto codificado."
+
+- hyper_edge_id: "he_tomar_carta_alcoba"
+  name: "Tomar la carta de la alcoba"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "carta_alcoba"
+  operators:
+    - type: "TRANSFER"
+      entity: "carta_alcoba"
+      from_container: "alcoba_de_la_hija_del_hechicero"
+      to_container: "hero"
+  output: "Tomas la carta de la alcoba."
+
+- hyper_edge_id: "he_tomar_carta_aura"
+  name: "Tomar la carta"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "carta_aura"
+  operators:
+    - type: "TRANSFER"
+      entity: "carta_aura"
+      from_container: "cuarto_de_la_hija_del_hechicero"
+      to_container: "hero"
+  output: "Tomas la carta."
+
+- hyper_edge_id: "he_tomar_cinta_de_moebius"
+  name: "Tomar la cinta de moebius"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "cinta_de_moebius"
+  operators:
+    - type: "TRANSFER"
+      entity: "cinta_de_moebius"
+      from_container: "choza_del_sabio"
+      to_container: "hero"
+  output: "Tomas la Cinta de Moebius. Un anillo de papel con una torcedura imposible."
+
+- hyper_edge_id: "he_tomar_corta_cristales"
+  name: "Tomar el corta-cristales"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "corta_cristales"
+  operators:
+    - type: "TRANSFER"
+      entity: "corta_cristales"
+      from_container: "cuarto_del_jardinero"
+      to_container: "hero"
+  output: "Tomas el corta-cristales."
+
+- hyper_edge_id: "he_tomar_cubo_de_agua"
+  name: "Tomar el cubo de agua"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "cubo_de_agua"
+  operators:
+    - type: "TRANSFER"
+      entity: "cubo_de_agua"
+      from_container: "oasis"
+      to_container: "hero"
+  output: "Tomas el cubo de agua."
+
+- hyper_edge_id: "he_tomar_cuerda"
+  name: "Tomar la cuerda"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "cuerda"
+  operators:
+    - type: "TRANSFER"
+      entity: "cuerda"
+      from_container: "habitaciones_del_juglar"
+      to_container: "hero"
+  output: "Tomas la cuerda."
+
+- hyper_edge_id: "he_tomar_daga_dragon"
+  name: "Tomar la daga"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "daga_dragon"
+  operators:
+    - type: "TRANSFER"
+      entity: "daga_dragon"
+      from_container: "cuarto_del_lenador"
+      to_container: "hero"
+  output: "Tomas la daga."
+
+- hyper_edge_id: "he_tomar_escudo_de_aquiles"
+  name: "Tomar el escudo de aquiles"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "escudo_de_aquiles"
+  operators:
+    - type: "TRANSFER"
+      entity: "escudo_de_aquiles"
+      from_container: "desierto"
+      to_container: "hero"
+  output: "Tomas el Escudo de Aquiles, forjado por Hefestos."
+
+- hyper_edge_id: "he_tomar_espejo_roto"
+  name: "Tomar el espejo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "espejo_roto"
+  operators:
+    - type: "TRANSFER"
+      entity: "espejo_roto"
+      from_container: "alcoba_de_la_hija_del_hechicero"
+      to_container: "hero"
+  output: "Tomas el espejo."
+
+- hyper_edge_id: "he_tomar_esqueleto_de_murcielago"
+  name: "Tomar el esqueleto de murciélago"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "esqueleto_de_murcielago"
+  operators:
+    - type: "TRANSFER"
+      entity: "esqueleto_de_murcielago"
+      from_container: "catacumbas"
+      to_container: "hero"
+  output: "Tomas el esqueleto de murciélago."
+
+- hyper_edge_id: "he_tomar_grabado_pintor"
+  name: "Tomar el grabado"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "grabado_pintor"
+  operators:
+    - type: "TRANSFER"
+      entity: "grabado_pintor"
+      from_container: "cuarto_de_un_pintor"
+      to_container: "hero"
+  output: "Tomas el grabado."
+
+- hyper_edge_id: "he_tomar_hacha_lenador"
+  name: "Tomar el hacha"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "hacha_lenador"
+  operators:
+    - type: "TRANSFER"
+      entity: "hacha_lenador"
+      from_container: "cuarto_del_lenador"
+      to_container: "hero"
+  output: "Tomas el hacha. Está muy mohosa pero aún corta."
+
+- hyper_edge_id: "he_tomar_inscripcion_alcoba_ogro"
+  name: "Tomar la inscripción de la alcoba del ogro"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "inscripcion_alcoba_ogro"
+  operators:
+    - type: "TRANSFER"
+      entity: "inscripcion_alcoba_ogro"
+      from_container: "alcoba_del_ogro"
+      to_container: "hero"
+  output: "Tomas la inscripción de la alcoba del ogro."
+
+- hyper_edge_id: "he_tomar_inscripcion_antesala"
+  name: "Tomar la inscripción de la antesala de la prueba"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "inscripcion_antesala"
+  operators:
+    - type: "TRANSFER"
+      entity: "inscripcion_antesala"
+      from_container: "antesala_de_la_prueba"
+      to_container: "hero"
+  output: "Tomas la inscripción de la antesala de la prueba."
+
+- hyper_edge_id: "he_tomar_inscripcion_calabozo_monstruo"
+  name: "Tomar la inscripción del calabozo del monstruo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "inscripcion_calabozo_monstruo"
+  operators:
+    - type: "TRANSFER"
+      entity: "inscripcion_calabozo_monstruo"
+      from_container: "calabozo_del_monstruo"
+      to_container: "hero"
+  output: "Tomas la inscripción del calabozo del monstruo."
+
+- hyper_edge_id: "he_tomar_inscripcion_ciudad"
+  name: "Tomar la inscripción de la ciudad abandonada"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "inscripcion_ciudad"
+  operators:
+    - type: "TRANSFER"
+      entity: "inscripcion_ciudad"
+      from_container: "ciudad_abandonada"
+      to_container: "hero"
+  output: "Tomas la inscripción de la ciudad abandonada."
+
+- hyper_edge_id: "he_tomar_inscripcion_desierto"
+  name: "Tomar la inscripción del desierto"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "inscripcion_desierto"
+  operators:
+    - type: "TRANSFER"
+      entity: "inscripcion_desierto"
+      from_container: "desierto"
+      to_container: "hero"
+  output: "Tomas la inscripción del desierto."
+
+- hyper_edge_id: "he_tomar_inscripcion_inmortal"
+  name: "Tomar la inscripción del inmortal"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "inscripcion_inmortal"
+  operators:
+    - type: "TRANSFER"
+      entity: "inscripcion_inmortal"
+      from_container: "cuarto_del_inmortal"
+      to_container: "hero"
+  output: "Tomas la inscripción del inmortal."
+
+- hyper_edge_id: "he_tomar_inscripcion_lago"
+  name: "Tomar la inscripción del fondo del lago"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "inscripcion_lago"
+  operators:
+    - type: "TRANSFER"
+      entity: "inscripcion_lago"
+      from_container: "fondo_del_lago"
+      to_container: "hero"
+  output: "Tomas la inscripción del fondo del lago."
+
+- hyper_edge_id: "he_tomar_inscripcion_salon_fumar"
+  name: "Tomar la inscripción del salón de fumar"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "inscripcion_salon_fumar"
+  operators:
+    - type: "TRANSFER"
+      entity: "inscripcion_salon_fumar"
+      from_container: "salon_de_fumar"
+      to_container: "hero"
+  output: "Tomas la inscripción del salón de fumar."
+
+- hyper_edge_id: "he_tomar_inscripcion_terrazas"
+  name: "Tomar la inscripción de las terrazas"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "inscripcion_terrazas"
+  operators:
+    - type: "TRANSFER"
+      entity: "inscripcion_terrazas"
+      from_container: "terrazas"
+      to_container: "hero"
+  output: "Tomas la inscripción de las terrazas."
+
+- hyper_edge_id: "he_tomar_lienzo"
+  name: "Tomar el lienzo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "lienzo"
+  operators:
+    - type: "TRANSFER"
+      entity: "lienzo"
+      from_container: "cuarto_de_un_pintor"
+      to_container: "hero"
+  output: "Tomas el lienzo."
+
+- hyper_edge_id: "he_tomar_marmidosa"
+  name: "Tomar marmidosa"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "marmidosa"
+  operators:
+    - type: "TRANSFER"
+      entity: "marmidosa"
+      from_container: "cueva_de_cristal"
+      to_container: "hero"
+  output: "Tomas a Marmidosa. La espada rival de Excalibur es ahora parte de tu mano."
+
+- hyper_edge_id: "he_tomar_muneco_diabolico"
+  name: "Tomar el muñeco diabólico"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "muneco_diabolico"
+  operators:
+    - type: "TRANSFER"
+      entity: "muneco_diabolico"
+      from_container: "sastreria"
+      to_container: "hero"
+  output: "Tomas el muñeco diabólico."
+
+- hyper_edge_id: "he_tomar_muslo_de_carnero"
+  name: "Tomar el muslo de carnero"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "muslo_de_carnero"
+  operators:
+    - type: "TRANSFER"
+      entity: "muslo_de_carnero"
+      from_container: "cocina"
+      to_container: "hero"
+  output: "Tomas el muslo de carnero."
+
+- hyper_edge_id: "he_tomar_panuelo"
+  name: "Tomar el pañuelo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "panuelo"
+  operators:
+    - type: "TRANSFER"
+      entity: "panuelo"
+      from_container: "cuarto_de_la_hija_del_hechicero"
+      to_container: "hero"
+  output: "Tomas el pañuelo."
+
+- hyper_edge_id: "he_tomar_pendulo"
+  name: "Tomar el péndulo"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "pendulo"
+  operators:
+    - type: "TRANSFER"
+      entity: "pendulo"
+      from_container: "choza_del_sabio"
+      to_container: "hero"
+  output: "Tomas el péndulo."
+
+- hyper_edge_id: "he_tomar_pescado"
+  name: "Tomar el pescado"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "pescado"
+  operators:
+    - type: "TRANSFER"
+      entity: "pescado"
+      from_container: "cocina"
+      to_container: "hero"
+  output: "Tomas el pescado."
+
+- hyper_edge_id: "he_tomar_piedra_comun"
+  name: "Tomar la piedra"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "piedra_comun"
+  operators:
+    - type: "TRANSFER"
+      entity: "piedra_comun"
+      from_container: "jardines_del_hechicero"
+      to_container: "hero"
+  output: "Tomas la piedra."
+
+- hyper_edge_id: "he_tomar_piedra_de_roseta"
+  name: "Tomar la piedra de roseta"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "piedra_de_roseta"
+  operators:
+    - type: "TRANSFER"
+      entity: "piedra_de_roseta"
+      from_container: "salon_de_fumar"
+      to_container: "hero"
+  output: "Tomas la Piedra de Roseta. La clave de los manuscritos."
+
+- hyper_edge_id: "he_tomar_piedra_verde"
+  name: "Tomar la piedra verde"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "piedra_verde"
+  operators:
+    - type: "TRANSFER"
+      entity: "piedra_verde"
+      from_container: "interior_del_baul"
+      to_container: "hero"
+  output: "Tomas la piedra verde."
+
+- hyper_edge_id: "he_tomar_receta"
+  name: "Tomar la receta"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "receta"
+  operators:
+    - type: "TRANSFER"
+      entity: "receta"
+      from_container: "cocina"
+      to_container: "hero"
+  output: "Tomas la receta."
+
+- hyper_edge_id: "he_tomar_reloj_de_arena"
+  name: "Tomar el reloj de arena"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "reloj_de_arena"
+  operators:
+    - type: "TRANSFER"
+      entity: "reloj_de_arena"
+      from_container: "terrazas"
+      to_container: "hero"
+  output: "Tomas el reloj de arena. Emite un tic-tac inquietante."
+
+- hyper_edge_id: "he_tomar_rosa_diamante"
+  name: "Tomar la rosa diamante"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "rosa_diamante"
+  operators:
+    - type: "TRANSFER"
+      entity: "rosa_diamante"
+      from_container: "habitacion_de_los_tesoros"
+      to_container: "hero"
+  output: "Tomas la rosa diamante. Es increíblemente hermosa."
+
+- hyper_edge_id: "he_tomar_rosario"
+  name: "Tomar el rosario"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "rosario"
+  operators:
+    - type: "TRANSFER"
+      entity: "rosario"
+      from_container: "catedral"
+      to_container: "hero"
+  output: "Tomas el rosario."
+
+- hyper_edge_id: "he_tomar_saltador"
+  name: "Tomar el saltador"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "saltador"
+  operators:
+    - type: "TRANSFER"
+      entity: "saltador"
+      from_container: "cuarto_de_juguetes"
+      to_container: "hero"
+  output: "Tomas el saltador."
+
+- hyper_edge_id: "he_tomar_silla_terrazas"
+  name: "Tomar la silla"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "silla_terrazas"
+  operators:
+    - type: "TRANSFER"
+      entity: "silla_terrazas"
+      from_container: "terrazas"
+      to_container: "hero"
+  output: "Tomas la silla."
+
+- hyper_edge_id: "he_tomar_sombrero_jardinero"
+  name: "Tomar el sombrero"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "sombrero_jardinero"
+  operators:
+    - type: "TRANSFER"
+      entity: "sombrero_jardinero"
+      from_container: "cuarto_del_jardinero"
+      to_container: "hero"
+  output: "Tomas el sombrero."
+
+- hyper_edge_id: "he_tomar_sonajero"
+  name: "Tomar el sonajero"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "sonajero"
+  operators:
+    - type: "TRANSFER"
+      entity: "sonajero"
+      from_container: "cuarto_de_juguetes"
+      to_container: "hero"
+  output: "Tomas el sonajero."
+
+- hyper_edge_id: "he_tomar_tablilla_de_madera"
+  name: "Tomar la tablilla de madera"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "tablilla_de_madera"
+  operators:
+    - type: "TRANSFER"
+      entity: "tablilla_de_madera"
+      from_container: "punta_de_la_torre_de_cristal"
+      to_container: "hero"
+  output: "Tomas la tablilla de madera. Primera mitad del Manuscrito de los Horantes."
+
+- hyper_edge_id: "he_tomar_talisman_de_nieve"
+  name: "Tomar el talismán de nieve"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "talisman_de_nieve"
+  operators:
+    - type: "TRANSFER"
+      entity: "talisman_de_nieve"
+      from_container: "cuarto_de_juguetes"
+      to_container: "hero"
+  output: "Tomas el Talismán de Nieve. Una tormenta encerrada en cristal."
+
+- hyper_edge_id: "he_tomar_tenazas"
+  name: "Tomar las tenazas"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "tenazas"
+  operators:
+    - type: "TRANSFER"
+      entity: "tenazas"
+      from_container: "campo_cultivado"
+      to_container: "hero"
+  output: "Tomas las tenazas."
+

@@ -1,0 +1,7 @@
+entity_id: "arpa"
+type: "item"
+name: "Arpa"
+components:
+  weight: 3
+  description: "De dieciocho cuerdas. Útil para dar al Juglar."
+spatial_anchor: "habitacion_de_los_tesoros"

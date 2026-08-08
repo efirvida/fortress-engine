@@ -1,0 +1,7 @@
+macro_edge_id: "me_torre_calabozos"
+from_anchor: "exterior_de_la_torre_de_cristal"
+to_anchor: "calabozos"
+direction: "bidirectional"
+passage_name: "puerta_hierro"
+passage_description: "La Puerta de Hierro de los Calabozos"
+open: true

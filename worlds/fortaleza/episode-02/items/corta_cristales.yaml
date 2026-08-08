@@ -1,0 +1,7 @@
+entity_id: "corta_cristales"
+type: "item"
+name: "Corta-cristales"
+components:
+  weight: 3
+  description: "Diamante en la punta. Útil para romper la Ventana en la Casa de muñecas y la Estatua de Cristal en la Ciudad."
+spatial_anchor: "cuarto_del_jardinero"

@@ -1,0 +1,7 @@
+entity_id: "subterraneos"
+type: "room"
+name: "los Subterráneos"
+components:
+  description: "Deben ser contemporáneos de las Ruinas. Usted siente como la humedad lo invade y le perfora los huesos."
+  visited: false
+spatial_anchor: null

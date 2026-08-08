@@ -1,0 +1,7 @@
+macro_edge_id: "me_orilla2_jardines"
+from_anchor: "otra_orilla_del_rio_negro"
+to_anchor: "jardines_del_hechicero"
+direction: "bidirectional"
+passage_name: "avenida_hierro"
+passage_description: "La Avenida de Hierro al otro lado de la muralla"
+open: true

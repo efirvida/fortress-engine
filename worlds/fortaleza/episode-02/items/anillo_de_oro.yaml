@@ -1,0 +1,7 @@
+entity_id: "anillo_de_oro"
+type: "item"
+name: "Anillo de oro"
+components:
+  weight: 1
+  description: "Sencillo, sin adornos. NO llevar durante La Prueba."
+spatial_anchor: "habitacion_de_los_tesoros"

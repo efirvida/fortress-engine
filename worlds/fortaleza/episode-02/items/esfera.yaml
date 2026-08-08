@@ -1,0 +1,7 @@
+entity_id: "esfera"
+type: "item"
+name: "Esfera"
+components:
+  description: "Un objeto que puede ser roto."
+  breakable: true
+spatial_anchor: "exterior_de_la_torre_de_cristal"

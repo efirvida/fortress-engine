@@ -1,0 +1,7 @@
+entity_id: "inscripcion_terrazas"
+type: "item"
+name: "Inscripción de las Terrazas"
+components:
+  weight: 1
+  description: "No todos los dragones merecen la muerte."
+spatial_anchor: "terrazas"

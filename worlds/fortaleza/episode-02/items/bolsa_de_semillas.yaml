@@ -1,0 +1,7 @@
+entity_id: "bolsa_de_semillas"
+type: "item"
+name: "Bolsa de semillas"
+components:
+  weight: 2
+  description: "Semillas de los árboles del valle. Útil para dar al Labrador en el Campo cultivado."
+spatial_anchor: "extenso_valle"

@@ -1,0 +1,7 @@
+entity_id: "ventana"
+type: "item"
+name: "Ventana"
+components:
+  description: "Un objeto que puede ser roto."
+  breakable: true
+spatial_anchor: "casa_de_munecas"

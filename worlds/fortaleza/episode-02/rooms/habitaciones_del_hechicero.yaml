@@ -1,0 +1,7 @@
+entity_id: "habitaciones_del_hechicero"
+type: "room"
+name: "las Habitaciones del Hechicero"
+components:
+  description: "Las habitaciones del Hechicero están dentro de una pirámide interior. Todo es igual a la gran pirámide, pero en una escala menor. Hay miles de espadas colgadas de la pared."
+  visited: false
+spatial_anchor: null

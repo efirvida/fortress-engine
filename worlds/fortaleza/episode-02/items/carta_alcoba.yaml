@@ -1,0 +1,7 @@
+entity_id: "carta_alcoba"
+type: "item"
+name: "Carta de la Alcoba"
+components:
+  weight: 1
+  description: "¿Por qué has demorado tanto? Mi padre me llevó al Abismo Infranqueable... Debe romperse según el Hechicero."
+spatial_anchor: "alcoba_de_la_hija_del_hechicero"

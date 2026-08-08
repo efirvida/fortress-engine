@@ -1,0 +1,7 @@
+macro_edge_id: "me_jardines_sastreria"
+from_anchor: "jardines_del_hechicero"
+to_anchor: "sastreria"
+direction: "bidirectional"
+passage_name: "puerta_tela"
+passage_description: "La Puerta de Tela"
+open: true

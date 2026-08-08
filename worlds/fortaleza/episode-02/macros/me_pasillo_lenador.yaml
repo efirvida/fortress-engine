@@ -1,0 +1,7 @@
+macro_edge_id: "me_pasillo_lenador"
+from_anchor: "pasillo"
+to_anchor: "cuarto_del_lenador"
+direction: "bidirectional"
+passage_name: "puerta_espinos"
+passage_description: "La Puerta de Espinos"
+open: true

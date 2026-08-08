@@ -1,0 +1,7 @@
+entity_id: "muralla_2"
+type: "item"
+name: "Muralla 2"
+components:
+  description: "Un objeto que puede ser roto."
+  breakable: true
+spatial_anchor: "extenso_valle"

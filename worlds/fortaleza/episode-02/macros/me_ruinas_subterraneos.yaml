@@ -1,0 +1,7 @@
+macro_edge_id: "me_ruinas_subterraneos"
+from_anchor: "ruinas"
+to_anchor: "subterraneos"
+direction: "bidirectional"
+passage_name: "escalera"
+passage_description: "Escalera que desciende a los Subterráneos"
+open: true

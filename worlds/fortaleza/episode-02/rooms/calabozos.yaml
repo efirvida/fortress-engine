@@ -1,0 +1,7 @@
+entity_id: "calabozos"
+type: "room"
+name: "los Calabozos"
+components:
+  description: "Los calabozos están formados por varios pasillos paralelos, llenos de celdas a ambos lados."
+  visited: false
+spatial_anchor: null

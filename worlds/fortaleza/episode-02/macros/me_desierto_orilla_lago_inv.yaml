@@ -1,0 +1,9 @@
+macro_edge_id: "me_desierto_orilla_lago_inv"
+from_anchor: "desierto"
+to_anchor: "orilla_del_lago"
+direction: "bidirectional"
+passage_name: "camino"
+passage_description: "Camino que regresa a la orilla del lago"
+open: false
+forbids_item: "talisman_de_nieve"
+death_message: "El desierto se convierte en infierno de nieve. El Talismán de Nieve te traiciona en esta dirección."

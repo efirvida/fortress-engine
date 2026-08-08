@@ -1,0 +1,7 @@
+macro_edge_id: "me_catedral_desierto"
+from_anchor: "catedral"
+to_anchor: "desierto"
+direction: "bidirectional"
+passage_name: "puerta"
+passage_description: "Puerta que sale al desierto"
+open: true

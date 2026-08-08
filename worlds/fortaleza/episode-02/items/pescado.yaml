@@ -1,0 +1,7 @@
+entity_id: "pescado"
+type: "item"
+name: "Pescado"
+components:
+  weight: 3
+  description: "Útil para dar al Gato en el Interior del baúl."
+spatial_anchor: "cocina"

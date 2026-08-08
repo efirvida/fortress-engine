@@ -1,0 +1,7 @@
+entity_id: "cuerda"
+type: "item"
+name: "Cuerda"
+components:
+  weight: 4
+  description: "Con gancho en un extremo. Permite el cruce seguro del Río desde el Campo cultivado y la Torre."
+spatial_anchor: "habitaciones_del_juglar"

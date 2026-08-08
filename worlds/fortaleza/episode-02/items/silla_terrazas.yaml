@@ -1,0 +1,7 @@
+entity_id: "silla_terrazas"
+type: "item"
+name: "Silla"
+components:
+  weight: 5
+  description: "Para tomar el sol. Alguien estaba sentado aquí. Útil para dar al Obispo en la Catedral."
+spatial_anchor: "terrazas"

@@ -1,0 +1,9 @@
+entity_id: "juglar"
+type: "npc"
+name: "juglar"
+components:
+  description: "Un hombre con cara larga como de caballo, que mira todo con profundo aburrimiento. Parece extrañamente triste."
+  is_troll: true
+  wants_item: "arpa"
+  gift_flag: "juglar_happy"
+spatial_anchor: "habitaciones_del_juglar"

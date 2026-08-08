@@ -1,0 +1,7 @@
+entity_id: "grabado_pintor"
+type: "item"
+name: "Grabado"
+components:
+  weight: 2
+  description: "Muestra al jugador cruzando un puente con el grabado en la mano. Protección para cruzar el Puente al Abismo en los Límites."
+spatial_anchor: "cuarto_de_un_pintor"

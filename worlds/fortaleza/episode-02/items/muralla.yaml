@@ -1,0 +1,7 @@
+entity_id: "muralla"
+type: "item"
+name: "Muralla"
+components:
+  description: "Un objeto que puede ser roto."
+  breakable: true
+spatial_anchor: "jardines_del_hechicero"

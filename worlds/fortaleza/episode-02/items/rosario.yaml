@@ -1,0 +1,7 @@
+entity_id: "rosario"
+type: "item"
+name: "Rosario"
+components:
+  weight: 1
+  description: "Bastante común. Útil para dar al Monje en la choza del Pico Negro."
+spatial_anchor: "catedral"
