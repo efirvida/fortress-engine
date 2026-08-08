@@ -367,6 +367,7 @@ Réplica exacta del parser original de Fortaleza:
 - Ignora artículos (`LA`, `EL`) y la preposición `POR`
 - Ignora la preposición `AL`
 - Sintaxis completa documentada en `docs/07-vocabulary.md`
+- **Idioma declarado en el mundo**: `world.yaml` declara `language: "es"` (default) y los plugins `parser`/`narrator`; la plugin factory inyecta el idioma en la instancia del parser al construirla.
 
 ### V2: Parser Clásico Expandido
 
@@ -384,7 +385,7 @@ Reemplaza el parser clásico por un LLM:
 
 ### Extensibilidad
 
-Nuevos parsers (para otros idiomas, para entrada por voz, para interfaces gráficas) se pueden agregar sin tocar el código del motor. Solo deben implementar la interfaz de parser.
+Nuevos parsers (para otros idiomas, para entrada por voz, para interfaces gráficas) se pueden agregar sin tocar el código del motor. Solo deben implementar la interfaz de parser. Para un idioma nuevo basta con registrar un nuevo entry point de parser y declarar su `language` en el `world.yaml` del mundo: la plugin factory (`create_parser`) inyecta el idioma en la instancia y el motor queda intacto.
 
 ---
 
@@ -412,6 +413,8 @@ El narrador V1 es responsable de TODO el texto que ve el jugador:
 - **Eventos narrativos**: introducción de episodios, textos de victoria y derrota.
 
 El motor produce eventos (`entity_entered`, `action_output`, `error_output`, etc.) y el narrador los convierte en texto. Ver `docs/13-event-system.md` para la taxonomía completa de eventos.
+
+El narrador también expone `language` (default `"es"`): la plugin factory lo inyecta desde `world.yaml` para que los mensajes de sistema y las plantillas sigan el idioma del mundo.
 
 ### V2: Narrador Inmersivo (IA)
 
