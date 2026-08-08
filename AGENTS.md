@@ -56,7 +56,7 @@ These are hard design constraints. Do NOT violate them:
 
 ## Code conventions
 
-- **Code identifiers (classes, methods, variables) in English.** YAML data and in-game text in Spanish.
+- **Code identifiers (classes, methods, variables) in English.** YAML world data and in-game text follow each world's declared language (`world.yaml → language`). The engine is **language-agnostic**: the Spanish Fortaleza world happens to be in Spanish, but world data must never be assumed to be in a specific language. The `language` field and the plugin factory (parser/narrator) inject the language from `world.yaml` (PRD §4.11).
 - **No entity type inheritance.** Entity behavior comes from components + HyperEdges, not class hierarchy. The engine is **entity-agnostic**: `Entity.type` is an opaque string owned by the world creator (e.g. `"item"`, `"room"`, `"npc"`). The engine MUST NOT validate, enumerate, or branch on entity types. World-type names like `"room"`/`"item"`/`"npc"` never appear in engine contracts — the engine's spatial vocabulary is `spatial_anchor`/`anchor` (see `add_anchor`, `from_anchor`/`to_anchor`, `start_anchor`).
 - `spatial_anchor == None` means "destroyed" or "in limbo" (see Limbo Room pattern, PRD 4.3).
 - Special clique values: `subject == "player"` resolves to `active_protagonist_id` at runtime. `target == "*"` and `instrument == "*"` are wildcards matching any entity of the expected type in the current anchor or inventory.
