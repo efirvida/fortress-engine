@@ -2,6 +2,6 @@ entity_id: "extenso_valle"
 type: "room"
 name: "un extenso valle"
 components:
-  description: "Siente deseos de construir una casa y quedarse a vivir en el valle. Por todos lados crece una especie de árbol frutal que, valiéndose de dos manos que salen de su tronco, es capaz de cultivarse ella misma."
+  description: "Siente deseos de construir una casa y quedarse a vivir en el valle. Por todos lados crece una especie de árbol frutal que, valiéndose de dos manos que salen de su tronco, es capaz de cultivarse ella misma. Ves: avenida_flores, escalera, montanas."
   visited: false
 spatial_anchor: null

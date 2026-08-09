@@ -2,6 +2,6 @@ entity_id: "patio_interior"
 type: "room"
 name: "el Patio Interior"
 components:
-  description: "Por el patio están diseminados varios árboles gigantescos, todos sin hojas. Parece como si el invierno reinase siempre en este lugar."
+  description: "Por el patio están diseminados varios árboles gigantescos, todos sin hojas. Parece como si el invierno reinase siempre en este lugar. Ves: puerta_azul, puerta_gris, puerta_negra, puerta_verde."
   visited: false
 spatial_anchor: null

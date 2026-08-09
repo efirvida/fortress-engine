@@ -50,3 +50,10 @@ python_files = ["test_*.py"]
 
 [tool.coverage.run]
 source = ["src/fortress_engine"]
+# The autoplay module is a DEVELOPMENT TOOL (gameplay fuzzer / blind
+# explorer), not game runtime.  Its defensive branches (crash catch,
+# iteration guards, unreachable-room handling) are intentionally not
+# exercised by the engine test suite, so it is excluded from the coverage
+# gate like the tests themselves are.  It has its own smoke tests in
+# tests/test_engine/test_autoplay_explorer.py.
+omit = ["src/fortress_engine/autoplay/*"]

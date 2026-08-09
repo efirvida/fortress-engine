@@ -424,7 +424,7 @@ name: "Bad Item"
 
 
 def test_load_macro_edges(tmp_path):
-    """load_macro_edges returns MacroEdge objects."""
+    """load_macro_edges returns MacroEdge objects (bidirectional expands)."""
     from fortress_engine.entities.loader import EntityLoader
     from fortress_engine.engine.graph import MacroEdge
 
@@ -432,13 +432,16 @@ def test_load_macro_edges(tmp_path):
     loader = EntityLoader(str(base))
     edges = loader.load_macro_edges("episode-01")
 
-    assert len(edges) == 1
-    edge = edges[0]
+    # door_to_hall is bidirectional -> forward + reverse.
+    assert len(edges) == 2
+    edge = next(e for e in edges if e.macro_edge_id == "door_to_hall")
     assert isinstance(edge, MacroEdge)
-    assert edge.macro_edge_id == "door_to_hall"
     assert edge.requires_text is None
     assert edge.from_anchor == "room_01"
     assert edge.to_anchor == "room_02"
+    reverse = next(e for e in edges if e.macro_edge_id == "door_to_hall_reverse")
+    assert reverse.from_anchor == "room_02"
+    assert reverse.to_anchor == "room_01"
 
 
 def test_load_macro_edges_rejects_legacy_connection_type(tmp_path):
@@ -503,6 +506,98 @@ def test_load_macro_edges_maps_generic_predicates(tmp_path):
     assert edge.forbids_flag == "darkness_remains"
     assert edge.death_message == "Has muerto."
     assert edge.open is False
+
+
+def test_load_macro_edges_expands_bidirectional(tmp_path):
+    """A bidirectional edge yields a reverse copy with swapped anchors and
+    copied predicates/outcomes (TDD:198 / GDD:261 semantics)."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = _minimal_world(tmp_path)
+    _write_yaml(
+        base / "episode-01" / "macros" / "bi_door.yaml",
+        """\
+- macro_edge_id: "bi_door"
+  from_anchor: "room_01"
+  to_anchor: "room_02"
+  direction: "bidirectional"
+  passage_name: "pasillo"
+  requires_text: "el sol"
+  open: false
+""",
+    )
+    loader = EntityLoader(str(base))
+    edges = loader.load_macro_edges("episode-01")
+
+    forward = [e for e in edges if e.macro_edge_id == "bi_door"]
+    reverse = [e for e in edges if e.macro_edge_id == "bi_door_reverse"]
+    assert len(forward) == 1
+    assert len(reverse) == 1
+
+    fwd = forward[0]
+    rev = reverse[0]
+    assert rev.from_anchor == fwd.to_anchor
+    assert rev.to_anchor == fwd.from_anchor
+    assert rev.passage_name == fwd.passage_name
+    # Predicates/outcomes copied.
+    assert rev.requires_text == fwd.requires_text
+    assert rev.open == fwd.open
+    assert rev.direction == "bidirectional"
+
+
+def test_load_macro_edges_keeps_unidirectional_single_sided(tmp_path):
+    """A unidirectional edge does NOT gain a reverse route."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = _minimal_world(tmp_path)
+    _write_yaml(
+        base / "episode-01" / "macros" / "one_way.yaml",
+        """\
+- macro_edge_id: "one_way"
+  from_anchor: "room_01"
+  to_anchor: "room_02"
+  direction: "unidirectional"
+  passage_name: "salida"
+  open: true
+""",
+    )
+    loader = EntityLoader(str(base))
+    edges = loader.load_macro_edges("episode-01")
+
+    one_way = [e for e in edges if e.macro_edge_id == "one_way"]
+    assert len(one_way) == 1
+    assert len([e for e in edges if e.macro_edge_id == "one_way_reverse"]) == 0
+
+
+def test_load_macro_edges_skips_existing_reverse(tmp_path):
+    """When a reverse declaration already exists, no duplicate is created."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = _minimal_world(tmp_path)
+    _write_yaml(
+        base / "episode-01" / "macros" / "bi_pair.yaml",
+        """\
+- macro_edge_id: "bi_a"
+  from_anchor: "room_01"
+  to_anchor: "room_02"
+  direction: "bidirectional"
+  passage_name: "pasillo"
+  open: true
+- macro_edge_id: "bi_b"
+  from_anchor: "room_02"
+  to_anchor: "room_01"
+  direction: "bidirectional"
+  passage_name: "pasillo"
+  open: true
+""",
+    )
+    loader = EntityLoader(str(base))
+    edges = loader.load_macro_edges("episode-01")
+
+    # The minimal world also provides door_to_hall + its reverse; the pair
+    # bi_a/bi_b is kept as declared with NO auto-generated third copy.
+    bi_ids = {e.macro_edge_id for e in edges if e.macro_edge_id.startswith("bi_")}
+    assert bi_ids == {"bi_a", "bi_b"}
 
 
 # ===================================================================
@@ -575,7 +670,7 @@ def test_load_episode_data(tmp_path):
     assert len(data["rooms"]) == 1
     assert len(data["items"]) == 1
     assert len(data["npcs"]) == 1
-    assert len(data["macro_edges"]) == 1
+    assert len(data["macro_edges"]) == 2  # bidirectional forward + reverse
     assert len(data["hyper_edges"]) == 1
 
 
@@ -767,7 +862,8 @@ passage_name: "up"
     loader = EntityLoader(str(base))
     edges = loader.load_macro_edges("episode-01")
 
-    assert len(edges) == 2  # original list + single dict
+    # door_to_hall (bidirectional -> 2) + single_door (unidirectional -> 1).
+    assert len(edges) == 3
     single = [e for e in edges if e.macro_edge_id == "single_door"]
     assert len(single) == 1
     assert single[0].to_anchor == "room_03"

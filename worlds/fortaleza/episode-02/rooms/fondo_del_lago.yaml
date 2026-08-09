@@ -2,6 +2,6 @@ entity_id: "fondo_del_lago"
 type: "room"
 name: "el fondo del Lago"
 components:
-  description: "Contrariamente a lo que le dijeron en su infancia, usted puede respirar debajo del agua. Usted siente una paz extraña al estar en el fondo del Lago, tal vez debida a posibles asociaciones subconcientes con su pasado embrionario, en el vientre de su madre."
+  description: "Contrariamente a lo que le dijeron en su infancia, usted puede respirar debajo del agua. Usted siente una paz extraña al estar en el fondo del Lago, tal vez debida a posibles asociaciones subconcientes con su pasado embrionario, en el vientre de su madre. Ves: catarata, grieta, reja, sendero_dorado."
   visited: false
 spatial_anchor: null

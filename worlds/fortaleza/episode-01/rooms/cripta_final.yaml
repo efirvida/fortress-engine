@@ -2,6 +2,6 @@ entity_id: "cripta_final"
 type: "room"
 name: "la cripta final"
 components:
-  description: "La cripta donde descansa el Troll."
+  description: "La cripta donde descansa el Troll. Ves: cripta, escondite."
   visited: false
 spatial_anchor: null

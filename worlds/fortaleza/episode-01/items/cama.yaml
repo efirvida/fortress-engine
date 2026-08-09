@@ -1,0 +1,8 @@
+entity_id: "cama"
+type: "item"
+name: "cama"
+components:
+  weight: 0
+  broken: false
+  description: "Una cama enorme que esconde una puerta al suelo. Hay que romperla."
+spatial_anchor: "cuarto_del_guerrero"

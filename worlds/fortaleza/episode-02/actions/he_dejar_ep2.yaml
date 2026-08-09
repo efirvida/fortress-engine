@@ -7,7 +7,11 @@
     subject: "player"
     verb: "dejar"
     target: "*"
-  operators: []
+  operators:
+    - type: "TRANSFER"
+      entity: "*"
+      from_container: "hero"
+      to_container: "@anchor"
   output: "Dejas el objeto en el suelo."
 
 - hyper_edge_id: "he_dejar_nada_ep2"
@@ -27,6 +31,114 @@
     subject: "player"
     verb: "dejar"
     target: "todo"
-  operators: []
+  operators:
+    - type: "TRANSFER"
+      entity: "*"
+      from_container: "hero"
+      to_container: "@anchor"
   output: "Vacías tus manos. Todo queda en el suelo."
+
+# --- Ritual drops: each sacred object must be placed in its goal room.
+# The generic drop above carries no operators, so the ritual placements are
+# modeled as explicit hyper edges that TRANSFER the object from the hero's
+# inventory to the goal anchor (faithful to the original walkthrough steps
+# 66-73 and the episode-02 goal conditions).
+
+- hyper_edge_id: "he_dejar_antorcha_subterraneos"
+  name: "Dejar la antorcha en la habitación de huéspedes"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "dejar"
+    target: "antorcha_subterraneos"
+  operators:
+    - type: "TRANSFER"
+      entity: "antorcha_subterraneos"
+      from_container: "hero"
+      to_container: "habitacion_para_huespedes"
+  output: "Dejas la antorcha en la habitación de huéspedes."
+
+- hyper_edge_id: "he_dejar_pendulo"
+  name: "Dejar el péndulo en el salón de fumar"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "dejar"
+    target: "pendulo"
+  operators:
+    - type: "TRANSFER"
+      entity: "pendulo"
+      from_container: "hero"
+      to_container: "salon_de_fumar"
+  output: "Dejas el péndulo en el salón de fumar."
+
+- hyper_edge_id: "he_dejar_espejo_roto"
+  name: "Dejar el espejo roto en el cuarto de la hija"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "dejar"
+    target: "espejo_roto"
+  operators:
+    - type: "TRANSFER"
+      entity: "espejo_roto"
+      from_container: "hero"
+      to_container: "cuarto_de_la_hija_del_hechicero"
+  output: "Dejas el espejo roto en el cuarto de la hija."
+
+- hyper_edge_id: "he_dejar_bote_carante"
+  name: "Dejar el bote de Caronte en la otra orilla"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "dejar"
+    target: "bote_carante"
+  operators:
+    - type: "TRANSFER"
+      entity: "bote_carante"
+      from_container: "hero"
+      to_container: "otra_orilla_del_rio_negro"
+  output: "Dejas el bote de Caronte en la otra orilla del río negro."
+
+- hyper_edge_id: "he_dejar_rosa_diamante"
+  name: "Dejar la rosa de diamante en el fondo del lago"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "dejar"
+    target: "rosa_diamante"
+  operators:
+    - type: "TRANSFER"
+      entity: "rosa_diamante"
+      from_container: "hero"
+      to_container: "fondo_del_lago"
+  output: "Dejas la rosa de diamante en el fondo del lago."
+
+- hyper_edge_id: "he_dejar_escudo_de_aquiles"
+  name: "Dejar el escudo de Aquiles en la ciudad abandonada"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "dejar"
+    target: "escudo_de_aquiles"
+  operators:
+    - type: "TRANSFER"
+      entity: "escudo_de_aquiles"
+      from_container: "hero"
+      to_container: "ciudad_abandonada"
+  output: "Dejas el escudo de Aquiles en la ciudad abandonada."
+
+- hyper_edge_id: "he_dejar_cinta_de_moebius"
+  name: "Dejar la cinta de Moebius en el exterior de la torre"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "dejar"
+    target: "cinta_de_moebius"
+  operators:
+    - type: "TRANSFER"
+      entity: "cinta_de_moebius"
+      from_container: "hero"
+      to_container: "exterior_de_la_torre_de_cristal"
+  output: "Dejas la cinta de Moebius en el exterior de la torre de cristal."
 

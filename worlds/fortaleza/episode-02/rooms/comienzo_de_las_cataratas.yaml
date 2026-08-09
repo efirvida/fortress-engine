@@ -2,6 +2,6 @@ entity_id: "comienzo_de_las_cataratas"
 type: "room"
 name: "el punto donde comienzan unas enormes cataratas"
 components:
-  description: "Un repentino acceso de vértigo hace que sus rodillas se doblen. A menos de un pie de donde usted se encuentra el agua se precipita hacia el abismo."
+  description: "Un repentino acceso de vértigo hace que sus rodillas se doblen. A menos de un pie de donde usted se encuentra el agua se precipita hacia el abismo. Ves: catarata, pasadizo."
   visited: false
 spatial_anchor: null

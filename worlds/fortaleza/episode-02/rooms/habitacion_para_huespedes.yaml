@@ -2,6 +2,6 @@ entity_id: "habitacion_para_huespedes"
 type: "room"
 name: "una habitación para huéspedes"
 components:
-  description: "Está tan oscura que usted cree que las paredes y el techo se han avalanzado sobre su cuerpo. En la pared que tiene delante se distingue un plateado hilo de luz. Es el filo de una puerta."
+  description: "Está tan oscura que usted cree que las paredes y el techo se han avalanzado sobre su cuerpo. En la pared que tiene delante se distingue un plateado hilo de luz. Es el filo de una puerta. Ves: puerta."
   visited: false
 spatial_anchor: null

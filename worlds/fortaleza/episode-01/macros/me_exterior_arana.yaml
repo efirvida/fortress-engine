@@ -4,6 +4,5 @@ to_anchor: "sala_de_la_arana"
 direction: "bidirectional"
 passage_name: "puerta_secreta"
 passage_description: "Una pared solitaria que esconde un secreto"
-open: false
+open: true
 requires_item: "antorcha"
-requires_text: "key[3]"

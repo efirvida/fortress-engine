@@ -11,6 +11,7 @@ always a list — no singleton assumptions.
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 from fortress_engine.entities.entity import Entity, ParsedCommand
@@ -286,9 +287,14 @@ class TurnOrchestrator:
             },
         )
 
-        # 9. Execute operators.
+        # 9. Execute operators.  Bind wildcard operators to the resolved
+        # target so generic edges (e.g. ``dejar <item>``) act on the
+        # specific item the player named.
+        resolved_target = self._graph.resolve_target_id(
+            selected.clique.target, parsed, self._state
+        )
         ops_executed = self._execute_operators(
-            selected.operators, protagonist_id
+            selected.operators, protagonist_id, resolved_target
         )
 
         has_effects = len(ops_executed) > 0
@@ -299,7 +305,9 @@ class TurnOrchestrator:
                 ACTION_OUTPUT,
                 {
                     "hyper_edge_id": selected.hyper_edge_id,
-                    "text": selected.output,
+                    "text": self._resolve_output(
+                        selected.output, resolved_target
+                    ),
                     "protagonist_id": protagonist_id,
                 },
             )
@@ -362,21 +370,31 @@ class TurnOrchestrator:
     # ------------------------------------------------------------------
 
     def _execute_operators(
-        self, operators: list[dict[str, object]], protagonist_id: str
+        self,
+        operators: list[dict[str, object]],
+        protagonist_id: str,
+        resolved_target_id: str | None = None,
     ) -> list[str]:
         """Execute a list of operator dicts sequentially.
 
         Each successful operator emits its state-change event.  On failure,
         emits error_output and stops (no rollback of prior operators).
 
+        A wildcard operator (``entity: "*"``) is bound to *resolved_target_id*
+        so a generic edge (e.g. ``dejar <item>``) acts on the specific entity
+        the player named.
+
         Returns the list of operator type strings that executed successfully.
         """
         ops_executed: list[str] = []
         for op_data in operators:
-            result = execute_operator(
-                self._state, op_data, protagonist_id, self._graph
+            bound_op = self._bind_wildcard_operator(
+                op_data, resolved_target_id
             )
-            op_type = op_data.get("type", "")
+            result = execute_operator(
+                self._state, bound_op, protagonist_id, self._graph
+            )
+            op_type = bound_op.get("type", "")
 
             if result.success and result.events_payload is not None:
                 # Emit the state-change event for this operator.
@@ -415,6 +433,78 @@ class TurnOrchestrator:
                 return ops_executed
 
         return ops_executed
+
+    def _bind_wildcard_operator(
+        self,
+        op_data: dict[str, object],
+        resolved_target_id: str | None,
+    ) -> dict[str, object]:
+        """Return *op_data* with ``entity: "*"`` bound to the resolved target.
+
+        A generic edge (``target: "*"``) can declare an operator with
+        ``entity: "*"``; the engine substitutes the concrete entity the
+        player named.  When no target resolved, the operator is returned
+        unchanged and will fail with ``entity_not_found`` downstream.
+        """
+        if resolved_target_id is None:
+            return op_data
+        if op_data.get("entity") != "*":
+            return op_data
+        bound = dict(op_data)
+        bound["entity"] = resolved_target_id
+        return bound
+
+    def _resolve_output(
+        self, output: str, resolved_target_id: str | None
+    ) -> str:
+        """Resolve ``{placeholder}`` tokens in an edge's output text.
+
+        Placeholders are resolved against the target entity's components
+        (``{description}``, ``{weight}``, and any other component the world
+        defines) plus the entity's ``name``, ``entity_id`` and ``type``.
+        When the edge matched no target (e.g. a ``mirar``/look command with
+        no object), placeholders resolve against the protagonist's current
+        anchor (the room the player is standing in), so ``{description}``
+        describes the room.  Unknown placeholders are left untouched.
+
+        This is a GENERIC mechanism — the engine does not know what ``mirar``
+        or ``ver`` mean; it merely substitutes component values that the
+        world author references.
+        """
+        if "{" not in output:
+            return output
+        target = None
+        if resolved_target_id is not None:
+            try:
+                target = self._state.get_entity(resolved_target_id)
+            except KeyError:
+                target = None
+        if target is None:
+            # Fall back to the protagonist's current anchor (the room).
+            anchor_id = self._state.get_entity(
+                self._state.active_protagonist_id
+            ).spatial_anchor
+            if anchor_id is not None:
+                try:
+                    target = self._state.get_entity(anchor_id)
+                except KeyError:
+                    target = None
+        if target is None:
+            return output
+
+        values: dict[str, str] = {
+            "name": str(target.name),
+            "entity_id": target.entity_id,
+            "type": str(target.type),
+        }
+        for key, value in target.components.items():
+            values[key] = str(value)
+
+        def _replace(match: re.Match[str]) -> str:
+            name = match.group(1)
+            return values.get(name, match.group(0))
+
+        return re.sub(r"\{(\w+)\}", _replace, output)
 
     # ------------------------------------------------------------------
     # Private: goal evaluation
@@ -465,8 +555,13 @@ class TurnOrchestrator:
                 },
             )
         else:
-            # Transition succeeded — replace the graph reference.
+            # Transition succeeded — replace the graph reference and bind
+            # the next episode's goal evaluator so the new episode is
+            # evaluated against its OWN goal conditions (REQ-GOAL-001).
             self._graph = new_graph  # type: ignore[assignment]
+            self._goal_evaluator = self._episode_manager.goal_evaluator_for(
+                self._state.current_episode_id
+            )
 
         return True
 

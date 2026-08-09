@@ -5,3 +5,4 @@ direction: "bidirectional"
 passage_name: "avenida_hierro"
 passage_description: "La Avenida de Hierro al otro lado de la muralla"
 open: true
+requires_flag: "muralla_rota"

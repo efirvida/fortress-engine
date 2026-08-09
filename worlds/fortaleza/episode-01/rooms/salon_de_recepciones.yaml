@@ -2,6 +2,6 @@ entity_id: "salon_de_recepciones"
 type: "room"
 name: "el salón de recepciones"
 components:
-  description: "Parece hecho para criaturas cientos de veces más grandes que los humanos. Está desierto, pero usted siente que es observado."
+  description: "Parece hecho para criaturas cientos de veces más grandes que los humanos. Está desierto, pero usted siente que es observado. Ves: puerta_negra, puerta_principal."
   visited: false
 spatial_anchor: null

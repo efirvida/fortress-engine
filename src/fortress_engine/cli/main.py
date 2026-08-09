@@ -84,7 +84,8 @@ def _build_engine(
         language = world_config.get("language", "es")
         parser = create_parser(
             __import__("fortress_engine.plugins.factory", fromlist=["PluginConfig"]).PluginConfig(
-                name=parser_name
+                name=parser_name,
+                options={"vocabulary": vocabulary},
             ),
             language,
         )
@@ -96,13 +97,17 @@ def _build_engine(
         )
         narrator.initialize(bus)
 
+        # Protagonist from the world definition when present, else default.
+        shared = loader.load_shared_entities("episode-01")
+        player_entities = [e for e in shared if e.type == "player"]
+        if player_entities:
+            hero = player_entities[0]
+        else:
+            hero = Entity("hero", "player", "Hero", {"max_weight": 20}, None)
+
         # Create protagonist entity at runtime
         state = WorldState(
-            entities={
-                "hero": Entity(
-                    "hero", "player", "Hero", {"max_weight": 20}, None
-                ),
-            },
+            entities={"hero": hero},
             player_controlled_entities=["hero"],
             active_protagonist_id="hero",
             current_episode_id="",
@@ -131,6 +136,7 @@ def _build_engine(
             narrator=narrator,
             goal_evaluator=goal_eval,
             episode_manager=ep_mgr,
+            vocabulary=vocabulary,
         )
 
         return EngineBundle(

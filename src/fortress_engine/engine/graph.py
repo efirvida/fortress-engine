@@ -266,12 +266,43 @@ class DualGraphEngine:
     ) -> MacroEdge | None:
         """Find a macro edge by passage name within an anchor.
 
-        Returns ``None`` if no matching edge is found.
+        The lookup normalizes both sides by collapsing whitespace to a
+        single underscore and lowercasing, so a player can write ``"ir
+        puerta principal"`` (natural Spanish, as in the original game) and
+        resolve the YAML passage ``puerta_principal``.  Returns ``None`` if
+        no matching edge is found.
         """
+        normalized = _normalize_passage_name(passage_name)
         for edge in self._macro_edges.get(anchor_id, []):
-            if edge.passage_name == passage_name:
+            if _normalize_passage_name(edge.passage_name) == normalized:
                 return edge
         return None
+
+    def _open_reverse_edges(self, edge: MacroEdge) -> None:
+        """Open the reverse copy of a bidirectional passage.
+
+        The loader creates reverse edges with ``open`` copied by value, so
+        opening one side must unlock the mirrored edge (they are the same
+        door).  Unidirectional edges have no reverse and are untouched.
+        """
+        reverse = (
+            f"{edge.macro_edge_id}_reverse"
+            if edge.macro_edge_id.endswith("_reverse")
+            else f"{edge.macro_edge_id}_reverse"
+        )
+        # Find the mirror: same passage, opposite direction.
+        for edges in self._macro_edges.values():
+            for candidate in edges:
+                if candidate.macro_edge_id == reverse:
+                    candidate.open = True
+                    return
+                if (
+                    candidate.passage_name == edge.passage_name
+                    and candidate.from_anchor == edge.to_anchor
+                    and candidate.to_anchor == edge.from_anchor
+                ):
+                    candidate.open = True
+                    return
 
     def get_hyper_edges_for_verb(self, anchor_id: str, verb: str) -> list[HyperEdge]:
         """Return HyperEdges matching *(anchor_id, verb)*, priority-descending.
@@ -489,6 +520,10 @@ class DualGraphEngine:
                 edge.requires_text
             ):
                 edge.open = True
+                # A bidirectional passage is the SAME door seen from both
+                # sides: opening one side unlocks the reverse edge too
+                # (reverse copies carry `open` by value, so propagate).
+                self._open_reverse_edges(edge)
             else:
                 return MacroGateResult(
                     is_valid=False,
@@ -577,6 +612,24 @@ class DualGraphEngine:
             return "*"
         return clique_value
 
+    def resolve_target_id(
+        self, clique_target: str | None, parsed: ParsedCommand, state: WorldState
+    ) -> str | None:
+        """Resolve the entity the clique matched for *parsed*.
+
+        Returns the concrete entity id the parsed target resolves to, or
+        ``None`` when there is no resolvable target.  Used by wildcard
+        operators (``entity: "*"``) so a generic edge can act on the
+        specific item the player named.
+        """
+        if clique_target is None:
+            return None
+        if clique_target == "*":
+            if parsed.target is None:
+                return None
+            return self.resolve_special_values(parsed.target, state)
+        return self.resolve_special_values(clique_target, state)
+
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -601,6 +654,17 @@ def _normalize_text(s: str) -> str:
     """
     text = unicodedata.normalize("NFKD", s.strip().lower())
     return "".join(ch for ch in text if not unicodedata.combining(ch))
+
+
+def _normalize_passage_name(s: str) -> str:
+    """Normalize a passage name for lookup.
+
+    Lowercases and collapses whitespace to a single underscore, so the
+    player's natural ``"puerta principal"`` resolves the YAML passage
+    ``puerta_principal``.  YAML passage names are snake_case by convention;
+    entity names are NOT normalized here (they legitimately contain spaces).
+    """
+    return "_".join(s.strip().lower().split())
 
 
 def _is_in_anchor_or_inventory(

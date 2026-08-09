@@ -1,0 +1,7 @@
+macro_edge_id: "me_jardin_lobos"
+from_anchor: "jardin"
+to_anchor: "sala_de_lobos"
+direction: "bidirectional"
+passage_name: "puerta_verde"
+passage_description: "Una puerta verde hacia el páramo donde aúllan los lobos"
+open: true

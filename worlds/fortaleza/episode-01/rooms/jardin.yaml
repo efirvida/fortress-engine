@@ -2,6 +2,6 @@ entity_id: "jardin"
 type: "room"
 name: "el jardín"
 components:
-  description: "Un jardín secreto con flores de todos los colores."
+  description: "Un jardín secreto con flores de todos los colores. Ves: libro, puerta_verde, ventana."
   visited: false
 spatial_anchor: null

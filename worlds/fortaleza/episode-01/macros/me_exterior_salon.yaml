@@ -5,4 +5,4 @@ direction: "bidirectional"
 passage_name: "puerta_principal"
 passage_description: "La puerta principal de la fortaleza"
 open: false
-requires_text: "password_key[2]"
+requires_text: "Abrete Sesamo"

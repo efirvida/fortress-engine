@@ -1,0 +1,8 @@
+entity_id: "puerta_madera"
+type: "item"
+name: "puerta de madera"
+components:
+  weight: 0
+  broken: false
+  description: "Una puerta de madera maciza que bloquea el paso al laberinto."
+spatial_anchor: "sala_del_columna"

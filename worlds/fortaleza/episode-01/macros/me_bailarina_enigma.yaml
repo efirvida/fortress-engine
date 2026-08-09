@@ -5,4 +5,4 @@ direction: "bidirectional"
 passage_name: "puerta_cristal"
 passage_description: "Una puerta de cristal"
 open: false
-requires_text: "key[42]"
+requires_text: "Agua"

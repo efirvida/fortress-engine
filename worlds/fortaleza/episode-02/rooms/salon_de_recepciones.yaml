@@ -2,6 +2,6 @@ entity_id: "salon_de_recepciones"
 type: "room"
 name: "el Salón de Recepciones"
 components:
-  description: "Todo está muy sucio y descuidado. Un fuerte olor a carroña le hace perder el equilibrio por momentos. Seguramente el Ogro usa este lugar para recibir a sus enemigos."
+  description: "Todo está muy sucio y descuidado. Un fuerte olor a carroña le hace perder el equilibrio por momentos. Seguramente el Ogro usa este lugar para recibir a sus enemigos. Ves: puerta_gris, puerta_hierro."
   visited: false
 spatial_anchor: null

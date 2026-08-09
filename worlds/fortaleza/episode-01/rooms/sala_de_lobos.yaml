@@ -2,6 +2,6 @@ entity_id: "sala_de_lobos"
 type: "room"
 name: "la sala de lobos"
 components:
-  description: "Una sala oscura donde aúllan los lobos."
+  description: "Una sala oscura donde aúllan los lobos. Ves: puerta_verde."
   visited: false
 spatial_anchor: null

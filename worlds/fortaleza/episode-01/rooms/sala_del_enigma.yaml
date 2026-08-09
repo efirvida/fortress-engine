@@ -2,6 +2,6 @@ entity_id: "sala_del_enigma"
 type: "room"
 name: "la sala del enigma"
 components:
-  description: "Una sala con enigmas y puertas doradas."
+  description: "Una sala con enigmas y puertas doradas. Ves: puerta_cristal, puerta_dorada."
   visited: false
 spatial_anchor: null

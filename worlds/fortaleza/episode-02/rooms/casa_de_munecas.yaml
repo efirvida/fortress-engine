@@ -2,6 +2,6 @@ entity_id: "casa_de_munecas"
 type: "room"
 name: "la casa de muñecas"
 components:
-  description: "Es tan pequeña como cualquier casa de muñecas. Usted no comprende cómo pudo entrar. Hay un baúl en el fondo."
+  description: "Es tan pequeña como cualquier casa de muñecas. Usted no comprende cómo pudo entrar. Hay un baúl en el fondo. Ves: agujero, pasadizo, puerta_baul."
   visited: false
 spatial_anchor: null

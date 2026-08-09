@@ -2,6 +2,6 @@ entity_id: "orilla_del_lago"
 type: "room"
 name: "la orilla del Lago"
 components:
-  description: "Frente a usted se extiende el Lago, de aguas claras y tranquilas."
+  description: "Frente a usted se extiende el Lago, de aguas claras y tranquilas. Ves: camino, sendero_dorado."
   visited: false
 spatial_anchor: null

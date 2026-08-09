@@ -105,9 +105,22 @@ def execute_transfer(
 
     Weight validation is applied **only** when the destination is the active
     protagonist's inventory.  Other containers are unrestricted.
+
+    ``to_container == "@anchor"`` resolves to the protagonist's current
+    spatial anchor at execution time (used by generic ``dejar <item>``
+    edges so the item lands in the room the player is standing in).
     """
     entity_id = op.entity
     to_container = op.to_container
+
+    if to_container == "@anchor":
+        protagonist = state.get_entity(protagonist_id)
+        to_container = protagonist.spatial_anchor
+
+    from_container = op.from_container
+    if from_container == "@anchor":
+        protagonist = state.get_entity(protagonist_id)
+        from_container = protagonist.spatial_anchor
 
     if not state.entity_exists(entity_id):
         return OperatorResult(
@@ -120,13 +133,13 @@ def execute_transfer(
 
     # --- container validation --------------------------------------
     if (
-        op.from_container is not None
-        and entity.spatial_anchor != op.from_container
+        from_container is not None
+        and entity.spatial_anchor != from_container
     ):
         return OperatorResult(
             success=False,
             code="entity_not_in_container",
-            data={"entity_id": entity_id, "container_id": op.from_container},
+            data={"entity_id": entity_id, "container_id": from_container},
         )
 
     if to_container is not None and not state.entity_exists(to_container):
@@ -184,7 +197,7 @@ def execute_transfer(
         success=True,
         events_payload={
             "entity_id": entity_id,
-            "from_container_id": op.from_container,
+            "from_container_id": from_container,
             "to_container_id": to_container,
         },
     )

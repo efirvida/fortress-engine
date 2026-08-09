@@ -2,6 +2,6 @@ entity_id: "alcoba_de_la_hija_del_hechicero"
 type: "room"
 name: "la alcoba de la hija del Hechicero"
 components:
-  description: "Esta es la alcoba donde la hija del Hechicero se alojaba temporalmente. Es muy cómoda y tiene muchos cuadros iguales al que usted lleva."
+  description: "Esta es la alcoba donde la hija del Hechicero se alojaba temporalmente. Es muy cómoda y tiene muchos cuadros iguales al que usted lleva. Ves: puerta_cristal, puerta_secreta."
   visited: false
 spatial_anchor: null

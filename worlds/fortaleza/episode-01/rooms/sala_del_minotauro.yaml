@@ -2,6 +2,6 @@ entity_id: "sala_del_minotauro"
 type: "room"
 name: "la sala del minotauro"
 components:
-  description: "La sala donde vive el Minotauro."
+  description: "La sala donde vive el Minotauro. Ves: salida, sendero_dorado."
   visited: false
 spatial_anchor: null

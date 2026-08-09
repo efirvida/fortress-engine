@@ -65,7 +65,7 @@
     subject: "player"
     verb: "romper"
     target: "pared_solaria"
-    instrument: "antorcha"
+    instrument: "ariete"
   operators:
     - type: "TRANSFORM"
       entity: "pared_solaria"

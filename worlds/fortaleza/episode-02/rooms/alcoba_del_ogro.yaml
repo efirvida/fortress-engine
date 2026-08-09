@@ -2,6 +2,6 @@ entity_id: "alcoba_del_ogro"
 type: "room"
 name: "la alcoba del Ogro"
 components:
-  description: "El aire se ha hecho casi irrespirable. Ahora usted comprende de dónde venía el mal olor reinante en el Salón de Recepciones. Nunca antes había estado en un lugar tan repulsivo."
+  description: "El aire se ha hecho casi irrespirable. Ahora usted comprende de dónde venía el mal olor reinante en el Salón de Recepciones. Nunca antes había estado en un lugar tan repulsivo. Ves: puerta_negra."
   visited: false
 spatial_anchor: null

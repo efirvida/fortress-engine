@@ -22,7 +22,7 @@ verbs:
   limpiar: ["cls"]
   todo: ["todo"]
 
-stopwords: ["la", "el", "los", "las", "un", "una", "al", "del", "de", "en", "con", "por", "para", "a"]
+stopwords: ["la", "el", "los", "las", "un", "una", "al", "del", "de", "en", "por", "para"]
 
 prepositions:
   instrument: ["con"]
@@ -32,7 +32,7 @@ speech_markers: ["diciendo", "respondiendo"]
 
 speech_verbs: ["decir", "responder"]
 
-movement_verbs: ["ir", "atravesar", "cruzar", "pasar"]
+movement_verbs: ["ir", "atravesar", "cruzar", "pasar", "abrir"]
 
 system_commands:
   save: ["salvar", "guardar", "save"]

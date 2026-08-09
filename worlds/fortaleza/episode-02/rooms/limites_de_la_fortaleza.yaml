@@ -2,6 +2,6 @@ entity_id: "limites_de_la_fortaleza"
 type: "room"
 name: "los límites de la Fortaleza"
 components:
-  description: "A su derecha crece la tercera muralla, hasta una altura irracional. Usted no puede creer que aquí termine la Fortaleza. Del otro lado de la muralla se escucha (usted no entiende cómo) el canto de los pájaros y el sonido del viento en los árboles."
+  description: "A su derecha crece la tercera muralla, hasta una altura irracional. Usted no puede creer que aquí termine la Fortaleza. Del otro lado de la muralla se escucha (usted no entiende cómo) el canto de los pájaros y el sonido del viento en los árboles. Ves: puente, puerta_triangular."
   visited: false
 spatial_anchor: null

@@ -176,6 +176,7 @@ class HyperEdge:
 **Notas de implementación**:
 - `subject == "player"` es un valor especial: el motor lo resuelve al `active_protagonist_id` en tiempo de validación. Cualquier otro valor se interpreta como un `entity_id` literal.
 - `target == "*"` e `instrument == "*"` son comodines: matchean cualquier entidad del tipo esperado en la room o inventario.
+- **Binding wildcard de operadores**: un operador con `entity: "*"` en una Hiper-Arista cuyo clique matcheó por wildcard se une al `entity_id` concreto que el jugador nombró. Ejemplo: el edge genérico `dejar <item>` con `target: "*"` y operador `TRANSFER entity: "*" from_container: "hero" to_container: "@anchor"` mueve el item exacto que el jugador dijo. Si no hay target resuelto, el operador queda sin cambios y falla con `entity_not_found` (nunca crashea).
 - La evaluación de prioridad es descendente (mayor primero). El PRD 4.3 establece que esto reemplaza la lógica `if/else` — basta con definir múltiples Hiper-Aristas con el mismo par `(verb, target)` y distintas prioridades.
 - `operators` se almacena como `list[dict]` en el dataclass porque los datos vienen de YAML. El motor los convierte a los tipos concretos (`TransferOp`, `TransformOp`, etc.) al ejecutarlos.
 
@@ -213,6 +214,7 @@ class MacroEdge:
 - Las aristas con `requires_text` arrancan con `open: False`. Se abren cuando el jugador dice el texto correcto (coincidencia insensible a mayúsculas y tildes).
 - Una arista sin predicados tiene `open: True` siempre.
 - El campo `open` es mutable — se modifica durante el juego (a diferencia del resto de campos que son inmutables después de la carga).
+- **Propagación bidireccional**: al abrir una arista con `requires_text` que es `bidirectional`, el motor también abre la arista espejo (misma `passage_name`, dirección opuesta). Es la MISMA puerta vista desde ambos lados; la copia reverse lleva `open` por valor, así que abrir un lado debe desbloquear el otro (`_open_reverse_edges`).
 - `death_message` es el único discriminador entre fatal y bloqueado; el motor nunca interpreta nombres de tipos de conexión.
 
 ### 3.4 Operators
@@ -271,6 +273,7 @@ Operator = Union[TransferOp, TransformOp, CombineOp, FlagOp, TeleportOp]
 **Notas de implementación**:
 - Los operadores se construyen a partir de los `dicts` en `HyperEdge.operators`. El loader YAML produce dicts; el motor los convierte usando una factory function `operator_from_dict(data: dict) -> Operator`.
 - La validación de peso en `TransferOp` se aplica solo cuando `to_container` es el `entity_id` del protagonista activo (ver PRD 4.4).
+- Los valores especiales `"@anchor"` en `from_container` y `to_container` se resuelven al `spatial_anchor` actual del protagonista en tiempo de ejecución. Esto permite edges genéricos de `dejar <item>` / `tomar <item>` que operan sobre el anchor donde está el jugador, sin hardcodear un contenedor (ver GDD 2.4).
 - `CombineOp.output_entity` debe ser una entidad que existe en el grafo, típicamente con `spatial_anchor: "_limbo"` (ver patrón Limbo Room, GDD 2.4).
 - El orden de ejecución es secuencial y transaccional: si un operador falla, los anteriores no se revierten porque el grafo aún no mutó. Pero sí se detiene la secuencia — los operadores posteriores no se ejecutan.
 
@@ -453,13 +456,39 @@ class TurnOrchestrator:
           7. Si ninguna clique: emit error_output, retornar
           8. emit action_attempted
           9. _execute_operators(selected.operators) → cada op exitoso emite su evento de cambio
-          10. emit action_output (si selected.output no vacío)
+          10. emit action_output (si selected.output no vacío; placeholders resueltos, ver abajo)
           11. emit action_resolved
           12. _evaluate_goal() → si goal cumplido: transición de episodio o game_completed
           13. Verificar player_dead → game_over
           14. emit turn_ended
         """
         ...
+
+    # ------------------------------------------------------------------
+    # Placeholders en action_output (mecanismo genérico)
+    # ------------------------------------------------------------------
+
+    El texto de `HyperEdge.output` puede contener placeholders `{nombre}`
+    que el motor resuelve contra los COMPONENTES de la entidad target del
+    clique (el objeto/NPC/room que el jugador nombró). Se resuelven también
+    los nombres especiales `{name}`, `{entity_id}`, `{type}`.
+
+    - Si el clique matcheó una entidad (target concreto o wildcard), los
+      placeholders se resuelven contra esa entidad.
+    - Si el clique no tiene target (p.ej. `mirar` la habitación), los
+      placeholders se resuelven contra el `spatial_anchor` actual del
+      protagonista (la room donde está).
+    - Los placeholders desconocidos se dejan INTACTOS (comportamiento
+      determinista, no rompe el output).
+
+    Ejemplo: un edge `he_mirar_habitacion` con `target: null` y
+    `output: "{description}"` describe la room actual; un edge
+    `he_ver_maza` con `target: "maza"` y `output: "Pesa {weight}."`
+    resuelve el peso de la maza.
+
+    Es un mecanismo GENÉRICO: el motor no conoce los verbos `mirar`/`ver`;
+    solo sustituye los valores de componentes que el autor del mundo
+    referencia. El narrador decora el texto final.
 
     # Private methods
     def _validate_clique(
@@ -539,7 +568,14 @@ class DualGraphEngine:
     def get_macro_edge_by_passage_name(
         self, anchor_id: str, passage_name: str
     ) -> MacroEdge | None:
-        """Busca una arista Macro por nombre de pasaje en una anchor."""
+        """Busca una arista Macro por nombre de pasaje en una anchor.
+
+        La búsqueda NORMALIZA ambos lados: espacios→guion bajo y
+        minúsculas. Así, el jugador escribe ``"ir puerta principal"``
+        (español natural) y resuelve el pasaje YAML ``puerta_principal``.
+        Los nombres de ENTIDAD no se normalizan (legítimamente contienen
+        espacios: "pastel de cerezas").
+        """
         ...
 
     def get_hyper_edges_for_verb(

@@ -1764,3 +1764,206 @@ def test_macro_edge_carries_only_generic_predicates():
     assert "forbids_flag" in names
     assert "death_message" in names
     assert "open" in names
+
+
+# ===================================================================
+# resolve_target_id (wildcard operator binding)
+# ===================================================================
+
+
+def test_resolve_target_id_none_clique_target():
+    """A clique with no target constraint resolves to None (no binding)."""
+    from fortress_engine.engine.graph import DualGraphEngine
+    from fortress_engine.plugins.parser_interface import ParsedCommand
+
+    engine = DualGraphEngine()
+    state = _make_detached_state()
+    parsed = ParsedCommand(subject="hero", verb="mirar", target="algo")
+
+    assert engine.resolve_target_id(None, parsed, state) is None
+
+
+def test_resolve_target_id_wildcard_resolves_parsed_target():
+    """A wildcard clique target resolves the parsed target to its entity id."""
+    from fortress_engine.engine.graph import DualGraphEngine
+    from fortress_engine.plugins.parser_interface import ParsedCommand
+
+    engine = DualGraphEngine()
+    hero = _make_player("hero", spatial_anchor="room_01")
+    key = _make_entity("key", components={"weight": 1}, spatial_anchor="hero")
+    state = WorldState(
+        entities={"room_01": hero, "key": key},
+        player_controlled_entities=["hero"],
+        active_protagonist_id="hero",
+    )
+    parsed = ParsedCommand(subject="hero", verb="dejar", target="key")
+
+    assert engine.resolve_target_id("*", parsed, state) == "key"
+
+
+def test_resolve_target_id_wildcard_missing_parsed_target():
+    """A wildcard clique with no parsed target resolves to None."""
+    from fortress_engine.engine.graph import DualGraphEngine
+    from fortress_engine.plugins.parser_interface import ParsedCommand
+
+    engine = DualGraphEngine()
+    state = _make_detached_state()
+    parsed = ParsedCommand(subject="hero", verb="dejar", target=None)
+
+    assert engine.resolve_target_id("*", parsed, state) is None
+
+
+def test_resolve_target_id_concrete_returns_clique_value():
+    """A concrete clique target resolves through special values (e.g.
+    ``"player"`` → protagonist id)."""
+    from fortress_engine.engine.graph import DualGraphEngine
+    from fortress_engine.plugins.parser_interface import ParsedCommand
+
+    engine = DualGraphEngine()
+    hero = _make_player("hero", spatial_anchor="room_01")
+    state = WorldState(
+        entities={"room_01": hero},
+        player_controlled_entities=["hero"],
+        active_protagonist_id="hero",
+    )
+    parsed = ParsedCommand(subject="hero", verb="matar", target="ciclope")
+
+    assert engine.resolve_target_id("player", parsed, state) == "hero"
+
+
+# ===================================================================
+# Passage name normalization (natural player input)
+# ===================================================================
+
+
+def test_passage_lookup_normalizes_spaces_to_underscore():
+    """``get_macro_edge_by_passage_name`` resolves natural player input
+    with spaces ("puerta principal") to a snake_case YAML passage
+    ("puerta_principal")."""
+    from fortress_engine.engine.graph import (
+        Clique,
+        DualGraphEngine,
+        HyperEdge,
+        MacroEdge,
+    )
+
+    engine = DualGraphEngine()
+    room_a = _make_entity("room_a", type_="room")
+    room_b = _make_entity("room_b", type_="room")
+    engine.add_anchor(room_a)
+    engine.add_anchor(room_b)
+    engine.add_macro_edge(
+        MacroEdge(
+            macro_edge_id="a_to_b",
+            from_anchor="room_a",
+            to_anchor="room_b",
+            direction="bidirectional",
+            passage_name="puerta_principal",
+        )
+    )
+
+    assert engine.get_macro_edge_by_passage_name(
+        "room_a", "puerta principal"
+    ) is not None
+    assert engine.get_macro_edge_by_passage_name(
+        "room_a", "puerta_principal"
+    ) is not None
+    assert engine.get_macro_edge_by_passage_name(
+        "room_a", "puerta  principal"
+    ) is not None
+
+
+def test_passage_lookup_normalization_is_case_insensitive():
+    """Passage lookup is case-insensitive: 'Puerta Principal' matches."""
+    from fortress_engine.engine.graph import (
+        DualGraphEngine,
+        MacroEdge,
+    )
+
+    engine = DualGraphEngine()
+    room_a = _make_entity("room_a", type_="room")
+    room_b = _make_entity("room_b", type_="room")
+    engine.add_anchor(room_a)
+    engine.add_anchor(room_b)
+    engine.add_macro_edge(
+        MacroEdge(
+            macro_edge_id="a_to_b",
+            from_anchor="room_a",
+            to_anchor="room_b",
+            direction="bidirectional",
+            passage_name="puerta_principal",
+        )
+    )
+
+    assert engine.get_macro_edge_by_passage_name(
+        "room_a", "Puerta Principal"
+    ) is not None
+
+
+def test_passage_lookup_no_match_returns_none():
+    """A passage name that does not exist still returns None."""
+    from fortress_engine.engine.graph import DualGraphEngine
+
+    engine = DualGraphEngine()
+    room_a = _make_entity("room_a", type_="room")
+    engine.add_anchor(room_a)
+
+    assert engine.get_macro_edge_by_passage_name("room_a", "pasaje_fantasma") is None
+
+
+def test_open_reverse_edges_propagates_to_mirror_by_anchors():
+    """``_open_reverse_edges`` falls back to matching the mirror by passage
+    name and swapped anchors when the ``_reverse`` id is not present."""
+    from fortress_engine.engine.graph import DualGraphEngine, MacroEdge
+
+    engine = DualGraphEngine()
+    room_a = _make_entity("room_a", type_="room")
+    room_b = _make_entity("room_b", type_="room")
+    engine.add_anchor(room_a)
+    engine.add_anchor(room_b)
+    fwd = MacroEdge(
+        macro_edge_id="custom_door",
+        from_anchor="room_a",
+        to_anchor="room_b",
+        direction="bidirectional",
+        passage_name="pasillo",
+        open=False,
+    )
+    mirror = MacroEdge(
+        macro_edge_id="custom_door_mirror",  # NOT <id>_reverse
+        from_anchor="room_b",
+        to_anchor="room_a",
+        direction="bidirectional",
+        passage_name="pasillo",
+        open=False,
+    )
+    engine.add_macro_edge(fwd)
+    engine.add_macro_edge(mirror)
+
+    engine._open_reverse_edges(fwd)
+
+    assert mirror.open is True
+
+
+def test_open_reverse_edges_no_mirror_is_noop():
+    """``_open_reverse_edges`` on an edge with no mirror is a no-op."""
+    from fortress_engine.engine.graph import DualGraphEngine, MacroEdge
+
+    engine = DualGraphEngine()
+    room_a = _make_entity("room_a", type_="room")
+    room_b = _make_entity("room_b", type_="room")
+    engine.add_anchor(room_a)
+    engine.add_anchor(room_b)
+    fwd = MacroEdge(
+        macro_edge_id="one_way",
+        from_anchor="room_a",
+        to_anchor="room_b",
+        direction="unidirectional",
+        passage_name="salida",
+        open=False,
+    )
+    engine.add_macro_edge(fwd)
+
+    # Must not raise and must not touch anything.
+    engine._open_reverse_edges(fwd)
+    assert fwd.open is False

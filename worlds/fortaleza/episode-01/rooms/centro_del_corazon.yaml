@@ -2,6 +2,6 @@ entity_id: "centro_del_corazon"
 type: "room"
 name: "el centro del corazón"
 components:
-  description: "El centro vital del corazón de la Bestia."
+  description: "El centro vital del corazón de la Bestia. Ves: arteria_principal, vena."
   visited: false
 spatial_anchor: null

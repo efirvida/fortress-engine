@@ -5,4 +5,4 @@ direction: "bidirectional"
 passage_name: "puerta"
 passage_description: "Una puerta para gigantes"
 open: false
-requires_text: "password_key[14]"
+requires_text: "Nombus Rostomelaris"

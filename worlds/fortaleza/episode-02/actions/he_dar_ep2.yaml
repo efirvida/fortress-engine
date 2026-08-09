@@ -259,8 +259,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "monstruo"
-    instrument: "muslo_de_carnero"
+    target: "muslo_de_carnero"
+    context: "monstruo"
   operators:
     - type: "TRANSFER"
       entity: "muslo_de_carnero"

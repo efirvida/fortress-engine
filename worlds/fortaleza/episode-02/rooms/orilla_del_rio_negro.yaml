@@ -2,6 +2,6 @@ entity_id: "orilla_del_rio_negro"
 type: "room"
 name: "una orilla del Río Negro"
 components:
-  description: "Las aguas del Río Negro hacen honor a su nombre. Más que aguas parecen una mezcla de muerte y olvido."
+  description: "Las aguas del Río Negro hacen honor a su nombre. Más que aguas parecen una mezcla de muerte y olvido. Ves: escalera_caracol_orilla, rio_negro."
   visited: false
 spatial_anchor: null

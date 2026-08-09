@@ -2,6 +2,6 @@ entity_id: "antesala_de_la_prueba"
 type: "room"
 name: "la Antesala de la Prueba"
 components:
-  description: "Es un salón circular. La luz del sol entra por unos vitrales rojos y el lugar luce como pintado con sangre."
+  description: "Es un salón circular. La luz del sol entra por unos vitrales rojos y el lugar luce como pintado con sangre. Ves: puerta_gris, puerta_verde, tunel."
   visited: false
 spatial_anchor: null
