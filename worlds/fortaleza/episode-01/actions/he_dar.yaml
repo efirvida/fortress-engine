@@ -89,7 +89,7 @@
     - type: "FLAG"
       flag: "bruja_happy"
       value: true
-  output: "La bruja toma la escoba. 'Toma mi consejo...'"
+  output: "La bruja toma la escoba. 'Toma mi consejo: cuando te digan Prohibido, invoca la luz.'"
 
 - hyper_edge_id: "he_dar_pocion_homunculo"
   name: "Dar poción al homúnculo"
@@ -161,7 +161,7 @@
     - type: "FLAG"
       flag: "esqueleto_happy"
       value: true
-  output: "El esqueleto bebe el café. 'Delicioso.'"
+  output: "El esqueleto bebe el café. 'Delicioso. La puerta de hierro se abre con seis.'"
 
 - hyper_edge_id: "he_dar_piedra_raton"
   name: "Dar piedra filosofal al ratón"
@@ -215,7 +215,7 @@
     - type: "FLAG"
       flag: "crunch_happy"
       value: true
-  output: "Crunch devora el pastel. '¡Ñam ñam!'"
+  output: "Crunch devora el pastel. '¡Ñam ñam! La puerta triangular se abre con mi nombre: crunch.'"
 
 - hyper_edge_id: "he_dar_vendajes_dedalo"
   name: "Dar vendajes a Dédalo"
@@ -233,7 +233,7 @@
     - type: "FLAG"
       flag: "dedalo_happy"
       value: true
-  output: "Dédalo toma los vendajes. 'Gracias.'"
+  output: "Dédalo toma los vendajes. 'Gracias. El laberinto guarda sus secretos: la puerta dorada pide una letanía interminable.'"
 
 - hyper_edge_id: "he_dar_maquina_bailarina"
   name: "Dar máquina del tiempo a la bailarina"
@@ -251,7 +251,7 @@
     - type: "FLAG"
       flag: "bailarina_happy"
       value: true
-  output: "La bailarina toma la máquina. 'El tiempo es relativo.'"
+  output: "La bailarina toma la máquina. 'El tiempo es relativo... como el agua que esconde la puerta de cristal.'"
 
 - hyper_edge_id: "he_regalar_item"
   name: "Regalar algo (alternativa)"

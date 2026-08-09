@@ -13,7 +13,7 @@
     - type: "FLAG"
       flag: "ciclope_muerto"
       value: true
-  output: "¡Arrrggghhhh! El Cíclope cae. Revela una contraseña."
+  output: "¡Arrrggghhhh! El Cíclope cae. Con su último aliento murmura: 'Nombus Rostomelaris... esa es la palabra de la puerta gigante.'"
 
 - hyper_edge_id: "he_matar_arpia"
   name: "Matar a la Arpía"

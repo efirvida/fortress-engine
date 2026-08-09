@@ -91,6 +91,7 @@ class BlindExplorer:
         self.crashes: list[tuple[str, str]] = []
         self._build_runtime()
         self._learn_vocabulary()
+        self._learn_passwords()
 
     # ------------------------------------------------------------------
     # Runtime wiring
@@ -175,16 +176,79 @@ class BlindExplorer:
         )
 
     # ------------------------------------------------------------------
+    # Password knowledge (from YAML config — read ONCE, global list)
+    # ------------------------------------------------------------------
+    # Passwords are cultural knowledge a parser cannot deduce ("Abrete
+    # Sesamo").  The explorer is a test tool, not a human: it reads the
+    # world config once to build the set of every requires_text value, then
+    # brute-forces that list against any text-closed passage.  Fully
+    # generic — no password is hardcoded.
+
+    def _learn_passwords(self) -> None:
+        self.passwords: set[str] = set()
+        for edge in self.loader.load_macro_edges(self.episode_id):
+            if edge.requires_text:
+                self.passwords.add(edge.requires_text)
+        # Passages indexed by name for password lookup.
+        self.passages: dict[str, list[Any]] = {}
+        for edge in self.loader.load_macro_edges(self.episode_id):
+            self.passages.setdefault(edge.from_anchor, []).append(edge)
+
+    # ------------------------------------------------------------------
     # Introspection
     # ------------------------------------------------------------------
 
     def anchor(self) -> str | None:
         return self.state.get_entity("hero").spatial_anchor
 
+    def entities_in_anchor(self) -> list[str]:
+        """Entity ids currently present in the protagonist's anchor.
+
+        Observed from RUNTIME state (what a player/depurator sees), NOT from
+        the YAML configuration.  Only these can be targeted by commands —
+        the parser resolves actions against the current anchor + inventory.
+        """
+        anchor = self.anchor()
+        if anchor is None:
+            return []
+        return sorted(
+            eid
+            for eid, ent in self.state.entities.items()
+            if ent.spatial_anchor == anchor and eid != "hero"
+        )
+
     def inventory(self) -> list[str]:
         return [
             e.entity_id for e in self.state.get_player_inventory("hero")
         ]
+
+    # ------------------------------------------------------------------
+    # Snapshot / restore — the explorer can save/load like a player with
+    # memory, so a destructive action (consuming an item, killing an NPC)
+    # never permanently blocks progress.
+    # ------------------------------------------------------------------
+
+    def snapshot(self) -> dict[str, Any]:
+        """Return a full play-state snapshot: WorldState + edge open flags."""
+        return {
+            "state": self.state.to_dict(),
+            "edge_open": {
+                e.macro_edge_id: e.open
+                for edges in self.graph._macro_edges.values()
+                for e in edges
+            },
+        }
+
+    def restore(self, snap: dict[str, Any]) -> None:
+        """Restore a play-state snapshot produced by :meth:`snapshot`."""
+        self.state = WorldState.from_dict(snap["state"])
+        # Rebind the orchestrator/parser to the NEW state object.
+        self.orch._state = self.state
+        # Restore edge open flags (mutable game state).
+        for edges in self.graph._macro_edges.values():
+            for e in edges:
+                if e.macro_edge_id in snap["edge_open"]:
+                    e.open = snap["edge_open"][e.macro_edge_id]
 
     def _current_weight(self) -> int:
         return self.state.get_inventory_weight("hero")
@@ -200,6 +264,144 @@ class BlindExplorer:
                     ent = e
                     break
         return ent.components.get("weight", 0) if ent else 0
+
+    def _drop_for(self, item_id: str) -> None:
+        """Drop carried items until *item_id* fits (weight management).
+
+        The explorer does NOT know which verb means "drop" — that is world
+        knowledge.  It probes every non-movement verb against a carried item
+        and observes whether the item left the inventory; if the action
+        consumed the item WITHOUT making room progress, it restores from the
+        snapshot so exploration never gets stuck.
+        """
+        need = self._item_weight(item_id)
+        inv = list(self.inventory())
+        guard = 0
+        while self._current_weight() + need > self._max_weight() and inv:
+            guard += 1
+            if guard > 100:
+                break
+            victim = inv.pop(0)
+            if victim not in self.inventory():
+                continue
+            snap = self.snapshot()
+            for verb in self.verbs:
+                if verb in self.movement_verbs:
+                    continue
+                before_inv = set(self.inventory())
+                self._turn(f"{verb} {victim}")
+                if victim not in self.inventory():
+                    # Item left inventory — keep this action committed.
+                    break
+            else:
+                # No verb removed it — restore and move on.
+                self.restore(snap)
+
+    def _take_if_present(self, item_id: str) -> bool:
+        """Try to acquire *item_id* from the current anchor by probing every
+        non-movement verb; returns True if it is now in the inventory.
+
+        Each probe runs under snapshot/restore so a lethal verb (e.g.
+        ``abandonar``) never kills the explorer while searching for the
+        take verb.
+        """
+        if item_id in self.inventory():
+            return True
+        for verb in self.verbs:
+            if verb in self.movement_verbs:
+                continue
+            snap = self.snapshot()
+            self._turn(f"{verb} {item_id}")
+            if item_id in self.inventory():
+                return True
+            self.restore(snap)
+        return False
+
+    def _probe_actions(
+        self,
+        anchor: str,
+        discovery: Discovery,
+        log: list[ExplorationEvent],
+    ) -> None:
+        """Probe every verb from the vocabulary against every entity in the
+        current anchor, using snapshot/restore so a destructive action never
+        permanently blocks progress.
+
+        For each (verb, target) the explorer snapshots, executes, observes
+        what changed (inventory, flags, crossings), and KEEPS the action only
+        if it produced observable progress; otherwise it restores.  This is
+        fully generic: the explorer never assumes a verb means "take", "give",
+        "kill" or "drop".
+        """
+        targets = set(self.entities_in_anchor()) | set(self.inventory())
+        # Measure progress: inventory + flags + reachable exits.
+        def progress_sig() -> tuple:
+            return (
+                tuple(sorted(self.inventory())),
+                tuple(sorted(k for k, v in self.state.flag_book.items() if v)),
+            )
+
+        for target in targets:
+            for verb in self.verbs:
+                if verb in self.movement_verbs:
+                    continue
+                # Direct verb+target.
+                self._probe_one(
+                    anchor, verb, target, None, discovery, log, progress_sig
+                )
+                # verb+target with each carried item as instrument.
+                for item in list(self.inventory()):
+                    for prep in self.instrument_preps:
+                        self._probe_one(
+                            anchor, verb, target, item, discovery, log,
+                            progress_sig, use_instrument=True, prep=prep,
+                        )
+                # verb+carried-item with target as recipient.
+                for item in list(self.inventory()):
+                    for prep in self.recipient_preps:
+                        self._probe_one(
+                            anchor, verb, item, target, discovery, log,
+                            progress_sig, prep=prep,
+                        )
+
+    def _probe_one(
+        self,
+        anchor: str,
+        verb: str,
+        target: str,
+        instrument: str | None,
+        discovery: Discovery,
+        log: list[ExplorationEvent],
+        progress_sig,
+        use_instrument: bool = False,
+        prep: str | None = None,
+    ) -> None:
+        """Execute one candidate command with snapshot/restore."""
+        if use_instrument:
+            cmd = f"{verb} {target} {prep} {instrument}"
+        elif prep:
+            cmd = f"{verb} {instrument} {prep} {target}"
+        else:
+            cmd = f"{verb} {target}"
+
+        before = progress_sig()
+        snap = self.snapshot()
+        ev = self._turn(cmd)
+        log.append(ev)
+        after = progress_sig()
+
+        if ev.game_over:
+            # Death is never committed progress — restore immediately.
+            self.restore(snap)
+        elif ev.ok and after != before:
+            # Observable progress — keep it committed.
+            # Record any newly acquired items.
+            for item_id in self.inventory():
+                if item_id not in before[0]:
+                    discovery.found_items[item_id] = anchor
+        else:
+            # No progress or destructive — restore to keep exploring.
+            self.restore(snap)
 
     # ------------------------------------------------------------------
     # Turn execution
@@ -289,10 +491,23 @@ class BlindExplorer:
 
     def _look_commands(self) -> list[str]:
         """Ambient verbs: non-movement verbs with no object (``mirar``,
-        ``look``...)."""
-        return [
+        ``look``...).
+
+        Danger verbs (those that kill the player, e.g. ``abandonar``) are
+        excluded: the explorer probes each candidate once with
+        snapshot/restore and drops any that cause ``game_over``.
+        """
+        candidates = [
             verb for verb in self.verbs if verb not in self.movement_verbs
         ]
+        safe: list[str] = []
+        for verb in candidates:
+            snap = self.snapshot()
+            ev = self._turn(verb)
+            if ev.ok and not ev.game_over:
+                safe.append(verb)
+            self.restore(snap)
+        return safe
 
     # ------------------------------------------------------------------
     # Blind exploration driver
@@ -320,7 +535,7 @@ class BlindExplorer:
             if anchor != self.anchor():
                 self._navigate_to(anchor, discovery, log)
 
-            # 1. Look around — read the narrator.
+            # 1. Look around — read the narrator (for room discovery tokens).
             room_tokens: set[str] = set()
             for cmd in self._look_commands():
                 ev = self._turn(cmd)
@@ -328,7 +543,20 @@ class BlindExplorer:
                 room_tokens.update(self._tokenize(ev.narrator_text))
             discovery.room_tokens.setdefault(anchor, set()).update(room_tokens)
 
-            # 2. Try movement through every inferred token.
+            # 1b. Try to acquire every item present in this anchor (observed
+            # from runtime state — a player sees what is in the room).  The
+            # explorer does not know which verb means "take": it probes all
+            # non-movement verbs and observes whether the item entered the
+            # inventory.
+            for item_id in self.entities_in_anchor():
+                if item_id in self.inventory():
+                    continue
+                if self._take_if_present(item_id):
+                    discovery.found_items[item_id] = anchor
+
+            # 2. Try movement through every inferred token.  If a passage is
+            # text-closed, brute-force the GLOBAL password list read from the
+            # YAML config (cultural knowledge a human player would have).
             for token in room_tokens:
                 for cmd in self._movement_commands(token):
                     ev = self._turn(cmd)
@@ -351,34 +579,38 @@ class BlindExplorer:
                         log.append(back)
                         break  # one movement verb is enough per token
 
-            # 3. Try every action verb against every inferred token.
-            self._interact_with_tokens(anchor, room_tokens, discovery, log)
+                    # Text-closed: try each password from the YAML list.
+                    if ev.error_code in ("blocked", "text_closed"):
+                        for password in self.passwords:
+                            if not password or len(password) < 2:
+                                continue
+                            open_cmd = (
+                                f"{self.movement_verbs[0]} {token} "
+                                f"diciendo {password}"
+                            )
+                            ev2 = self._turn(open_cmd)
+                            log.append(ev2)
+                            if ev2.ok and not ev2.game_over:
+                                # Password found — cross now.
+                                ev3 = self._turn(cmd)
+                                log.append(ev3)
+                                if ev3.ok and self.anchor() != anchor:
+                                    discovery.crossed_passages.add(
+                                        (anchor, self.anchor(), token)
+                                    )
+                                    if self.anchor() not in visited:
+                                        visited.add(self.anchor())
+                                        queue.append(self.anchor())
+                                    back = self._turn(cmd)
+                                    log.append(back)
+                                break
+
+            # 3. Probe every verb against every entity in this anchor,
+            # snapshot/restore so destructive actions never block progress.
+            self._probe_actions(anchor, discovery, log)
 
         discovery.visited_rooms = visited
         return discovery, log
-
-    def _interact_with_tokens(
-        self,
-        anchor: str,
-        tokens: set[str],
-        discovery: Discovery,
-        log: list[ExplorationEvent],
-    ) -> None:
-        """Try take/kill/give/break/ask on every narrator token."""
-        for token in tokens:
-            for cmd in self._action_commands(token):
-                before_inv = set(self.inventory())
-                ev = self._turn(cmd)
-                log.append(ev)
-                after_inv = set(self.inventory())
-                if ev.ok and not ev.game_over:
-                    # A take succeeded: record the resolved item ids.
-                    gained = after_inv - before_inv
-                    for item_id in gained:
-                        discovery.found_items[item_id] = anchor
-                    # A kill/give may have hit an NPC named by the token.
-                    if ev.narrator_text:
-                        discovery.found_npcs.setdefault(token, anchor)
 
     def _navigate_to(
         self,

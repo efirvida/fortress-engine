@@ -39,7 +39,7 @@
     verb: "ver"
     target: "roble"
   operators: []
-  output: "Las palabras mágicas para abrir la puerta son obvias."
+  output: "Las palabras mágicas para abrir la puerta son obvias: 'Abrete Sesamo'."
 
 - hyper_edge_id: "he_ver_inscripcion"
   name: "Ver la inscripción"
@@ -69,7 +69,7 @@
     verb: "ver"
     target: "retrato"
   operators: []
-  output: "Es un retrato de Alfred Hitchcock."
+  output: "Es un retrato de Alfred Hitchcock. Recuerdas sus películas: Psicosis, Vértigo y Los treinta y nueve escalones."
 
 - hyper_edge_id: "he_ver_cuadro"
   name: "Ver el cuadro"
