@@ -3,5 +3,5 @@ type: "item"
 name: "Espejo"
 components:
   weight: 1
-  description: "Roto. Debe colocarse en el Cuarto de Aura — condición de victoria."
+  description: "Está roto."
 spatial_anchor: "alcoba_de_la_hija_del_hechicero"

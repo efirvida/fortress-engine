@@ -3,5 +3,5 @@ type: "item"
 name: "Escudo de Aquiles"
 components:
   weight: 10
-  description: "Escudo forjado por Hefestos. Protección para Escaleras y Túneles subterráneos. Debe colocarse en la Ciudad — condición de victoria."
+  description: "Usted nunca había visto algo tan hermoso.\nEste escudo formaba parte de la nueva armadura que Hefestos le hizo a Aquiles cuando la anterior cayó en manos de los troyanos al morir Patroclo."
 spatial_anchor: "desierto"

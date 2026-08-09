@@ -3,6 +3,6 @@ from_anchor: "fondo_del_lago"
 to_anchor: "catedral"
 direction: "bidirectional"
 passage_name: "reja"
-passage_description: "La reja oculta que esconde la escalera a la Catedral"
+passage_description: "Los barrotes de la reja son muy gruesos. Al otro lado se divisa una escalera."
 open: false
 requires_item: "tenazas"

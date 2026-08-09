@@ -8,7 +8,7 @@
     verb: "mirar"
     target: "*"
   operators: []
-  output: ""
+  output: "{description}"
 
 - hyper_edge_id: "he_mirar_alrededor_ep2"
   name: "Mirar alrededor sin objetivo"
@@ -18,5 +18,5 @@
     verb: "mirar"
     target: null
   operators: []
-  output: ""
+  output: "{description}"
 

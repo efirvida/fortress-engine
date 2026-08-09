@@ -2,6 +2,6 @@ entity_id: "bajos_de_las_cataratas"
 type: "room"
 name: "los bajos de las cataratas"
 components:
-  description: "El agua se desploma desde una altura imposible y levanta una niebla permanente. El estruendo de las cataratas no le deja escuchar sus propios pensamientos."
+  description: "Hay un ruido ensordecedor, como si millones de tambores redoblaran al lado de sus tímpanos. Usted siente como si su cabeza fuese a explotar."
   visited: false
 spatial_anchor: null

@@ -3,5 +3,5 @@ type: "item"
 name: "Bolsa de semillas"
 components:
   weight: 2
-  description: "Semillas de los árboles del valle. Útil para dar al Labrador en el Campo cultivado."
+  description: "La bolsa está llena de semillas de los árboles que crecen en el valle."
 spatial_anchor: "extenso_valle"

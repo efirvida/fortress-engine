@@ -2,6 +2,6 @@ entity_id: "ventana"
 type: "item"
 name: "Ventana"
 components:
-  description: "Un objeto que puede ser roto."
+  description: "Es de un cristal muy grueso. Usted trata de ver al otro lado, pero la ventana es tan opaca que solo puede divisar algunas sombras moviéndose."
   breakable: true
 spatial_anchor: "casa_de_munecas"

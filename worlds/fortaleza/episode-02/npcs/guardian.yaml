@@ -2,7 +2,7 @@ entity_id: "guardian"
 type: "npc"
 name: "guardián"
 components:
-  description: "Un viejo quemado por el sol que vigila los límites de la Fortaleza. Se queja implacablemente del calor."
+  description: "Está muy viejo para vigilar algo. Probablemente alguien lo haya olvidado en este lugar. Está muy quemado por el sol."
   is_troll: true
   wants_item: "sombrero_jardinero"
   gift_flag: "guardian_happy"

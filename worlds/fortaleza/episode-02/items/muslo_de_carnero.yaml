@@ -3,5 +3,5 @@ type: "item"
 name: "Muslo de carnero"
 components:
   weight: 10
-  description: "Parece muslo de persona. Útil para dar al Monstruo en el Calabozo."
+  description: "Más bien parece el muslo de una persona."
 spatial_anchor: "cocina"

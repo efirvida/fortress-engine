@@ -3,5 +3,5 @@ type: "item"
 name: "Silla"
 components:
   weight: 5
-  description: "Para tomar el sol. Alguien estaba sentado aquí. Útil para dar al Obispo en la Catedral."
+  description: "Es una silla para tomar el sol. Usted tiene la certeza de que había alguien sentado en ella cuando entró a las terrazas."
 spatial_anchor: "terrazas"

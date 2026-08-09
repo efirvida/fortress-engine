@@ -2,6 +2,6 @@ entity_id: "arbol_de_marfil"
 type: "item"
 name: "Arbol De Marfil"
 components:
-  description: "Un objeto que puede ser roto."
+  description: "Es infinitamente blanco."
   breakable: true
 spatial_anchor: "otra_orilla_del_rio_negro"

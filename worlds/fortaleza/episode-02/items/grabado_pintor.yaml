@@ -3,5 +3,5 @@ type: "item"
 name: "Grabado"
 components:
   weight: 2
-  description: "Muestra al jugador cruzando un puente con el grabado en la mano. Protección para cruzar el Puente al Abismo en los Límites."
+  description: "En el grabado aparece usted cruzando un puente con el propio grabado en la mano. Una estructura en abismo interesante."
 spatial_anchor: "cuarto_de_un_pintor"

@@ -3,5 +3,5 @@ type: "item"
 name: "Anillo de plata"
 components:
   weight: 1
-  description: "Muy brillante. NO llevar durante La Prueba."
+  description: "Es muy brillante."
 spatial_anchor: "comienzo_de_las_cataratas"

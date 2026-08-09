@@ -3,5 +3,5 @@ type: "item"
 name: "maza"
 components:
   weight: 37
-  description: "Una maza pesada, forjada del marfil del árbol. Sirve para derribar la muralla."
+  description: "Es muy pesada."
 spatial_anchor: null

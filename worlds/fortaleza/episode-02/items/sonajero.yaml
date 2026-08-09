@@ -3,5 +3,5 @@ type: "item"
 name: "Sonajero"
 components:
   weight: 2
-  description: "Juguete para recién nacidos. Útil para dar al Dinosaurio en el Comedor."
+  description: "Es un jugete para recién nacidos."
 spatial_anchor: "cuarto_de_juguetes"

@@ -2,7 +2,7 @@ entity_id: "pordiosero"
 type: "npc"
 name: "pordiosero"
 components:
-  description: "Un hombre harapiento que guarda silencio y extiende su mano pidiendo una limosna en medio del oasis."
+  description: "Usted no sabe si es en realidad un pordiosero, o alguien que acaba de atravesar el desierto."
   is_troll: true
   wants_item: "bolsa_oro"
   gift_flag: "pordiosero_happy"

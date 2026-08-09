@@ -2,6 +2,6 @@ entity_id: "reja"
 type: "item"
 name: "Reja"
 components:
-  description: "Un objeto que puede ser roto."
+  description: "Los barrotes de la reja son muy gruesos. Al otro lado se divisa una escalera."
   breakable: true
 spatial_anchor: "fondo_del_lago"

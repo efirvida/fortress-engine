@@ -3,5 +3,5 @@ from_anchor: "ruinas"
 to_anchor: "oasis"
 direction: "bidirectional"
 passage_name: "desierto"
-passage_description: "El desierto largo y abrasador"
+passage_description: "Promete ser largo y abrasador."
 open: true

@@ -3,5 +3,5 @@ from_anchor: "ruinas"
 to_anchor: "subterraneos"
 direction: "bidirectional"
 passage_name: "escalera"
-passage_description: "Escalera que desciende a los Subterráneos"
+passage_description: "Desde el final asciende un aire frío y húmedo."
 open: true

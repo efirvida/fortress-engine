@@ -51,5 +51,5 @@
     verb: "preguntar"
     target: "*"
   operators: []
-  output: "Guarda un silencio impenetrable."
+  output: "No desea hablar con usted."
 

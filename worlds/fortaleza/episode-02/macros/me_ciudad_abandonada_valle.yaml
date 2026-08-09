@@ -3,5 +3,5 @@ from_anchor: "ciudad_abandonada"
 to_anchor: "extenso_valle"
 direction: "bidirectional"
 passage_name: "escalera"
-passage_description: "Escalera que asciende al valle"
+passage_description: "Usted se pregunta a dónde conducirá."
 open: true

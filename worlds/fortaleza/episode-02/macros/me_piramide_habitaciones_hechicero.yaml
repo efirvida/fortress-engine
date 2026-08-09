@@ -3,6 +3,6 @@ from_anchor: "piramide_del_hechicero"
 to_anchor: "habitaciones_del_hechicero"
 direction: "bidirectional"
 passage_name: "puerta_roble"
-passage_description: "La Puerta de Roble con acertijo"
+passage_description: "Usted presiente que el Hechicero se encuentra detrás de esa puerta."
 open: false
 requires_text: "Yo"

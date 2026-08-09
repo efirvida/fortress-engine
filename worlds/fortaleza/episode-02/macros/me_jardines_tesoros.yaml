@@ -3,6 +3,6 @@ from_anchor: "jardines_del_hechicero"
 to_anchor: "habitacion_de_los_tesoros"
 direction: "bidirectional"
 passage_name: "puerta_amarilla"
-passage_description: "La Puerta Amarilla que guarda los tesoros"
+passage_description: "Conduce al cuarto del tesoro."
 open: false
 requires_text: "Omicuos Ihanti"

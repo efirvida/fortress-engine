@@ -591,18 +591,20 @@ class BlindExplorer:
                             ev2 = self._turn(open_cmd)
                             log.append(ev2)
                             if ev2.ok and not ev2.game_over:
-                                # Password found — cross now.
-                                ev3 = self._turn(cmd)
-                                log.append(ev3)
-                                if ev3.ok and self.anchor() != anchor:
+                                # The open command already crossed into the
+                                # new room — record the discovery NOW.
+                                opened_anchor = self.anchor()
+                                if opened_anchor and opened_anchor != anchor:
                                     discovery.crossed_passages.add(
-                                        (anchor, self.anchor(), token)
+                                        (anchor, opened_anchor, token)
                                     )
-                                    if self.anchor() not in visited:
-                                        visited.add(self.anchor())
-                                        queue.append(self.anchor())
-                                    back = self._turn(cmd)
-                                    log.append(back)
+                                    if opened_anchor not in visited:
+                                        visited.add(opened_anchor)
+                                        queue.append(opened_anchor)
+                                # Return to the current room to keep exploring
+                                # it (the door is open now).
+                                back = self._turn(cmd)
+                                log.append(back)
                                 break
 
             # 3. Probe every verb against every entity in this anchor,

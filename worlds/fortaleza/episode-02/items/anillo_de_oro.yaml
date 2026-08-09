@@ -3,5 +3,5 @@ type: "item"
 name: "Anillo de oro"
 components:
   weight: 1
-  description: "Sencillo, sin adornos. NO llevar durante La Prueba."
+  description: "El anillo es sencillo. Solo un aro, sin ningún tipo de adorno."
 spatial_anchor: "habitacion_de_los_tesoros"

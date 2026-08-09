@@ -3,5 +3,5 @@ from_anchor: "pasillo"
 to_anchor: "salon_de_fumar"
 direction: "bidirectional"
 passage_name: "puerta_negra"
-passage_description: "La Puerta Negra del pasillo"
+passage_description: "Usted ve unas delgadas cortinas de humo saliendo por debajo de la puerta."
 open: true

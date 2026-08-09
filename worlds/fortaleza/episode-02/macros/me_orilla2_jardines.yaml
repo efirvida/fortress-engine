@@ -3,6 +3,6 @@ from_anchor: "otra_orilla_del_rio_negro"
 to_anchor: "jardines_del_hechicero"
 direction: "bidirectional"
 passage_name: "avenida_hierro"
-passage_description: "La Avenida de Hierro al otro lado de la muralla"
+passage_description: "Toda la avenida está rodeada de árboles de metal. Usted se cubre los oídos tratando de escapar de los chirridos provocados por el viento en las hojas."
 open: true
 requires_flag: "muralla_rota"

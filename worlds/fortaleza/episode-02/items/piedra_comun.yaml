@@ -3,5 +3,5 @@ type: "item"
 name: "Piedra"
 components:
   weight: 5
-  description: "Común y corriente. Útil para romper el Huevo en el Comedor."
+  description: "Es una piedra común. Usted se pregunta qué hace en la Fortaleza, donde todo es tan exótico."
 spatial_anchor: "jardines_del_hechicero"

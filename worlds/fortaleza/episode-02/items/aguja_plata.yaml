@@ -3,5 +3,5 @@ type: "item"
 name: "Aguja"
 components:
   weight: 1
-  description: "De plata, muy larga. Arma letal contra la Hija del Hechicero."
+  description: "Es una aguja de plata, tan larga que usted se pregunta cómo el sastre puede coser con ella."
 spatial_anchor: "sastreria"

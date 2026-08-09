@@ -3,5 +3,5 @@ type: "item"
 name: "Cuerda"
 components:
   weight: 4
-  description: "Con gancho en un extremo. Permite el cruce seguro del Río desde el Campo cultivado y la Torre."
+  description: "Esta cuerda era usada por el juglar en los actos de equilibrismo. Tiene un gancho atado en uno de sus extremos."
 spatial_anchor: "habitaciones_del_juglar"

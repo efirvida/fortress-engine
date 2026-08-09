@@ -3,5 +3,5 @@ type: "item"
 name: "Pescado"
 components:
   weight: 3
-  description: "Útil para dar al Gato en el Interior del baúl."
+  description: "¿Qué tiempo llevará en este lugar?"
 spatial_anchor: "cocina"

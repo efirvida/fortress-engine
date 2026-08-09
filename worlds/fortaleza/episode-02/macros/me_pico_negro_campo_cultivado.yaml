@@ -3,5 +3,5 @@ from_anchor: "cima_del_pico_negro"
 to_anchor: "campo_cultivado"
 direction: "bidirectional"
 passage_name: "ladera"
-passage_description: "La ladera que desciende al campo cultivado"
+passage_description: "La ladera desciende suavemente hasta un campo sembrado."
 open: true

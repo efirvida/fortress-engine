@@ -3,5 +3,5 @@ from_anchor: "patio_interior"
 to_anchor: "habitaciones_del_juglar"
 direction: "bidirectional"
 passage_name: "puerta_verde"
-passage_description: "La Puerta Verde del patio"
+passage_description: "Conduce al cuarto del juglar."
 open: true

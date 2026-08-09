@@ -3,7 +3,7 @@ from_anchor: "desierto"
 to_anchor: "orilla_del_lago"
 direction: "bidirectional"
 passage_name: "camino"
-passage_description: "Camino que regresa a la orilla del lago"
+passage_description: "El camino se pierde como una serpiente en la rectitud del horizonte. "
 open: false
 forbids_item: "talisman_de_nieve"
 death_message: "El desierto se convierte en infierno de nieve. El Talismán de Nieve te traiciona en esta dirección."

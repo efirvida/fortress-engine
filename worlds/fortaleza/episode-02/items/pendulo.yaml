@@ -3,5 +3,5 @@ type: "item"
 name: "Péndulo"
 components:
   weight: 3
-  description: "Oscila colgado de un punto invisible. Debe colocarse en el Salón de Fumar — condición de victoria."
+  description: "El péndulo oscila levemente, colgado de un punto invisible del espacio."
 spatial_anchor: "choza_del_sabio"

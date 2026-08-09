@@ -3,6 +3,6 @@ from_anchor: "pasillo"
 to_anchor: "cuarto_de_la_hija_del_hechicero"
 direction: "bidirectional"
 passage_name: "puerta_azul"
-passage_description: "La Puerta Azul con acertijo"
+passage_description: "Es más pequeña que las puertas restantes."
 open: false
 requires_text: "Aura"

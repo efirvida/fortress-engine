@@ -3,5 +3,5 @@ type: "item"
 name: "Bote"
 components:
   weight: 39
-  description: "El célebre bote de Caronte. Debe colocarse en la Orilla 2 — condición de victoria."
+  description: "Es el célebre bote de Caronte."
 spatial_anchor: "orilla_del_rio_negro"

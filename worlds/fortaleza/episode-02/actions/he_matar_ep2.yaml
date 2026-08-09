@@ -12,7 +12,7 @@
     - type: "FLAG"
       flag: "carcelero_muerto"
       value: true
-  output: "Marmidosa atraviesa al carcelero. Las llaves de las celdas caen al suelo."
+  output: "ARRRGG!!! ¡Te será muy difícil abrir la celda, porque la palabra mágica es el nombre de la primera criatura que viste al salir del cuarto de huéspedes! \nUsted sonríe porque sabe que el problema es fácil."
 
 - hyper_edge_id: "he_matar_grifo"
   name: "Matar a grifo"
@@ -26,7 +26,7 @@
     - type: "FLAG"
       flag: "grifo_muerto"
       value: true
-  output: "Hundes la daga del dragón en el grifo. Medio león, medio águila, entero muerto."
+  output: "El grifo se contorsiona tratando de arrancarse la daga y grita: \"¡Aura!\"."
 
 - hyper_edge_id: "he_matar_hija_del_hechicero"
   name: "Matar a hija del hechicero"
@@ -40,7 +40,7 @@
     - type: "FLAG"
       flag: "hija_muerta"
       value: true
-  output: "Clavas la aguja de plata en la serpiente de tres cabezas. La hija del Hechicero se desvanece y deja un cáliz."
+  output: "Usted clava fuertemente la aguja entre las escamas. Las cabezas le miran llenas de ira y hay una que exclama: \"¡Mata a todos los que te mintieron si quieres salir!\""
 
 - hyper_edge_id: "he_matar_inmortal"
   name: "Matar a inmortal"
@@ -54,7 +54,7 @@
     - type: "FLAG"
       flag: "inmortal_muerto"
       value: true
-  output: "Disparas el arco que mató a Hycrk. ¿Quién quiere vivir para siempre?"
+  output: "El Inmortal lo mira agradecido y le dice antes de morir:\n\"No confundas la tercera muralla con la tercera barrera que tienes que romper. La tercera barrera está en tí mismo.\""
 
 - hyper_edge_id: "he_matar_ogro"
   name: "Matar a ogro"
@@ -68,5 +68,5 @@
     - type: "FLAG"
       flag: "ogro_muerto"
       value: true
-  output: "Vacías el cubo de agua sobre el ogro. La criatura se disuelve entre alaridos."
+  output: "El Ogro despierta sobresaltado. El agua lo quema como si fuese ácido. Antes de volverse un charco de pasta pestilente le grita, víctima de un rencor casi infantil:\n\"¡No saldrás del lago con Marmidosa tan fácilmente!\"\nEl cubo de agua vuelve a llenarse."
 

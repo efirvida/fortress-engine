@@ -1,0 +1,7 @@
+entity_id: "balanza"
+type: "item"
+name: "Balanza"
+components:
+  weight: 1
+  description: "La balanza tiene el plato en forma de mano. La aguja es muy delgada, hecha con varios bigotes de gato trenzados. "
+spatial_anchor: "salon_de_fumar"

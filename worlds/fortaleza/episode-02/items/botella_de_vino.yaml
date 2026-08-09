@@ -3,5 +3,5 @@ type: "item"
 name: "Botella de vino"
 components:
   weight: 3
-  description: "Parece agua sucia. Útil para dar al Camello en el Valle."
+  description: "Parece una botella de agua sucia."
 spatial_anchor: "cuarto_del_lenador"

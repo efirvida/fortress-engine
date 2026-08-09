@@ -2,7 +2,7 @@ entity_id: "labrador"
 type: "npc"
 name: "labrador"
 components:
-  description: "Un hombre robusto y maltratado quejándose del cansancio. Demasiada tierra para una sola persona."
+  description: "Es un hobre robusto y muy maltratado por el trabajo en el campo."
   is_troll: true
   wants_item: "bolsa_de_semillas"
   gift_flag: "labrador_happy"

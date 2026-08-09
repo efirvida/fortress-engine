@@ -3,5 +3,5 @@ from_anchor: "jardines_del_hechicero"
 to_anchor: "sastreria"
 direction: "bidirectional"
 passage_name: "puerta_tela"
-passage_description: "La Puerta de Tela"
+passage_description: "La tela de la puerta es tan dura como cualquier acero."
 open: true

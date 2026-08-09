@@ -3,5 +3,5 @@ type: "item"
 name: "Arco"
 components:
   weight: 5
-  description: "Con este arco mataron a Hycrk, uno de los doce inmortales. Arma letal contra el Inmortal y protección para túneles de murciélagos."
+  description: "Con este arco mataron a Hycrk, uno de los doce inmortales."
 spatial_anchor: "antesala_de_la_prueba"

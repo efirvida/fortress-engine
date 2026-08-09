@@ -3,5 +3,5 @@ type: "item"
 name: "Pañuelo"
 components:
   weight: 1
-  description: "Bordado con A y S. Protección para la Puerta de metal en la Cocina."
+  description: "Tiene bordadas una A y una S."
 spatial_anchor: "cuarto_de_la_hija_del_hechicero"

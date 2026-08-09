@@ -3,5 +3,5 @@ type: "item"
 name: "Esqueleto de Murciélago"
 components:
   weight: 7
-  description: "3 metros de ala a ala. Útil para dar al Sabio en su choza."
+  description: "Usted se alegra de que sea solo el esqueleto. Mide tres metros de ala a ala."
 spatial_anchor: "catacumbas"

@@ -3,5 +3,5 @@ type: "item"
 name: "Daga"
 components:
   weight: 2
-  description: "Empuñadura de dragón. Arma letal contra el Grifo."
+  description: "La empuñadura tiene forma de dragón."
 spatial_anchor: "cuarto_del_lenador"

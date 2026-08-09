@@ -3,5 +3,5 @@ type: "item"
 name: "Cáliz"
 components:
   weight: 2
-  description: "Aparece al morir la Hija del Hechicero. Contiene texto codificado, posible segunda mitad del manuscrito."
+  description: "Tiene grabadas las siguientes palabras:\n\n \"Lsmra elshrne o:\n  Rs imnee od e ao\n  Bt ecrnee aoil pet\n  Atrh ne urod usee\n  E nloeeiojnoa bn\n  Ecd eaulse acua elshrne\n  Epj el iadlhcieoe ucat\n  Pnuoe lslnd ua\""
 spatial_anchor: "alcoba_secreta"

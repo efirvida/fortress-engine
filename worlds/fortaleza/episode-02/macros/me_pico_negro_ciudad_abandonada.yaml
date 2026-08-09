@@ -3,7 +3,7 @@ from_anchor: "cima_del_pico_negro"
 to_anchor: "ciudad_abandonada"
 direction: "bidirectional"
 passage_name: "precipicio"
-passage_description: "El precipicio que desciende a la Ciudad Abandonada"
+passage_description: "Usted se inclina en el borde del precipicio, pero no consigue ver el fondo."
 open: false
 requires_item: "saltador"
 death_message: "La caída es demasiado larga. Sin algo que amortigüe el golpe, te estrellas contra las rocas."

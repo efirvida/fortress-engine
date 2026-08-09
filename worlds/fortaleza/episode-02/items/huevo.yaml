@@ -2,6 +2,6 @@ entity_id: "huevo"
 type: "item"
 name: "Huevo"
 components:
-  description: "Un objeto que puede ser roto."
+  description: "Por el tamaño debe ser el huevo de un dinosaurio. Y de uno grande."
   breakable: true
 spatial_anchor: "cuarto_de_juguetes"

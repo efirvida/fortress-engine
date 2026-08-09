@@ -3,5 +3,5 @@ type: "item"
 name: "Receta"
 components:
   weight: 1
-  description: "5 Ojos de rana, 1 Mano de gigante, 2 Cucharadas de puré de lombrices, 1 Hígado de muchacha virgen, 9 Libras de azúcar, 1 Tanque de agua del pantano verde. Útil para dar al Encapuchado en la Celda."
+  description: "Es una receta de cocina. Dice:\n\n  5 Ojos de rana\n  1 Mano de gigante\n  2 Cucharadas de puré de lombrices\n  1 Hígado de muchacha virgen\n  9 Libras de azúcar\n  1 Tanque de agua del pantano verde\n\nUsted recuerda haber probado esto en alguna parte."
 spatial_anchor: "cocina"

@@ -2,6 +2,6 @@ entity_id: "muralla"
 type: "item"
 name: "Muralla"
 components:
-  description: "Un objeto que puede ser roto."
+  description: "Al lado de esta, la Gran Muralla China es el juego de un niño en la arena."
   breakable: true
 spatial_anchor: "otra_orilla_del_rio_negro"

@@ -3,5 +3,5 @@ type: "item"
 name: "Carta"
 components:
   weight: 1
-  description: "¡Dios te salve, mi única esperanza! Mi padre me ha encerrado en la Torre de Cristal... Pista sobre la Torre de Cristal."
+  description: "La carta dice:\n\"¡Dios te salve, mi única esperanza! \nMi padre me ha encerrado en la Torre de Cristal, que está más allá del segundo río. El sabe que solo yo podría mostrarte el camino de salida. Búscame.\""
 spatial_anchor: "cuarto_de_la_hija_del_hechicero"

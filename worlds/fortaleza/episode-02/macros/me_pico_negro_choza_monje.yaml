@@ -3,5 +3,5 @@ from_anchor: "cima_del_pico_negro"
 to_anchor: "choza_del_monje"
 direction: "bidirectional"
 passage_name: "puerta_madera"
-passage_description: "La Puerta de Madera de la choza"
+passage_description: "Es la entrada a la choza del Monje."
 open: true

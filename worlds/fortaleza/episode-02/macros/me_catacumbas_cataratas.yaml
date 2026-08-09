@@ -3,5 +3,5 @@ from_anchor: "catacumbas"
 to_anchor: "comienzo_de_las_cataratas"
 direction: "bidirectional"
 passage_name: "pasadizo"
-passage_description: "Pasadizo seguro hacia las cataratas"
+passage_description: "Parece más seguro que la escalera y el túnel."
 open: true

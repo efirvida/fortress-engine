@@ -3,7 +3,7 @@ from_anchor: "limites_de_la_fortaleza"
 to_anchor: "piramide_del_hechicero"
 direction: "bidirectional"
 passage_name: "puente"
-passage_description: "El Puente que conduce a la Pirámide"
+passage_description: "Está hecho de madera y soga. Bajo él se abre, infinito, el Abismo Infranqueable. Del otro lado se divisa una pirámide."
 open: false
 requires_item: "grabado"
 death_message: "El abismo te traga. Sin el grabado, el puente no existe."

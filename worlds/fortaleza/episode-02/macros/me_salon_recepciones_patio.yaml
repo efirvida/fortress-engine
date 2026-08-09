@@ -3,5 +3,5 @@ from_anchor: "salon_de_recepciones"
 to_anchor: "patio_interior"
 direction: "bidirectional"
 passage_name: "puerta_gris"
-passage_description: "La Puerta Gris"
+passage_description: "Conduce al patio."
 open: true

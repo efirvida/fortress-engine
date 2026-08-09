@@ -3,5 +3,5 @@ type: "item"
 name: "Carta de la Alcoba"
 components:
   weight: 1
-  description: "¿Por qué has demorado tanto? Mi padre me llevó al Abismo Infranqueable... Debe romperse según el Hechicero."
+  description: "La carta dice:\n\"Mi querido salvador:\n¿Por qué has demorado tanto? Hace mucho que mi padre me llevó al Abismo Infranqueable. Ahora no podré marcharme contigo. La único que puedes hacer para salir es matarlo con Marmidosa. Por favor, trata de que no sufra.\""
 spatial_anchor: "alcoba_de_la_hija_del_hechicero"

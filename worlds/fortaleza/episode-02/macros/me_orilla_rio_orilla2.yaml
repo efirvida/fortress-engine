@@ -3,5 +3,5 @@ from_anchor: "orilla_del_rio_negro"
 to_anchor: "otra_orilla_del_rio_negro"
 direction: "bidirectional"
 passage_name: "rio_negro"
-passage_description: "Las aguas oscuras del Río Negro"
+passage_description: "Es el Estigia."
 open: true

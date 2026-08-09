@@ -3,5 +3,5 @@ from_anchor: "habitacion_para_huespedes"
 to_anchor: "pasillo"
 direction: "bidirectional"
 passage_name: "puerta"
-passage_description: "Una puerta tenue con un hilo de luz plateada"
+passage_description: "En realidad, lo que usted puede distinguir es el delicado filón de luz que deja escapar la unión de la puerta y el marco."
 open: true

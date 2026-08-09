@@ -3,6 +3,6 @@ from_anchor: "punta_de_la_torre_de_cristal"
 to_anchor: "alcoba_de_la_hija_del_hechicero"
 direction: "bidirectional"
 passage_name: "puerta_cristal"
-passage_description: "La Puerta de Cristal con acertijo"
+passage_description: "Es de un cristal muy grueso y opaco."
 open: false
 requires_text: "Aura Srka"

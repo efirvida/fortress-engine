@@ -3,5 +3,5 @@ type: "item"
 name: "Antorcha"
 components:
   weight: 3
-  description: "Muy brillante. Útil para derretir la Columna de Hielo en la Pirámide del Hechicero."
+  description: "Es muy brillante y despide mucho calor."
 spatial_anchor: "subterraneos"

@@ -3,5 +3,5 @@ type: "item"
 name: "Talismán de Nieve"
 components:
   weight: 1
-  description: "Tormenta de nieve encerrada en cristal. Protección para la Grieta en el Lago. NO llevar por el Camino del Desierto."
+  description: "Hay una pequeña tormenta de nieve encerrada en el cristal"
 spatial_anchor: "cuarto_de_juguetes"

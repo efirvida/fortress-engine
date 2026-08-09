@@ -378,6 +378,38 @@ class TestFortalezaEpisode2HyperEdges:
         he_ids = {h.hyper_edge_id for h in hes}
         assert "he_dar_pescado_gato" in he_ids
 
+    def test_episode_02_give_cliques_resolve_natural_command(self):
+        """Every give hyper-edge matches the parser output for the natural
+        command ``dar <item> a <npc>`` (target=item, context=npc).
+
+        Regression: 17/18 dar cliques were authored as ``target=<npc>`` +
+        ``instrument=<item>``, which the parser never produces — giving
+        gifts to trolls silently failed (``no_action``).
+        """
+        loader = EntityLoader(_WORLD_PATH)
+        items = {i.entity_id for i in loader.load_items("episode-02")}
+        npcs = {n.entity_id for n in loader.load_npcs("episode-02")}
+        hes = [
+            h for h in loader.load_hyper_edges("episode-02")
+            if h.clique.verb == "dar"
+        ]
+        assert len(hes) >= 17, (
+            f"Expected at least 17 give edges, got {len(hes)}"
+        )
+        for he in hes:
+            assert he.clique.instrument is None, (
+                f"{he.hyper_edge_id}: dar clique must not use 'instrument'; "
+                "the parser routes 'dar <item> a <npc>' as target+context"
+            )
+            assert he.clique.target in items, (
+                f"{he.hyper_edge_id}: clique 'target' must be the ITEM "
+                f"entity, got {he.clique.target!r}"
+            )
+            assert he.clique.context in npcs, (
+                f"{he.hyper_edge_id}: clique 'context' must be the NPC "
+                f"entity, got {he.clique.context!r}"
+            )
+
 
 class TestFortalezaEpisode1MacroEdges:
     """Episode 1 macro-edges load and validate."""

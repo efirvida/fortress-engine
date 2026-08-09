@@ -2,6 +2,6 @@ entity_id: "estatua_cristal"
 type: "item"
 name: "Estatua Cristal"
 components:
-  description: "Un objeto que puede ser roto."
+  description: "Usted no logra descubrir qué representa."
   breakable: true
 spatial_anchor: "ruinas"

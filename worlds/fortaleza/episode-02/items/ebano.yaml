@@ -1,0 +1,7 @@
+entity_id: "ebano"
+type: "item"
+name: "Ebano"
+components:
+  description: "Es muy alto."
+  breakable: true
+spatial_anchor: "exterior_de_la_torre_de_cristal"

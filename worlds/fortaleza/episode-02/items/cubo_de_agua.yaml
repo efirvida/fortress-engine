@@ -3,5 +3,5 @@ type: "item"
 name: "Cubo de agua"
 components:
   weight: 4
-  description: "Balde lleno. Arma letal contra el Ogro."
+  description: "Es un balde de madera, lleno de agua hasta el tope."
 spatial_anchor: "oasis"

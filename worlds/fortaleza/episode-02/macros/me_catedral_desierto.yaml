@@ -3,5 +3,5 @@ from_anchor: "catedral"
 to_anchor: "desierto"
 direction: "bidirectional"
 passage_name: "puerta"
-passage_description: "Puerta que sale al desierto"
+passage_description: "Es la salida de la Catedral."
 open: true

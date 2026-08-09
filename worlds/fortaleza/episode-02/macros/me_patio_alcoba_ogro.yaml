@@ -3,5 +3,5 @@ from_anchor: "patio_interior"
 to_anchor: "alcoba_del_ogro"
 direction: "bidirectional"
 passage_name: "puerta_negra"
-passage_description: "La Puerta Negra del patio"
+passage_description: "Conduce a la alcoba del Ogro."
 open: true

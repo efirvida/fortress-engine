@@ -54,6 +54,92 @@ def test_comparator_reports_unreachable_rooms():
     assert discovery.visited_rooms <= comp.declared_rooms
 
 
+def test_explorer_records_password_gated_crossing():
+    """When the explorer opens a riddle/password-gated passage, both the
+    destination room and the crossing are recorded (regression: the new room
+    used to be visited only transiently and then lost)."""
+    import tempfile
+    from pathlib import Path
+
+    from fortress_engine.autoplay import BlindExplorer
+
+    with tempfile.TemporaryDirectory() as tmp:
+        base = Path(tmp)
+        (base / "world.yaml").write_text(
+            'world_id: "test"\nname: "Test"\nlanguage: "es"\n'
+        )
+        (base / "shared").mkdir()
+        (base / "shared" / "vocabulary.yaml").write_text(
+            'language: "es"\n'
+            "verbs:\n"
+            '  ir: ["ir"]\n'
+            '  mirar: ["mirar"]\n'
+            "stopwords: [\"la\", \"el\", \"os\", \"a\"]\n"
+            "prepositions:\n"
+            '  instrument: ["con"]\n'
+            '  recipient: ["a"]\n'
+            'speech_markers: ["diciendo", "respondiendo"]\n'
+            'speech_verbs: ["decir", "responder"]\n'
+            'movement_verbs: ["ir"]\n'
+            "system_commands:\n"
+            '  save: ["save"]\n'
+            "messages: {}\n"
+        )
+        (base / "episodes").mkdir()
+        (base / "episodes" / "ep.yaml").write_text(
+            'id: "ep"\nname: "Ep"\norder: 1\nstart_anchor: "r1"\n'
+            "goal:\n  conditions: []\n  output: \"Win!\"\n"
+            "carry_over:\n  inventory: []\n  flags: []\n"
+        )
+        (base / "ep").mkdir()
+        (base / "ep" / "rooms").mkdir()
+        (base / "ep" / "rooms" / "r1.yaml").write_text(
+            'entity_id: "r1"\ntype: "room"\nname: "Entrada"\n'
+            "components:\n  description: \"Una puerta.\"\n"
+            "spatial_anchor: null\n"
+        )
+        (base / "ep" / "rooms" / "r2.yaml").write_text(
+            'entity_id: "r2"\ntype: "room"\nname: "Sala secreta"\n'
+            "components:\n  description: \"Una sala.\"\n"
+            "spatial_anchor: null\n"
+        )
+        (base / "ep" / "macros").mkdir()
+        (base / "ep" / "macros" / "m1.yaml").write_text(
+            'macro_edge_id: "m1"\n'
+            'from_anchor: "r1"\n'
+            'to_anchor: "r2"\n'
+            'direction: "bidirectional"\n'
+            'passage_name: "puerta"\n'
+            "passage_description: \"La puerta con acertijo\"\n"
+            "open: false\n"
+            'requires_text: "Aura"\n'
+        )
+        (base / "ep" / "actions").mkdir()
+        (base / "ep" / "actions" / "he_mirar.yaml").write_text(
+            "- hyper_edge_id: \"he_mirar\"\n"
+            '  name: "Mirar"\n'
+            "  priority: 0\n"
+            "  clique:\n"
+            '    subject: "player"\n'
+            '    verb: "mirar"\n'
+            "    target: null\n"
+            "  operators: []\n"
+            '  output: "{description}"\n'
+        )
+
+        ex = BlindExplorer(base, "ep")
+        discovery, _ = ex.explore()
+        # r2 is only reachable through the password-gated "puerta" passage
+        # ("ir puerta diciendo Aura").  It must be a recorded discovery, not
+        # a transient visit followed by a silent return.
+        assert "r2" in discovery.visited_rooms
+        # And the crossing into it must appear in crossed_passages.
+        assert any(
+            dest == "r2"
+            for (_src, dest, _passage) in discovery.crossed_passages
+        )
+
+
 def test_explorer_inventory_and_weight_helpers():
     """Weight helpers work on the real world (fallback to disk)."""
     ex = BlindExplorer(_WORLD, "episode-01")

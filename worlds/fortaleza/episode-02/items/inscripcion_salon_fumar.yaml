@@ -3,5 +3,5 @@ type: "item"
 name: "Inscripción del Salón de Fumar"
 components:
   weight: 1
-  description: "Profecía de la Bestia sobre su venganza. La muerte es un acto de la vida. Yo, la Bestia, he de morir como he vivido..."
+  description: "La inscripción dice:\nLa muerte es un acto de la vida. Yo, la Bestia, he de morir como he vivido. Esta es mi venganza, y tú mismo serás el instrumento que la lleve a cabo. La naturaleza humana es el arma más poderosa que puede utilizarse contra el hombre."
 spatial_anchor: "salon_de_fumar"

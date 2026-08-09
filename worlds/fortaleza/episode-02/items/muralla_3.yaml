@@ -1,0 +1,7 @@
+entity_id: "muralla_3"
+type: "item"
+name: "Muralla 3"
+components:
+  description: "Es la tercera muralla con que usted tropieza en su camino. algo le dice que también es la última."
+  breakable: true
+spatial_anchor: "limites_de_la_fortaleza"

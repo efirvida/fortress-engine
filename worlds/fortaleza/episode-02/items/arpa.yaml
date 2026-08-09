@@ -3,5 +3,5 @@ type: "item"
 name: "Arpa"
 components:
   weight: 3
-  description: "De dieciocho cuerdas. Útil para dar al Juglar."
+  description: "Es un arpa de diciocho cuerdas."
 spatial_anchor: "habitacion_de_los_tesoros"

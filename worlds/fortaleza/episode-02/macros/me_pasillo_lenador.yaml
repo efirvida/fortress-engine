@@ -3,5 +3,5 @@ from_anchor: "pasillo"
 to_anchor: "cuarto_del_lenador"
 direction: "bidirectional"
 passage_name: "puerta_espinos"
-passage_description: "La Puerta de Espinos"
+passage_description: "Está erizada de espinas. Usted tiene miedo hasta de acercarse."
 open: true

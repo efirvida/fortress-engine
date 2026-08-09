@@ -1,0 +1,234 @@
+# ASK actions (episode 2) — per-NPC default dialogue (Pascal lD verbatim)
+# Each troll/guard speaks its Pascal lD line (or the _Silence default for
+# guards, who do not override LivingThing.Speak).  Priority 5 beats the
+# generic fallback he_preguntar_npc_ep2 (priority 0).
+
+- hyper_edge_id: "he_preguntar_camello"
+  name: "Preguntar al camello"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "camello"
+  operators: []
+  output: "¡Dame más!"
+
+- hyper_edge_id: "he_preguntar_carcelero"
+  name: "Preguntar al carcelero"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "carcelero"
+  operators: []
+  output: "No desea hablar con usted."
+
+- hyper_edge_id: "he_preguntar_caronte"
+  name: "Preguntar a caronte"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "caronte"
+  operators: []
+  output: "Tráeme el reloj de arena, pero víralo antes de entregármelo. "
+
+- hyper_edge_id: "he_preguntar_dinosaurio"
+  name: "Preguntar al dinosaurio"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "dinosaurio"
+  operators: []
+  output: "¡Guaaaaaa! ¡Guaaaaaa!\nUsted se pregunta con qué podría calmarlo."
+
+- hyper_edge_id: "he_preguntar_doncella_del_lago"
+  name: "Preguntar a la doncella del lago"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "doncella_del_lago"
+  operators: []
+  output: "La doncella le mira con cierto aire de complicidad y exclama: ¡La cueva de cristal es tan hermosa! Si pudiera entrar al menos una vez..."
+
+- hyper_edge_id: "he_preguntar_dragon"
+  name: "Preguntar al dragón"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "dragon"
+  operators: []
+  output: "No desea hablar con usted."
+
+- hyper_edge_id: "he_preguntar_encapuchado"
+  name: "Preguntar al encapuchado"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "encapuchado"
+  operators: []
+  output: "Pareces haber estado viajando. Seguramente has visto algo que me pertenece por ahí... ¿podrías traérmelo?"
+
+- hyper_edge_id: "he_preguntar_gato"
+  name: "Preguntar al gato"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "gato"
+  operators: []
+  output: "¡No molestes!"
+
+- hyper_edge_id: "he_preguntar_grifo"
+  name: "Preguntar al grifo"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "grifo"
+  operators: []
+  output: "No desea hablar con usted."
+
+- hyper_edge_id: "he_preguntar_guardian"
+  name: "Preguntar al guardián"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "guardian"
+  operators: []
+  output: "¡Qué calor!"
+
+- hyper_edge_id: "he_preguntar_hechicero"
+  name: "Preguntar al hechicero"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "hechicero"
+  operators: []
+  output: "No desea hablar con usted."
+
+- hyper_edge_id: "he_preguntar_hija_del_hechicero"
+  name: "Preguntar a la hija del hechicero"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "hija_del_hechicero"
+  operators: []
+  output: "No desea hablar con usted."
+
+- hyper_edge_id: "he_preguntar_horante"
+  name: "Preguntar al horante"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "horante"
+  operators: []
+  output: "El horante trata de articular algo, pero un terrible dolor en su pierna derecha no lo deja."
+
+- hyper_edge_id: "he_preguntar_inmortal"
+  name: "Preguntar al inmortal"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "inmortal"
+  operators: []
+  output: "No desea hablar con usted."
+
+- hyper_edge_id: "he_preguntar_jardinero"
+  name: "Preguntar al jardinero"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "jardinero"
+  operators: []
+  output: "El jardinero no le presta atención. Está muy ocupado cortando un abeto con una navaja."
+
+- hyper_edge_id: "he_preguntar_juglar"
+  name: "Preguntar al juglar"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "juglar"
+  operators: []
+  output: "¡Qué aburrimiento!"
+
+- hyper_edge_id: "he_preguntar_labrador"
+  name: "Preguntar al labrador"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "labrador"
+  operators: []
+  output: "¡Qué cansancio! Creo que es demasiada tierra para una sola persona."
+
+- hyper_edge_id: "he_preguntar_monje"
+  name: "Preguntar al monje"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "monje"
+  operators: []
+  output: "El monje no le responde. Está muy ocupado recogiendo las cuentas del suelo."
+
+- hyper_edge_id: "he_preguntar_monstruo"
+  name: "Preguntar al monstruo"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "monstruo"
+  operators: []
+  output: "¡Grrrr! ¡Hambre!"
+
+- hyper_edge_id: "he_preguntar_obispo"
+  name: "Preguntar al obispo"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "obispo"
+  operators: []
+  output: "El Obispo lo mira y fuerza una sonrisa. Está muy cansado para conversar y en toda la Catedral no hay dónde sentarse."
+
+- hyper_edge_id: "he_preguntar_ogro"
+  name: "Preguntar al ogro"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "ogro"
+  operators: []
+  output: "No desea hablar con usted."
+
+- hyper_edge_id: "he_preguntar_pordiosero"
+  name: "Preguntar al pordiosero"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "pordiosero"
+  operators: []
+  output: "El pordiosero guarda silencio y extiende su mano pidiendo una limosna."
+
+- hyper_edge_id: "he_preguntar_sabio"
+  name: "Preguntar al sabio"
+  priority: 5
+  clique:
+    subject: "player"
+    verb: "preguntar"
+    target: "sabio"
+  operators: []
+  output: "El sabio está muy distraído haciendo un anillo de papel algo torcido. "

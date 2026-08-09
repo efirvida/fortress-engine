@@ -3,5 +3,5 @@ from_anchor: "pasillo"
 to_anchor: "terrazas"
 direction: "bidirectional"
 passage_name: "puerta_oro"
-passage_description: "La Puerta de Oro"
+passage_description: "Usted nunca había visto tanto oro fundido en una misma pieza."
 open: true

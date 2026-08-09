@@ -2,6 +2,6 @@ entity_id: "esfera"
 type: "item"
 name: "Esfera"
 components:
-  description: "Un objeto que puede ser roto."
+  description: "Tiene aproximadamente tres metros de diámetro y parece ser de carne. Es algo realmente insólito."
   breakable: true
 spatial_anchor: "exterior_de_la_torre_de_cristal"

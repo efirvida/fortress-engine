@@ -3,5 +3,5 @@ from_anchor: "jardines_del_hechicero"
 to_anchor: "salon_de_las_velas"
 direction: "bidirectional"
 passage_name: "puerta_roja"
-passage_description: "La Puerta Roja"
+passage_description: "Conduce al salón de las velas. La puerta está caliente."
 open: true

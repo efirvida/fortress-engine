@@ -3,5 +3,5 @@ from_anchor: "calabozos"
 to_anchor: "antesala_de_la_prueba"
 direction: "bidirectional"
 passage_name: "puerta_gris"
-passage_description: "La Puerta Gris de la Antesala"
+passage_description: "Conduce a la sala de La Prueba."
 open: true

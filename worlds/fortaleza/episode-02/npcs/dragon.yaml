@@ -2,7 +2,7 @@ entity_id: "dragon"
 type: "npc"
 name: "dragón"
 components:
-  description: "Un dragón hermoso y terrible que guarda silencio en medio de un círculo vacío, rodeado de miles de velas."
+  description: "A usted se le erizan los pelos de la nuca de tan solo mirarlo. Es una criatura extremadamente hermosa y terrible a la vez."
   is_troll: true
   wants_item: "daga_dragon"
   gift_flag: "dragon_happy"

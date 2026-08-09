@@ -3,7 +3,7 @@ from_anchor: "antesala_de_la_prueba"
 to_anchor: "comedor"
 direction: "bidirectional"
 passage_name: "tunel"
-passage_description: "Túnel peligroso de regreso al Comedor"
+passage_description: "Parece ser muy largo. Usted no se atrevería a cruzarlo sin el arco."
 open: false
 requires_item: "arco"
 death_message: "Murciélagos gigantes te devoran vivo. Sin el arco, no puedes defenderte."

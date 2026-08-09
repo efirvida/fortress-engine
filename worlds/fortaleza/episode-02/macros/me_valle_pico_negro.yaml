@@ -3,5 +3,5 @@ from_anchor: "extenso_valle"
 to_anchor: "cima_del_pico_negro"
 direction: "bidirectional"
 passage_name: "montanas"
-passage_description: "Las montañas que conducen al Pico Negro"
+passage_description: "Las montañas rodean todo el sur del Valle. Parece el espinazo de un dragón gigantesco."
 open: true

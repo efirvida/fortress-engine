@@ -3,5 +3,5 @@ type: "item"
 name: "Muñeco diabólico"
 components:
   weight: 2
-  description: "Artefacto de brujería, alfiler en la pierna. Útil para dar al Horante en la Ciudad."
+  description: "Es un artefacto de brujería. Representa a un hombre joven y tiene un alfiler clavado en una pierna."
 spatial_anchor: "sastreria"

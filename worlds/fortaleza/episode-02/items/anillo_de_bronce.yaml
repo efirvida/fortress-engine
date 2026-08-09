@@ -3,5 +3,5 @@ type: "item"
 name: "Anillo de bronce"
 components:
   weight: 2
-  description: "Más pesado que los demás anillos. NO llevar durante La Prueba."
+  description: "Es más pesado que los demás anillos."
 spatial_anchor: "salon_de_recepciones"

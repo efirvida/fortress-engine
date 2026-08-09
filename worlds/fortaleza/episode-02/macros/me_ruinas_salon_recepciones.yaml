@@ -3,5 +3,5 @@ from_anchor: "ruinas"
 to_anchor: "salon_de_recepciones"
 direction: "bidirectional"
 passage_name: "puerta_hierro"
-passage_description: "La Puerta de Hierro"
+passage_description: "Es la entrada a la casa del Ogro."
 open: true

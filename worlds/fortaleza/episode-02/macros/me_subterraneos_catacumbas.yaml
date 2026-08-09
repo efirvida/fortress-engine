@@ -3,7 +3,7 @@ from_anchor: "subterraneos"
 to_anchor: "catacumbas"
 direction: "bidirectional"
 passage_name: "tunel"
-passage_description: "Túnel peligroso a las Catacumbas"
+passage_description: "Conduce a las catacumbas. Usted huele alguna trampa."
 open: false
 requires_item: "escudo_de_aquiles"
 death_message: "Sin protección, los fuegos de las catacumbas te consumen vivo."

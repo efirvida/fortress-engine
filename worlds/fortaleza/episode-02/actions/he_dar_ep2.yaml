@@ -7,8 +7,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "camello"
-    instrument: "botella_de_vino"
+    target: "botella_de_vino"
+    context: "camello"
   operators:
     - type: "TRANSFER"
       entity: "botella_de_vino"
@@ -17,7 +17,7 @@
     - type: "FLAG"
       flag: "camello_happy"
       value: true
-  output: "El camello bebe el vino de un trago y resopla satisfecho. Ya no te cierra el paso."
+  output: "Las dos últimas letras del segundo nombre de la Hija del Hechicero son \"KA\"."
 
 - hyper_edge_id: "he_dar_reloj_de_arena_caronte"
   name: "Dar reloj de arena a caronte"
@@ -25,8 +25,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "caronte"
-    instrument: "reloj_de_arena"
+    target: "reloj_de_arena"
+    context: "caronte"
   operators:
     - type: "TRANSFER"
       entity: "reloj_de_arena"
@@ -35,7 +35,7 @@
     - type: "FLAG"
       flag: "caronte_happy"
       value: true
-  output: "Caronte recibe el reloj de arena con su mano descarnada. El bote queda libre."
+  output: "Dentro del blanco está la llave de la muralla."
 
 - hyper_edge_id: "he_dar_sonajero_dinosaurio"
   name: "Dar sonajero a dinosaurio"
@@ -43,8 +43,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "dinosaurio"
-    instrument: "sonajero"
+    target: "sonajero"
+    context: "dinosaurio"
   operators:
     - type: "TRANSFER"
       entity: "sonajero"
@@ -53,7 +53,7 @@
     - type: "FLAG"
       flag: "dinosaurio_happy"
       value: true
-  output: "El pequeño dinosaurio agita el sonajero y ríe: ¡Guaaaaaa!"
+  output: "Maúllale al gato.\nUsted se sonríe. Es una respuesta típica en un cachorro de dinosaurio."
 
 - hyper_edge_id: "he_dar_talisman_de_nieve_doncella_del_lago"
   name: "Dar talisman de nieve a doncella del lago"
@@ -61,8 +61,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "doncella_del_lago"
-    instrument: "talisman_de_nieve"
+    target: "talisman_de_nieve"
+    context: "doncella_del_lago"
   operators:
     - type: "TRANSFER"
       entity: "talisman_de_nieve"
@@ -71,7 +71,7 @@
     - type: "FLAG"
       flag: "doncella_lago_happy"
       value: true
-  output: "La doncella acaricia el talismán y sonríe. La grieta ya no te teme."
+  output: "Las dos partes del manuscrito están guardadas en la Torre de Cristal. Y cuando vayas en busca de la segunda parte, lleva el triángulo contigo."
 
 - hyper_edge_id: "he_dar_daga_dragon_dragon"
   name: "Dar daga dragon a dragón"
@@ -79,8 +79,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "dragon"
-    instrument: "daga_dragon"
+    target: "daga_dragon"
+    context: "dragon"
   operators:
     - type: "TRANSFER"
       entity: "daga_dragon"
@@ -89,7 +89,7 @@
     - type: "FLAG"
       flag: "dragon_happy"
       value: true
-  output: "El dragón acepta la daga con reverencia. No todos los dragones merecen la muerte."
+  output: "Las palabras mágicas para entrar en el cuarto del tesoro son: \"Omicuos Ihanti\"."
 
 - hyper_edge_id: "he_dar_receta_encapuchado"
   name: "Dar receta a encapuchado"
@@ -97,8 +97,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "encapuchado"
-    instrument: "receta"
+    target: "receta"
+    context: "encapuchado"
   operators:
     - type: "TRANSFER"
       entity: "receta"
@@ -107,7 +107,7 @@
     - type: "FLAG"
       flag: "encapuchado_happy"
       value: true
-  output: "El encapuchado lee la receta con sus siete dedos y desaparece entre risas."
+  output: "El nombre de la hija del Hechicero tiene ocho letras, una está repetida tres veces y otra dos."
 
 - hyper_edge_id: "he_dar_pescado_gato"
   name: "Dar pescado a gato"
@@ -115,8 +115,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "gato"
-    instrument: "pescado"
+    target: "pescado"
+    context: "gato"
   operators:
     - type: "TRANSFER"
       entity: "pescado"
@@ -125,7 +125,7 @@
     - type: "FLAG"
       flag: "gato_happy"
       value: true
-  output: "El gato devora el pescado y ronronea. 'Miau.'"
+  output: "La piedra verde te servirá para romper la segunda muralla."
 
 - hyper_edge_id: "he_dar_sombrero_jardinero_guardian"
   name: "Dar sombrero jardinero a guardián"
@@ -133,8 +133,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "guardian"
-    instrument: "sombrero_jardinero"
+    target: "sombrero_jardinero"
+    context: "guardian"
   operators:
     - type: "TRANSFER"
       entity: "sombrero_jardinero"
@@ -143,7 +143,7 @@
     - type: "FLAG"
       flag: "guardian_happy"
       value: true
-  output: "El guardián se cala el sombrero y bendice tu nombre. Al fin, sombra."
+  output: "El anciano le cuenta una historia incoherente sobre un héroe que derrota a una serpiente gigante armado de una aguja."
 
 - hyper_edge_id: "he_dar_marmidosa_hechicero"
   name: "Dar marmidosa a hechicero"
@@ -151,8 +151,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "hechicero"
-    instrument: "marmidosa"
+    target: "marmidosa"
+    context: "hechicero"
   operators:
     - type: "TRANSFER"
       entity: "marmidosa"
@@ -161,7 +161,7 @@
     - type: "FLAG"
       flag: "hechicero_happy"
       value: true
-  output: "El Hechicero toma a Marmidosa y rompe su silencio impenetrable."
+  output: "El Hechicero le sonríe y le dice: \n\"No soy tu enemigo. Es mi hija quien ha elaborado este diabólico plan para eliminarnos. Rompe la carta que te dejó en la Torre de Cristal y ocurrirá un milagro.\""
 
 - hyper_edge_id: "he_dar_muneco_diabolico_horante"
   name: "Dar muneco diabolico a horante"
@@ -169,8 +169,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "horante"
-    instrument: "muneco_diabolico"
+    target: "muneco_diabolico"
+    context: "horante"
   operators:
     - type: "TRANSFER"
       entity: "muneco_diabolico"
@@ -179,7 +179,7 @@
     - type: "FLAG"
       flag: "horante_happy"
       value: true
-  output: "El horante recibe el muñeco y arranca el alfiler de la pierna. Su dolor cesa."
+  output: "Busca las dos mitades del Manuscrito de los Horantes y descífralo. Luego coloca las marcas para abrir la Fortaleza."
 
 - hyper_edge_id: "he_dar_hacha_lenador_jardinero"
   name: "Dar hacha lenador a jardinero"
@@ -187,8 +187,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "jardinero"
-    instrument: "hacha_lenador"
+    target: "hacha_lenador"
+    context: "jardinero"
   operators:
     - type: "TRANSFER"
       entity: "hacha_lenador"
@@ -197,7 +197,7 @@
     - type: "FLAG"
       flag: "jardinero_happy"
       value: true
-  output: "El jardinero abandona la navaja y empuña el hacha con alegría."
+  output: "En tu camino encontrarás varios anillos. Debes guardar el que tú consideres más apropiado, el que se ajuste más a tu espíritu y a tu empresa. Los otros anillos solo te traerán peligros y muerte. Elige bien."
 
 - hyper_edge_id: "he_dar_arpa_juglar"
   name: "Dar arpa a juglar"
@@ -205,8 +205,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "juglar"
-    instrument: "arpa"
+    target: "arpa"
+    context: "juglar"
   operators:
     - type: "TRANSFER"
       entity: "arpa"
@@ -215,7 +215,7 @@
     - type: "FLAG"
       flag: "juglar_happy"
       value: true
-  output: "El juglar acaricia las dieciocho cuerdas del arpa y su tristeza se disuelve."
+  output: "Lleva algo de la fragua de Vulcano al bajar a las Catacumbas."
 
 - hyper_edge_id: "he_dar_bolsa_de_semillas_labrador"
   name: "Dar bolsa de semillas a labrador"
@@ -223,8 +223,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "labrador"
-    instrument: "bolsa_de_semillas"
+    target: "bolsa_de_semillas"
+    context: "labrador"
   operators:
     - type: "TRANSFER"
       entity: "bolsa_de_semillas"
@@ -233,7 +233,7 @@
     - type: "FLAG"
       flag: "labrador_happy"
       value: true
-  output: "El labrador recibe las semillas. Ahora la tierra tiene sentido."
+  output: "El Labrador lo mira y le dice:\n\"No siempre las cosas son lo que parecen. La realidad tiene muchas caras y nunca sabemos si estamos mirando la verdadera. Mantén tu mente abierta\"."
 
 - hyper_edge_id: "he_dar_rosario_monje"
   name: "Dar rosario a monje"
@@ -241,8 +241,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "monje"
-    instrument: "rosario"
+    target: "rosario"
+    context: "monje"
   operators:
     - type: "TRANSFER"
       entity: "rosario"
@@ -251,7 +251,7 @@
     - type: "FLAG"
       flag: "monje_happy"
       value: true
-  output: "El monje engarza el rosario y por fin te mira a los ojos."
+  output: "Para descender por el precipicio debes llevar algo que amortigüe el golpe al final."
 
 - hyper_edge_id: "he_dar_muslo_de_carnero_monstruo"
   name: "Dar muslo de carnero a monstruo"
@@ -272,7 +272,7 @@
     - type: "FLAG"
       flag: "monstruo_muerto"
       value: true
-  output: "El monstruo devora el muslo de carnero con ansia... y se desploma. La inscripción lo advertía: no alimente al monstruo."
+  output: "¡Tú cuidarte de Hechicero! ¡Hechicero ser malo! ¡Malo! ¡Muy malo!\nHechicero puso yo feo. A tú no poner feo... ¡A tú arrancal tripa, sacal ojo, rompel hueso y echal dragrón hambroso!\nYo consejo tú: Busca espada Marmidosa... ¡y pincha todo!"
 
 - hyper_edge_id: "he_dar_silla_terrazas_obispo"
   name: "Dar silla terrazas a obispo"
@@ -280,8 +280,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "obispo"
-    instrument: "silla_terrazas"
+    target: "silla_terrazas"
+    context: "obispo"
   operators:
     - type: "TRANSFER"
       entity: "silla_terrazas"
@@ -290,7 +290,7 @@
     - type: "FLAG"
       flag: "obispo_happy"
       value: true
-  output: "El obispo se sienta en la silla con un suspiro de alivio."
+  output: "Solo con el Talismán de Nieve podrás entrar hasta Marmidosa."
 
 - hyper_edge_id: "he_dar_bolsa_oro_pordiosero"
   name: "Dar bolsa oro a pordiosero"
@@ -298,8 +298,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "pordiosero"
-    instrument: "bolsa_oro"
+    target: "bolsa_oro"
+    context: "pordiosero"
   operators:
     - type: "TRANSFER"
       entity: "bolsa_oro"
@@ -308,7 +308,7 @@
     - type: "FLAG"
       flag: "pordiosero_happy"
       value: true
-  output: "El pordiosero abre la bolsa de oro y su mano deja de temblar."
+  output: "Si el Ogro se baña, se muere."
 
 - hyper_edge_id: "he_dar_esqueleto_de_murcielago_sabio"
   name: "Dar esqueleto de murcielago a sabio"
@@ -316,8 +316,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "sabio"
-    instrument: "esqueleto_de_murcielago"
+    target: "esqueleto_de_murcielago"
+    context: "sabio"
   operators:
     - type: "TRANSFER"
       entity: "esqueleto_de_murcielago"
@@ -326,5 +326,5 @@
     - type: "FLAG"
       flag: "sabio_happy"
       value: true
-  output: "El sabio examina el esqueleto de murciélago, fascinado, y suelta su anillo de papel."
+  output: "De todas las cosas sobre la tierra, la que más me fascina es la cinta de Moebius. Empiezas a recorrerla por adentro y cuando vienes a ver... ¡estás afuera!"
 

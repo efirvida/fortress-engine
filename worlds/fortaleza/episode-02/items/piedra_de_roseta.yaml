@@ -3,5 +3,5 @@ type: "item"
 name: "Piedra de Roseta"
 components:
   weight: 5
-  description: "Texto bilingüe codificado: 'Fuimos grandes una vez' ↔ texto alterado. Clave para descifrar los manuscritos."
+  description: "Esta no es la piedra original. Tiene grabadas las siguientes palabras:\n\n\"Fuimos grandes una vez,   │   Fio rne n e,atsd absi\n antes de la Bestia        │   Umsgadsuavz ne el eta\"\n\nOjalá Champollión estuviera aquí."
 spatial_anchor: "salon_de_fumar"

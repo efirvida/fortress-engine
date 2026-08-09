@@ -3,6 +3,6 @@ from_anchor: "calabozos"
 to_anchor: "celda"
 direction: "bidirectional"
 passage_name: "reja"
-passage_description: "La reja de la celda con contraseña"
+passage_description: "Conduce a la celda. Los barrotes son tan gruesos que la reja es prácticamente una puerta maciza."
 open: false
 requires_text: "Grifo"

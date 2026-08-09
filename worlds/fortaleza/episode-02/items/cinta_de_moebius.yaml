@@ -3,5 +3,5 @@ type: "item"
 name: "Cinta de Moebius"
 components:
   weight: 1
-  description: "Papel con torcedura, extremos pegados. Anillo correcto para La Prueba. Debe colocarse en la Torre — condición de victoria."
+  description: "Es una cinta de papel con una torcedura y ambos extremos pegados."
 spatial_anchor: "choza_del_sabio"

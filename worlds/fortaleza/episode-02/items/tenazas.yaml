@@ -3,5 +3,5 @@ type: "item"
 name: "Tenazas"
 components:
   weight: 2
-  description: "Muy fuertes. Útiles para romper la Reja en el Lago."
+  description: "Parecen ser muy fuertes."
 spatial_anchor: "campo_cultivado"

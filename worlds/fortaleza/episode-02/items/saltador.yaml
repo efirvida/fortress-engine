@@ -3,5 +3,5 @@ type: "item"
 name: "Saltador"
 components:
   weight: 7
-  description: "Tronco de abeto con resorte. Protección para saltar al Precipicio en el Pico Negro."
+  description: "Es un tronco de abeto con un resorte en el extremo inferior."
 spatial_anchor: "cuarto_de_juguetes"

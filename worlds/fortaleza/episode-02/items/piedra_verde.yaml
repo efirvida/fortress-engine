@@ -3,5 +3,5 @@ type: "item"
 name: "Piedra verde"
 components:
   weight: 9
-  description: "Increíblemente sólida. Útil para romper la segunda muralla en el Desierto."
+  description: "Es increíblemente sólida."
 spatial_anchor: "interior_del_baul"

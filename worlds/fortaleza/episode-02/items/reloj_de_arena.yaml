@@ -3,5 +3,5 @@ type: "item"
 name: "Reloj de arena"
 components:
   weight: 2
-  description: "Emite tic-tac. Debe voltearse antes de entregar a Caronte en la Orilla del Río Negro."
+  description: "Usted escucha un callado tic-tac."
 spatial_anchor: "terrazas"

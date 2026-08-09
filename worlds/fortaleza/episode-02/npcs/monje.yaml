@@ -2,7 +2,7 @@ entity_id: "monje"
 type: "npc"
 name: "monje"
 components:
-  description: "Un monje bastante joven que no responde. Está muy ocupado recogiendo las cuentas del suelo una por una."
+  description: "Parece ser bastante joven."
   is_troll: true
   wants_item: "rosario"
   gift_flag: "monje_happy"

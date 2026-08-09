@@ -2,7 +2,7 @@ entity_id: "dinosaurio"
 type: "npc"
 name: "dinosaurio"
 components:
-  description: "Un pequeño dinosaurio que acaba de salir de un enorme huevo. Grita con voz de bebé: ¡Guaaaaaa!"
+  description: "Debía sentirse muy apretado en el huevo. Es un pequeño tiranosaurio."
   is_troll: true
   wants_item: "sonajero"
   gift_flag: "dinosaurio_happy"

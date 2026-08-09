@@ -3,5 +3,5 @@ from_anchor: "exterior_de_la_torre_de_cristal"
 to_anchor: "calabozos"
 direction: "bidirectional"
 passage_name: "puerta_hierro"
-passage_description: "La Puerta de Hierro de los Calabozos"
+passage_description: "Es la entrada a los calabozos."
 open: true

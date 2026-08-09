@@ -3,5 +3,5 @@ from_anchor: "ciudad_abandonada"
 to_anchor: "ruinas"
 direction: "bidirectional"
 passage_name: "tunel"
-passage_description: "Túnel que conecta con las Ruinas"
+passage_description: "Conduce a las ruinas."
 open: true

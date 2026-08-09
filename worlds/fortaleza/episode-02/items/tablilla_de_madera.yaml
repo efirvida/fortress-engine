@@ -3,5 +3,5 @@ type: "item"
 name: "Tablilla de Madera"
 components:
   weight: 2
-  description: "Primera mitad del Manuscrito de los Horantes, con texto codificado."
+  description: "Tiene las siguientes palabras grabadas:\n\n \"A acsd o oatssn\n  Oadaat lfnodllg\n  Oed aot nl rlaousa\n  Nocae lcat ehépds\n  Lail lgd ut léao\n  Suod qie nl iddd o oats\n  Seod ahj e ehcr ns uro\n  Edl ne aó efmr\""
 spatial_anchor: "punta_de_la_torre_de_cristal"

@@ -3,5 +3,5 @@ from_anchor: "comienzo_de_las_cataratas"
 to_anchor: "fondo_del_lago"
 direction: "bidirectional"
 passage_name: "catarata"
-passage_description: "Salto al vacío de la catarata"
+passage_description: "Usted siente mareos de tan solo pensar en ella."
 open: true
