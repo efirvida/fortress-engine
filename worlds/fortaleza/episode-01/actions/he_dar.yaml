@@ -7,8 +7,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "llamador_bronce"
-    instrument: "cigarro"
+    target: "cigarro"
+    context: "llamador_bronce"
   operators:
     - type: "TRANSFER"
       entity: "cigarro"
@@ -25,8 +25,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "trebol"
-    instrument: "vaso_agua"
+    target: "vaso_agua"
+    context: "trebol"
   operators:
     - type: "TRANSFER"
       entity: "vaso_agua"
@@ -43,8 +43,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "atenea"
-    instrument: "lanza"
+    target: "lanza"
+    context: "atenea"
   operators:
     - type: "TRANSFER"
       entity: "lanza"
@@ -61,8 +61,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "hermes"
-    instrument: "paraguas"
+    target: "paraguas"
+    context: "hermes"
   operators:
     - type: "TRANSFER"
       entity: "paraguas"
@@ -79,8 +79,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "bruja"
-    instrument: "escoba"
+    target: "escoba"
+    context: "bruja"
   operators:
     - type: "TRANSFER"
       entity: "escoba"
@@ -97,8 +97,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "homunculo"
-    instrument: "pocion_crecer"
+    target: "pocion_crecer"
+    context: "homunculo"
   operators:
     - type: "TRANSFER"
       entity: "pocion_crecer"
@@ -115,8 +115,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "troll_sala_infusiones"
-    instrument: "polvo_magico"
+    target: "polvo_magico"
+    context: "troll_sala_infusiones"
   operators:
     - type: "TRANSFER"
       entity: "polvo_magico"
@@ -133,8 +133,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "doncella"
-    instrument: "rosa"
+    target: "rosa"
+    context: "doncella"
   operators:
     - type: "TRANSFER"
       entity: "rosa"
@@ -151,8 +151,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "esqueleto"
-    instrument: "taza_cafe"
+    target: "taza_cafe"
+    context: "esqueleto"
   operators:
     - type: "TRANSFER"
       entity: "taza_cafe"
@@ -169,8 +169,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "raton"
-    instrument: "piedra_filosofal"
+    target: "piedra_filosofal"
+    context: "raton"
   operators:
     - type: "TRANSFER"
       entity: "piedra_filosofal"
@@ -187,8 +187,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "arana"
-    instrument: "hilo_ariadna"
+    target: "hilo_ariadna"
+    context: "arana"
   operators:
     - type: "TRANSFER"
       entity: "hilo_ariadna"
@@ -205,8 +205,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "crunch"
-    instrument: "pastel_cerezas"
+    target: "pastel_cerezas"
+    context: "crunch"
   operators:
     - type: "TRANSFER"
       entity: "pastel_cerezas"
@@ -223,8 +223,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "dedalo"
-    instrument: "vendajes"
+    target: "vendajes"
+    context: "dedalo"
   operators:
     - type: "TRANSFER"
       entity: "vendajes"
@@ -241,8 +241,8 @@
   clique:
     subject: "player"
     verb: "dar"
-    target: "bailarina"
-    instrument: "maquina_tiempo"
+    target: "maquina_tiempo"
+    context: "bailarina"
   operators:
     - type: "TRANSFER"
       entity: "maquina_tiempo"

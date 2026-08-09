@@ -2,6 +2,6 @@ entity_id: "sala_de_la_arana"
 type: "room"
 name: "la sala de la araña"
 components:
-  description: "Una sala llena de telarañas con una araña gigante."
+  description: "Una sala llena de telarañas con una araña gigante. Ves: estatua_satanas, puerta_oculta, puerta_secreta."
   visited: false
 spatial_anchor: null

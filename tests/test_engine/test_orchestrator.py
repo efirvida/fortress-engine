@@ -1604,7 +1604,356 @@ components:
 # ===================================================================
 
 
-def test_execute_turn_hyper_edge_without_output(tmp_path):
+def test_execute_turn_wildcard_operator_binds_target(tmp_path):
+    """A generic edge (``target: "*"``) with an operator ``entity: "*"``
+    transfers the item the player named (generic ``dejar <item>``)."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+    from fortress_engine.engine.graph import HyperEdge, Clique
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+
+    # Hero carries a key; drop it in room_a.
+    key = Entity("key", "item", "Key", {"weight": 1}, "hero")
+    state.entities["key"] = key
+    state.get_entity("hero").spatial_anchor = "room_a"
+
+    drop_edge = HyperEdge(
+        hyper_edge_id="dejar_generico",
+        name="Dejar",
+        priority=10,
+        clique=Clique(subject="player", verb="dejar", target="*"),
+        operators=[
+            {
+                "type": "TRANSFER",
+                "entity": "*",
+                "from_container": "hero",
+                "to_container": "@anchor",
+            }
+        ],
+        output="Dejas el objeto.",
+    )
+    graph.add_hyper_edge("room_a", drop_edge)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="dejar", target="key")
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+    orch.execute_turn("dejar key")
+
+    assert state.get_entity("key").spatial_anchor == "room_a"
+    assert state.get_entity("hero").spatial_anchor == "room_a"
+    # No error emitted; the transfer actually happened.
+    assert not any(e.type == ERROR_OUTPUT for e in received)
+    assert any(e.type == ENTITY_TRANSFERRED for e in received)
+
+
+def test_execute_turn_wildcard_operator_unresolved_target_no_action(tmp_path):
+    """A wildcard edge with no resolvable target falls through to
+    no_action (the parsed target must exist and be reachable)."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+    from fortress_engine.engine.graph import HyperEdge, Clique
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    state.get_entity("hero").spatial_anchor = "room_a"
+
+    drop_edge = HyperEdge(
+        hyper_edge_id="dejar_generico",
+        name="Dejar",
+        priority=10,
+        clique=Clique(subject="player", verb="dejar", target="*"),
+        operators=[
+            {
+                "type": "TRANSFER",
+                "entity": "*",
+                "from_container": "hero",
+                "to_container": "@anchor",
+            }
+        ],
+        output="Dejas el objeto.",
+    )
+    graph.add_hyper_edge("room_a", drop_edge)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="dejar", target="ghost")
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+    orch.execute_turn("dejar ghost")
+
+    # The wildcard clique requires a reachable entity → no_action.
+    assert any(e.type == ERROR_OUTPUT for e in received)
+    error = next(e for e in received if e.type == ERROR_OUTPUT)
+    assert error.payload["error_code"] == "no_action"
+
+
+def test_execute_turn_output_resolves_target_component(tmp_path):
+    """An edge output with ``{description}`` resolves the TARGET entity's
+    component (``mirar <objeto>`` describes the object, not the room)."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+    from fortress_engine.engine.graph import HyperEdge, Clique
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    state.get_entity("hero").spatial_anchor = "room_a"
+    # A sword in the room with a description component.
+    sword = Entity(
+        "sword",
+        "item",
+        "Espada",
+        {"description": "Una espada afilada.", "weight": 3},
+        "room_a",
+    )
+    state.entities["sword"] = sword
+
+    look_edge = HyperEdge(
+        hyper_edge_id="mirar_objeto",
+        name="Mirar",
+        priority=10,
+        clique=Clique(subject="player", verb="mirar", target="*"),
+        operators=[],
+        output="{description}",
+    )
+    graph.add_hyper_edge("room_a", look_edge)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="mirar", target="sword")
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+    orch.execute_turn("mirar sword")
+
+    out = next(e for e in received if e.type == ACTION_OUTPUT)
+    assert out.payload["text"] == "Una espada afilada."
+
+
+def test_execute_turn_output_unknown_placeholder_left_intact(tmp_path):
+    """A placeholder that is not an entity component is left untouched
+    (deterministic) — the engine only resolves real components."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+    from fortress_engine.engine.graph import HyperEdge, Clique
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    state.get_entity("hero").spatial_anchor = "room_a"
+    sword = Entity(
+        "sword",
+        "item",
+        "Espada",
+        {"description": "Una espada afilada.", "weight": 3},
+        "room_a",
+    )
+    state.entities["sword"] = sword
+
+    look_edge = HyperEdge(
+        hyper_edge_id="mirar_objeto",
+        name="Mirar",
+        priority=10,
+        clique=Clique(subject="player", verb="mirar", target="*"),
+        operators=[],
+        output="{description} [{exits}]",
+    )
+    graph.add_hyper_edge("room_a", look_edge)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="mirar", target="sword")
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+    orch.execute_turn("mirar sword")
+
+    out = next(e for e in received if e.type == ACTION_OUTPUT)
+    # description resolves; unknown {exits} is left intact.
+    assert "Una espada afilada." in out.payload["text"]
+    assert "{exits}" in out.payload["text"]
+
+
+def test_execute_turn_output_resolves_room_when_no_target(tmp_path):
+    """When the edge matches with no target (``mirar`` the room), the
+    output resolves ``{description}`` against the protagonist's anchor."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+    from fortress_engine.engine.graph import HyperEdge, Clique
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    state.get_entity("hero").spatial_anchor = "room_a"
+    room_a = Entity(
+        "room_a",
+        "room",
+        "Habitación A",
+        {"description": "Una sala vacía."},
+        None,
+    )
+    state.entities["room_a"] = room_a
+
+    look_edge = HyperEdge(
+        hyper_edge_id="mirar_habitacion",
+        name="Mirar",
+        priority=0,
+        clique=Clique(subject="player", verb="mirar", target=None),
+        operators=[],
+        output="{description}",
+    )
+    graph.add_hyper_edge("room_a", look_edge)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="mirar", target=None)
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+    orch.execute_turn("mirar")
+
+    out = next(e for e in received if e.type == ACTION_OUTPUT)
+    assert out.payload["text"] == "Una sala vacía."
+
+
+def test_execute_turn_output_resolves_entity_name_component(tmp_path):
+    """The special keys name/entity_id/type resolve too."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+    from fortress_engine.engine.graph import HyperEdge, Clique
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    state.get_entity("hero").spatial_anchor = "room_a"
+    gem = Entity(
+        "gem",
+        "item",
+        "Gema",
+        {"description": "Brilla.", "weight": 1},
+        "room_a",
+    )
+    state.entities["gem"] = gem
+
+    look_edge = HyperEdge(
+        hyper_edge_id="ver_gema",
+        name="Ver",
+        priority=10,
+        clique=Clique(subject="player", verb="ver", target="*"),
+        operators=[],
+        output="{name} ({type}): {description} peso {weight}",
+    )
+    graph.add_hyper_edge("room_a", look_edge)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+    parser = _StubParser(
+        ParsedCommand(subject="hero", verb="ver", target="gem")
+    )
+
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=parser,
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+    orch.execute_turn("ver gem")
+
+    out = next(e for e in received if e.type == ACTION_OUTPUT)
+    assert out.payload["text"] == "Gema (item): Brilla. peso 1"
+
+
+def test_execute_turn_output_resolves_to_anchor_fallback(tmp_path):
+    """When the resolved target entity is missing from state, the output
+    falls back to the protagonist's anchor; if that is also missing, the
+    output is left untouched."""
+    from fortress_engine.engine.orchestrator import TurnOrchestrator
+    from fortress_engine.engine.graph import HyperEdge, Clique
+
+    state, graph, bus, ep_mgr, goal_eval = _setup_orchestrator(tmp_path)
+    state.get_entity("hero").spatial_anchor = "room_01"
+
+    look_edge = HyperEdge(
+        hyper_edge_id="mirar_objeto",
+        name="Mirar",
+        priority=10,
+        clique=Clique(subject="player", verb="mirar", target="*"),
+        operators=[],
+        output="{description}",
+    )
+    graph.add_hyper_edge("room_01", look_edge)
+
+    received: list[EngineEvent] = []
+    bus.subscribe("*", lambda e: received.append(e))
+    narrator = _StubNarrator()
+    # Target "ghost" does not exist in state → the wildcard clique rejects,
+    # so instead call _resolve_output directly for the fallback branches.
+    orch = TurnOrchestrator(
+        state=state,
+        graph=graph,
+        event_bus=bus,
+        parser=_StubParser(
+            ParsedCommand(subject="hero", verb="mirar", target="ghost")
+        ),
+        narrator=narrator,
+        goal_evaluator=goal_eval,
+        episode_manager=ep_mgr,
+    )
+
+    # Fallback to anchor (room_01) which exists in state: the anchor entity
+    # has no description component, so the unknown placeholder is left
+    # intact (deterministic).
+    text = orch._resolve_output("{description}", "does_not_exist")
+    assert text == "{description}"
+
+    # No target and no anchor → output untouched.
+    state.get_entity("hero").spatial_anchor = None
+    text2 = orch._resolve_output("{description}", None)
+    assert text2 == "{description}"
     """HyperEdge without output text still resolves (covers output=None branch)."""
     from fortress_engine.engine.orchestrator import TurnOrchestrator
     from fortress_engine.engine.graph import HyperEdge, Clique

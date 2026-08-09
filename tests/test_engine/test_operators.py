@@ -314,6 +314,66 @@ def test_transfer_to_null_destroys_entity():
     assert payload["to_container_id"] is None
 
 
+def test_transfer_at_anchor_resolves_to_protagonist_room():
+    """TRANSFER with ``to_container == "@anchor"`` resolves to the
+    protagonist's current spatial anchor at execution time (generic
+    ``dejar <item>`` edges)."""
+    from fortress_engine.engine.operators import TransferOp, execute_transfer
+
+    hero = _make_player("hero", spatial_anchor="hall")
+    key = _make_entity("key", components={WEIGHT: 1}, spatial_anchor="hero")
+    hall = _make_entity("hall", type_="room")
+    state = _minimal_state(hero, hall, extras={"key": key})
+    # `_minimal_state` stores the room under its own entity_id.
+    state.entities["hall"] = hall
+
+    op = TransferOp(entity="key", from_container="hero", to_container="@anchor")
+    result = execute_transfer(state, op, protagonist_id="hero")
+
+    assert result.success is True
+    assert state.get_entity("key").spatial_anchor == "hall"
+    payload = result.events_payload
+    assert payload is not None
+    assert payload["to_container_id"] == "hall"
+
+
+def test_transfer_at_anchor_moves_with_protagonist():
+    """``@anchor`` follows the protagonist: dropping in a different room
+    lands the item there, not in the previous anchor."""
+    from fortress_engine.engine.operators import TransferOp, execute_transfer
+
+    hero = _make_player("hero", spatial_anchor="kitchen")
+    key = _make_entity("key", components={WEIGHT: 1}, spatial_anchor="hero")
+    kitchen = _make_entity("kitchen", type_="room")
+    state = _minimal_state(hero, kitchen, extras={"key": key})
+    state.entities["kitchen"] = kitchen
+
+    # The protagonist is already in the kitchen (post-move).
+    state.get_entity("hero").spatial_anchor = "kitchen"
+
+    op = TransferOp(entity="key", from_container="hero", to_container="@anchor")
+    result = execute_transfer(state, op, protagonist_id="hero")
+
+    assert result.success is True
+    assert state.get_entity("key").spatial_anchor == "kitchen"
+
+
+def test_transfer_at_anchor_without_room_destroys():
+    """``@anchor`` when the protagonist has no anchor (limbo) moves the item
+    to limbo — the destination is whatever the anchor resolves to."""
+    from fortress_engine.engine.operators import TransferOp, execute_transfer
+
+    hero = _make_player("hero", spatial_anchor=None)
+    key = _make_entity("key", components={WEIGHT: 1}, spatial_anchor="hero")
+    state = _minimal_state(hero, extras={"key": key})
+
+    op = TransferOp(entity="key", from_container="hero", to_container="@anchor")
+    result = execute_transfer(state, op, protagonist_id="hero")
+
+    assert result.success is True
+    assert state.get_entity("key").spatial_anchor is None
+
+
 def test_transfer_fails_when_entity_missing():
     """TRANSFER for a non-existent entity fails with entity_not_found."""
     from fortress_engine.engine.operators import TransferOp, execute_transfer

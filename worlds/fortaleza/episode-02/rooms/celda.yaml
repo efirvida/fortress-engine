@@ -2,6 +2,6 @@ entity_id: "celda"
 type: "room"
 name: "una celda"
 components:
-  description: "Debe ser un verdadero suplicio el estar encerrado aquí. Todo el suelo está cubierto de afiladas hojas, excepto en una esquina, donde se supone que está el prisionero."
+  description: "Debe ser un verdadero suplicio el estar encerrado aquí. Todo el suelo está cubierto de afiladas hojas, excepto en una esquina, donde se supone que está el prisionero. Ves: reja."
   visited: false
 spatial_anchor: null

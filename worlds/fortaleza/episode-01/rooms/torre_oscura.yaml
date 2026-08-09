@@ -2,6 +2,6 @@ entity_id: "torre_oscura"
 type: "room"
 name: "la torre oscura"
 components:
-  description: "Una torre alta con ventanas estrechas."
+  description: "Una torre alta con ventanas estrechas. Ves: escalera_madera."
   visited: false
 spatial_anchor: null

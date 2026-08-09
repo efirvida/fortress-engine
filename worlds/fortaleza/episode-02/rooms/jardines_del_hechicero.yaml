@@ -2,6 +2,6 @@ entity_id: "jardines_del_hechicero"
 type: "room"
 name: "los Jardines del Hechicero"
 components:
-  description: "Son tan extensos que usted no puede ver dónde terminan. Todos los árboles tienen el mismo tamaño y la misma forma. El jardín parece un gran juego de espejos."
+  description: "Son tan extensos que usted no puede ver dónde terminan. Todos los árboles tienen el mismo tamaño y la misma forma. El jardín parece un gran juego de espejos. Ves: avenida_hierro, pasadizo, puerta_amarilla, puerta_madera, puerta_roja, puerta_tela, puerta_verde."
   visited: false
 spatial_anchor: null

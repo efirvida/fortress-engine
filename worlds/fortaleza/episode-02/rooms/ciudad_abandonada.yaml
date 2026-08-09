@@ -2,6 +2,6 @@ entity_id: "ciudad_abandonada"
 type: "room"
 name: "la Ciudad Abandonada"
 components:
-  description: "A pesar de ser más antigua que las ruinas, la ciudad se conserva intacta. Usted oye el ruido de la gente en las calles y siente los olores de los alimentos en las cocinas, pero no son más que ilusiones. La ciudad está abandonada desde hace siglos."
+  description: "A pesar de ser más antigua que las ruinas, la ciudad se conserva intacta. Usted oye el ruido de la gente en las calles y siente los olores de los alimentos en las cocinas, pero no son más que ilusiones. La ciudad está abandonada desde hace siglos. Ves: escalera, precipicio, puerta_hierro, tunel."
   visited: false
 spatial_anchor: null

@@ -2,6 +2,6 @@ entity_id: "salon_blanco"
 type: "room"
 name: "el Salón Blanco"
 components:
-  description: "Es un salón de pruebas tradicional. Este tipo de salón fue usado ampliamente por los horantes para educar a sus hijos. Es el último de la prueba."
+  description: "Es un salón de pruebas tradicional. Este tipo de salón fue usado ampliamente por los horantes para educar a sus hijos. Es el último de la prueba. Ves: puerta_blanca, puerta_triangular."
   visited: false
 spatial_anchor: null

@@ -2,6 +2,6 @@ entity_id: "centro_del_estomago"
 type: "room"
 name: "el centro del estómago"
 components:
-  description: "El centro vital del estómago de la Bestia."
+  description: "El centro vital del estómago de la Bestia. Ves: conducto, esofago."
   visited: false
 spatial_anchor: null

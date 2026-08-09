@@ -7,7 +7,11 @@
     subject: "player"
     verb: "dejar"
     target: "*"
-  operators: []
+  operators:
+    - type: "TRANSFER"
+      entity: "*"
+      from_container: "hero"
+      to_container: "@anchor"
   output: "Dejas el objeto en el suelo."
 
 - hyper_edge_id: "he_dejar_nada_ep2"
@@ -27,7 +31,11 @@
     subject: "player"
     verb: "dejar"
     target: "todo"
-  operators: []
+  operators:
+    - type: "TRANSFER"
+      entity: "*"
+      from_container: "hero"
+      to_container: "@anchor"
   output: "Vacías tus manos. Todo queda en el suelo."
 
 # --- Ritual drops: each sacred object must be placed in its goal room.

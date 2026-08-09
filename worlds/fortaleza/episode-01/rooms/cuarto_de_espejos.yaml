@@ -2,6 +2,6 @@ entity_id: "cuarto_de_espejos"
 type: "room"
 name: "el cuarto de espejos"
 components:
-  description: "Hay tantos espejos que no puede reconocer si usted es real o es una imagen de sí mismo."
+  description: "Hay tantos espejos que no puede reconocer si usted es real o es una imagen de sí mismo. Ves: escalera, puerta_oculta."
   visited: false
 spatial_anchor: null

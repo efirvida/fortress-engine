@@ -2,6 +2,6 @@ entity_id: "laberinto_1"
 type: "room"
 name: "laberinto sala 1"
 components:
-  description: "Sala del laberinto. Tres puertas."
+  description: "Sala del laberinto. Tres puertas. Ves: puerta_madera, sendero_dorado."
   visited: false
 spatial_anchor: null

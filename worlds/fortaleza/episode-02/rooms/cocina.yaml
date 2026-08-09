@@ -2,6 +2,6 @@ entity_id: "cocina"
 type: "room"
 name: "la Cocina"
 components:
-  description: "En realidad, se parece mucho más a un matadero. El olor a sangre coagulada y carroña no le permite apartar el pañuelo de la nariz. Hay unas marcas de sangre en la pared que le llaman mucho la atención: fueron hechas por una mano de siete dedos."
+  description: "En realidad, se parece mucho más a un matadero. El olor a sangre coagulada y carroña no le permite apartar el pañuelo de la nariz. Hay unas marcas de sangre en la pared que le llaman mucho la atención: fueron hechas por una mano de siete dedos. Ves: puerta_metal."
   visited: false
 spatial_anchor: null

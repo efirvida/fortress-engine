@@ -2,6 +2,6 @@ entity_id: "oasis"
 type: "room"
 name: "un Oasis"
 components:
-  description: "Es un oasis tradicional, con varias palmeras de dátiles y un pequeño estanque de agua turbia en el centro."
+  description: "Es un oasis tradicional, con varias palmeras de dátiles y un pequeño estanque de agua turbia en el centro. Ves: desierto, ruta_camellos."
   visited: false
 spatial_anchor: null

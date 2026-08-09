@@ -2,6 +2,6 @@ entity_id: "laboratorio_de_la_bestia"
 type: "room"
 name: "el laboratorio de la Bestia"
 components:
-  description: "Hay muchos frascos. A usted le llaman la atención los últimos: están llenos de homúnculos."
+  description: "Hay muchos frascos. A usted le llaman la atención los últimos: están llenos de homúnculos. Ves: puerta_prohibida, tunel_laboratorio."
   visited: false
 spatial_anchor: null

@@ -2,6 +2,6 @@ entity_id: "choza_del_monje"
 type: "room"
 name: "la choza de un monje"
 components:
-  description: "El suelo está muy limpio, al igual que los muebles y las ventanas. Hay una gran cantidad de cuentas regadas por el suelo."
+  description: "El suelo está muy limpio, al igual que los muebles y las ventanas. Hay una gran cantidad de cuentas regadas por el suelo. Ves: puerta_madera."
   visited: false
 spatial_anchor: null

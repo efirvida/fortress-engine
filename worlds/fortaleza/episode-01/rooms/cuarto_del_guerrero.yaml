@@ -2,6 +2,6 @@ entity_id: "cuarto_del_guerrero"
 type: "room"
 name: "el cuarto del guerrero"
 components:
-  description: "El cuarto está muy ordenado. A usted le sorprende que no hayan armas."
+  description: "El cuarto está muy ordenado. A usted le sorprende que no hayan armas. Ves: cama, puerta_metal, puerta_roja."
   visited: false
 spatial_anchor: null

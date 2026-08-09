@@ -2,6 +2,6 @@ entity_id: "cueva_de_cristal"
 type: "room"
 name: "la Cueva de Cristal"
 components:
-  description: "Hay resplandores de cristales por todas partes. En este lugar el agua se ha hecho más densa y le resulta difícil respirar."
+  description: "Hay resplandores de cristales por todas partes. En este lugar el agua se ha hecho más densa y le resulta difícil respirar. Ves: grieta."
   visited: false
 spatial_anchor: null

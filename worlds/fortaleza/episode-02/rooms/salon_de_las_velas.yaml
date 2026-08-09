@@ -2,6 +2,6 @@ entity_id: "salon_de_las_velas"
 type: "room"
 name: "el salón de las velas"
 components:
-  description: "Deben ser varios kilómetros sembrados de velas. En el centro hay un círculo vacío."
+  description: "Deben ser varios kilómetros sembrados de velas. En el centro hay un círculo vacío. Ves: escalera, puerta_blanca, puerta_roja."
   visited: false
 spatial_anchor: null

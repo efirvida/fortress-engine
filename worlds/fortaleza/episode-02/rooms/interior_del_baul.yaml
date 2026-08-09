@@ -2,6 +2,6 @@ entity_id: "interior_del_baul"
 type: "room"
 name: "el interior del baúl"
 components:
-  description: "Ahora sí está confundido. El baúl es inmensamente mayor que la casa de muñecas, a pesar de que está dentro de ella. Luce como una habitación cualquiera."
+  description: "Ahora sí está confundido. El baúl es inmensamente mayor que la casa de muñecas, a pesar de que está dentro de ella. Luce como una habitación cualquiera. Ves: puerta_baul."
   visited: false
 spatial_anchor: null

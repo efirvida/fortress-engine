@@ -1,15 +1,25 @@
 # LOOK actions — player looks around or at objects
 # No operators, just output
 
+- hyper_edge_id: "he_mirar_objeto"
+  name: "Mirar un objeto"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "mirar"
+    target: "*"
+  operators: []
+  output: "{description}"
+
 - hyper_edge_id: "he_mirar_habitacion"
   name: "Mirar la habitación"
   priority: 0
   clique:
     subject: "player"
     verb: "mirar"
-    target: "*"
+    target: null
   operators: []
-  output: ""
+  output: "{description}"
 
 - hyper_edge_id: "he_observar_habitacion"
   name: "Observar la habitación (alternativa)"
@@ -17,9 +27,9 @@
   clique:
     subject: "player"
     verb: "observar"
-    target: "*"
+    target: null
   operators: []
-  output: ""
+  output: "{description}"
 
 - hyper_edge_id: "he_ver_roble"
   name: "Ver el roble"
@@ -119,4 +129,4 @@
     verb: "ver"
     target: "*"
   operators: []
-  output: "No ves nada especial."
+  output: "{description}"

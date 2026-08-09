@@ -2,6 +2,6 @@ entity_id: "centro_del_cerebro"
 type: "room"
 name: "el centro del cerebro"
 components:
-  description: "El centro vital del cerebro de la Bestia."
+  description: "El centro vital del cerebro de la Bestia. Ves: conducto, escondite, puerta_dorada, puerta_hierro."
   visited: false
 spatial_anchor: null

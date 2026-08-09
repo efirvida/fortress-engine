@@ -2,6 +2,6 @@ entity_id: "cuarto_de_los_cuadros"
 type: "room"
 name: "el cuarto de los cuadros"
 components:
-  description: "Un cuarto lleno de cuadros valiosos."
+  description: "Un cuarto lleno de cuadros valiosos. Ves: puerta_dorada."
   visited: false
 spatial_anchor: null

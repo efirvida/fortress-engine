@@ -2,6 +2,6 @@ entity_id: "salon_azul"
 type: "room"
 name: "el Salón Azul"
 components:
-  description: "Es un salón de pruebas tradicional. Este tipo de salón fue usado ampliamente por los horantes para educar a sus hijos."
+  description: "Es un salón de pruebas tradicional. Este tipo de salón fue usado ampliamente por los horantes para educar a sus hijos. Ves: puerta_azul, puerta_blanca."
   visited: false
 spatial_anchor: null

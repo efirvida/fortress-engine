@@ -2,6 +2,6 @@ entity_id: "pasillo"
 type: "room"
 name: "el pasillo"
 components:
-  description: "Hay seis puertas distribuidas simétricamente. Las paredes son de mármol blanco, pero usted tiene la certeza de que hay algo terrible encerrado detrás de toda esa pulcritud."
+  description: "Hay seis puertas distribuidas simétricamente. Las paredes son de mármol blanco, pero usted tiene la certeza de que hay algo terrible encerrado detrás de toda esa pulcritud. Ves: puerta, puerta_azul, puerta_espinos, puerta_metal, puerta_negra, puerta_oro."
   visited: false
 spatial_anchor: null

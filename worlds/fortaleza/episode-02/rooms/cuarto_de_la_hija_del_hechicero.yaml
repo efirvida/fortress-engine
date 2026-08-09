@@ -2,6 +2,6 @@ entity_id: "cuarto_de_la_hija_del_hechicero"
 type: "room"
 name: "el cuarto de la hija del Hechicero"
 components:
-  description: "Se pregunta cómo luciría la hija de un hechicero. En las paredes hay cientos de retratos, todos de muchachas diferentes. ¿Cuál será la real?... ¿O todas son una misma?"
+  description: "Se pregunta cómo luciría la hija de un hechicero. En las paredes hay cientos de retratos, todos de muchachas diferentes. ¿Cuál será la real?... ¿O todas son una misma? Ves: agujero, puerta_azul."
   visited: false
 spatial_anchor: null

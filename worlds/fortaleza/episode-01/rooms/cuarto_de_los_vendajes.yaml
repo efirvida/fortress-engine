@@ -2,6 +2,6 @@ entity_id: "cuarto_de_los_vendajes"
 type: "room"
 name: "el cuarto de los vendajes"
 components:
-  description: "Un cuarto con vendajes y medicinas."
+  description: "Un cuarto con vendajes y medicinas. Ves: puerta_metal."
   visited: false
 spatial_anchor: null

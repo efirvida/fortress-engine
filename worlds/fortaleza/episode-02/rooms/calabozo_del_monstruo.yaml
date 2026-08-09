@@ -2,6 +2,6 @@ entity_id: "calabozo_del_monstruo"
 type: "room"
 name: "el calabozo del Monstruo"
 components:
-  description: "Las paredes son de barro. Hay cientos de cadenas embotadas en el techo, moviéndose constantemente, como si las arrastrara un viento de acero."
+  description: "Las paredes son de barro. Hay cientos de cadenas embotadas en el techo, moviéndose constantemente, como si las arrastrara un viento de acero. Ves: escalera_caracol."
   visited: false
 spatial_anchor: null

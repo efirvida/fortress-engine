@@ -2,6 +2,6 @@ entity_id: "campo_cultivado"
 type: "room"
 name: "un campo cultivado"
 components:
-  description: "Todos los sembrados parecen bastante descuidados. Probablemente el labrador no sea capaz de atender una cantidad tan grande de tierra al mismo tiempo."
+  description: "Todos los sembrados parecen bastante descuidados. Probablemente el labrador no sea capaz de atender una cantidad tan grande de tierra al mismo tiempo. Ves: ladera, rio."
   visited: false
 spatial_anchor: null

@@ -2,6 +2,6 @@ entity_id: "otra_orilla_del_rio_negro"
 type: "room"
 name: "otra orilla del Río Negro"
 components:
-  description: "La espesa niebla casi no deja ver las terrazas al otro lado."
+  description: "La espesa niebla casi no deja ver las terrazas al otro lado. Ves: avenida_hierro, rio_negro."
   visited: false
 spatial_anchor: null

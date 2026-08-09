@@ -26,7 +26,7 @@
   operators:
     - type: "TRANSFER"
       entity: "maza"
-      from_container: "el_exterior_de_la_fortaleza"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la maza. Es muy pesada (39 kg)."
 
@@ -40,7 +40,7 @@
   operators:
     - type: "TRANSFER"
       entity: "pastel_cerezas"
-      from_container: "el_exterior_de_la_fortaleza"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el pastel de cerezas."
 
@@ -54,7 +54,7 @@
   operators:
     - type: "TRANSFER"
       entity: "escoba"
-      from_container: "sala_de_juegos"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la escoba. Dicen que es voladora."
 
@@ -68,9 +68,23 @@
   operators:
     - type: "TRANSFER"
       entity: "hilo_ariadna"
-      from_container: "sala_de_juegos"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el hilo de Ariadna. Mide varios kilómetros."
+
+- hyper_edge_id: "he_tomar_inscripcion"
+  name: "Tomar la inscripción"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "inscripcion"
+  operators:
+    - type: "TRANSFER"
+      entity: "inscripcion"
+      from_container: "@anchor"
+      to_container: "hero"
+  output: "Tomas la inscripción de la sala de juegos."
 
 - hyper_edge_id: "he_tomar_balanza"
   name: "Tomar la balanza"
@@ -82,7 +96,7 @@
   operators:
     - type: "TRANSFER"
       entity: "balanza"
-      from_container: "patio_interior"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la balanza."
 
@@ -96,7 +110,7 @@
   operators:
     - type: "TRANSFER"
       entity: "hueso_gato"
-      from_container: "cuarto_de_espejos"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el hueso de gato."
 
@@ -110,7 +124,7 @@
   operators:
     - type: "TRANSFER"
       entity: "vaso_agua"
-      from_container: "biblioteca"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el vaso de agua. Para el trébol."
 
@@ -124,7 +138,7 @@
   operators:
     - type: "TRANSFER"
       entity: "candelabro"
-      from_container: "biblioteca"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el candelabro. Su llama está inmóvil."
 
@@ -138,9 +152,23 @@
   operators:
     - type: "TRANSFER"
       entity: "antorcha"
-      from_container: "pasillo"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la antorcha."
+
+- hyper_edge_id: "he_tomar_grabado"
+  name: "Tomar el grabado"
+  priority: 10
+  clique:
+    subject: "player"
+    verb: "tomar"
+    target: "grabado"
+  operators:
+    - type: "TRANSFER"
+      entity: "grabado"
+      from_container: "@anchor"
+      to_container: "hero"
+  output: "Tomas el grabado del cuarto del guerrero."
 
 - hyper_edge_id: "he_tomar_antorcha_3"
   name: "Tomar la antorcha 3"
@@ -152,7 +180,7 @@
   operators:
     - type: "TRANSFER"
       entity: "antorcha_3"
-      from_container: "sala_del_minotauro"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la antorcha de llama azulada y fría."
 
@@ -166,7 +194,7 @@
   operators:
     - type: "TRANSFER"
       entity: "polvo_magico"
-      from_container: "alcoba_de_la_bruja"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el polvo mágico. Hace invisible."
 
@@ -180,7 +208,7 @@
   operators:
     - type: "TRANSFER"
       entity: "pocion_crecer"
-      from_container: "alcoba_de_la_bruja"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la poción. Huele fatal."
 
@@ -194,7 +222,7 @@
   operators:
     - type: "TRANSFER"
       entity: "vendajes"
-      from_container: "cuarto_del_guerrero"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas los vendajes. Manchados de sangre."
 
@@ -208,7 +236,7 @@
   operators:
     - type: "TRANSFER"
       entity: "piedra_filosofal"
-      from_container: "laboratorio_de_la_bestia"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la piedra filosofal. La quinta esencia."
 
@@ -222,7 +250,7 @@
   operators:
     - type: "TRANSFER"
       entity: "maquina_tiempo"
-      from_container: "laboratorio_de_la_bestia"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la máquina. Parece una moledora de carne."
 
@@ -236,7 +264,7 @@
   operators:
     - type: "TRANSFER"
       entity: "taza_cafe"
-      from_container: "sala_de_infusiones"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la taza de café."
 
@@ -250,7 +278,7 @@
   operators:
     - type: "TRANSFER"
       entity: "cigarro"
-      from_container: "sala_de_infusiones"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el cigarro."
 
@@ -264,7 +292,7 @@
   operators:
     - type: "TRANSFER"
       entity: "rosa"
-      from_container: "jardin"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la rosa. Es para la doncella."
 
@@ -278,7 +306,7 @@
   operators:
     - type: "TRANSFER"
       entity: "cuadro"
-      from_container: "alcoba_de_la_doncella"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el cuadro. Útil para destruir estatuas."
 
@@ -292,7 +320,7 @@
   operators:
     - type: "TRANSFER"
       entity: "corazon_unicornio"
-      from_container: "alcoba_de_la_doncella"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el corazón de unicornio. Para la arteria."
 
@@ -306,7 +334,7 @@
   operators:
     - type: "TRANSFER"
       entity: "paraguas"
-      from_container: "cuarto_del_hechicero"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el paraguas. Para Hermes y el esófago."
 
@@ -320,7 +348,7 @@
   operators:
     - type: "TRANSFER"
       entity: "talisman_aire"
-      from_container: "cuarto_del_hechicero"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el talismán de aire. Para la tráquea."
 
@@ -334,7 +362,7 @@
   operators:
     - type: "TRANSFER"
       entity: "martillo"
-      from_container: "sala_de_la_arana"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el martillo. Para puertas de madera."
 
@@ -348,7 +376,7 @@
   operators:
     - type: "TRANSFER"
       entity: "hacha"
-      from_container: "cuarto_de_los_vendajes"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el hacha. Para camas y árboles."
 
@@ -362,7 +390,7 @@
   operators:
     - type: "TRANSFER"
       entity: "espada"
-      from_container: "sala_de_armas"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la espada. Arma del Minotauro."
 
@@ -376,7 +404,7 @@
   operators:
     - type: "TRANSFER"
       entity: "lanza"
-      from_container: "sala_de_armas"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la lanza. Para Atenea y el estómago."
 
@@ -390,7 +418,7 @@
   operators:
     - type: "TRANSFER"
       entity: "ariete"
-      from_container: "sala_de_armas"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el ariete de hierro. Sirve para derribar la pared solitaria."
 
@@ -404,7 +432,7 @@
   operators:
     - type: "TRANSFER"
       entity: "arco"
-      from_container: "sala_de_armas"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el arco. Para el corazón."
 
@@ -418,7 +446,7 @@
   operators:
     - type: "TRANSFER"
       entity: "daga"
-      from_container: "sala_de_armas"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas la daga. Para la Arpía."
 
@@ -432,7 +460,7 @@
   operators:
     - type: "TRANSFER"
       entity: "latigo"
-      from_container: "sala_de_armas"
+      from_container: "@anchor"
       to_container: "hero"
   output: "Tomas el látigo. Para el lobo."
 

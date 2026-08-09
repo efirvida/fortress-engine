@@ -2,6 +2,6 @@ entity_id: "sala_de_la_bailarina"
 type: "room"
 name: "la sala de la bailarina"
 components:
-  description: "Una sala con espejos y una bailarina."
+  description: "Una sala con espejos y una bailarina. Ves: puerta_cristal, puerta_triangular."
   visited: false
 spatial_anchor: null

@@ -2,6 +2,6 @@ entity_id: "comedor"
 type: "room"
 name: "el Comedor"
 components:
-  description: "La mesa es tan alta que usted no puede ver lo que hay servido. Alguien se lamenta allá arriba."
+  description: "La mesa es tan alta que usted no puede ver lo que hay servido. Alguien se lamenta allá arriba. Ves: puerta_madera, tunel."
   visited: false
 spatial_anchor: null

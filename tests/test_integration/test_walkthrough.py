@@ -1065,23 +1065,22 @@ def test_fortaleza_bidirectional_round_trip():
 
 
 def test_fortaleza_bidirectional_preserves_gate_equivalence():
-    """A gated bidirectional passage keeps equivalent gate semantics on
-    both sides: the correct text unlocks each direction independently
-    (open state is copied by value, so the reverse edge re-requires the
-    text — matching the original's separate per-direction links)."""
+    """A gated bidirectional passage keeps equivalent gate semantics: the
+    correct text unlocks the door and BOTH directions become traversable
+    (opening one side propagates to the reverse edge — same door)."""
     fx = _FortalezaFixture()
     # Open the principal door from the exterior.
     events = fx.turn("ir puerta_principal diciendo Abrete Sesamo")
     assert fx.last_error(events) is None
     assert fx.hero_anchor() == "salon_de_recepciones"
-    # Return through the reverse edge: without text it is still closed.
+    # Return through the reverse edge: now open (propagated).
     events = fx.turn("ir puerta_principal")
-    assert fx.last_error(events) == "blocked"
-    assert fx.hero_anchor() == "salon_de_recepciones"
-    # With the correct text the reverse direction opens (equivalent gate).
-    events = fx.turn("ir puerta_principal diciendo Abrete Sesamo")
     assert fx.last_error(events) is None
     assert fx.hero_anchor() == "el_exterior_de_la_fortaleza"
+    # Crossing both ways again stays open (door remains unlocked).
+    events = fx.turn("ir puerta_principal")
+    assert fx.last_error(events) is None
+    assert fx.hero_anchor() == "salon_de_recepciones"
 
 
 def test_fortaleza_l2_password_gate_opens_with_decoded_text():

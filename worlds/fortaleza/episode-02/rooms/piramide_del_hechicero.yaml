@@ -2,6 +2,6 @@ entity_id: "piramide_del_hechicero"
 type: "room"
 name: "la Pirámide del Hechicero"
 components:
-  description: "Es una construcción gigantesca, a base de piedras. Al parecer, las piedras fueron colocadas sin orden alguno, olvidando las ventanas. El lugar está iluminado con numerosas antorchas."
+  description: "Es una construcción gigantesca, a base de piedras. Al parecer, las piedras fueron colocadas sin orden alguno, olvidando las ventanas. El lugar está iluminado con numerosas antorchas. Ves: puente, puerta_roble."
   visited: false
 spatial_anchor: null

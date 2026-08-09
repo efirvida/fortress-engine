@@ -2,6 +2,6 @@ entity_id: "sala_del_columna"
 type: "room"
 name: "la sala de la columna"
 components:
-  description: "Una sala con una columna de cristal gigante."
+  description: "Una sala con una columna de cristal gigante. Ves: cripta, puerta_hierro, puerta_madera, puerta_oculta, puerta_triangular, salida."
   visited: false
 spatial_anchor: null

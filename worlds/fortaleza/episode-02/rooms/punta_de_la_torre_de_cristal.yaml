@@ -2,6 +2,6 @@ entity_id: "punta_de_la_torre_de_cristal"
 type: "room"
 name: "la punta de la Torre de Cristal"
 components:
-  description: "Probablemente se encuentre a varios kilómetros de altura. Usted se alegra de que no hayan ventanas en el lugar."
+  description: "Probablemente se encuentre a varios kilómetros de altura. Usted se alegra de que no hayan ventanas en el lugar. Ves: escalera_caracol, puerta_cristal."
   visited: false
 spatial_anchor: null

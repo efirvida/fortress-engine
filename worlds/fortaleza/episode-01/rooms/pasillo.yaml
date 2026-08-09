@@ -2,6 +2,6 @@ entity_id: "pasillo"
 type: "room"
 name: "el pasillo"
 components:
-  description: "Tiene tres puertas al lado y una al final."
+  description: "Tiene tres puertas al lado y una al final. Ves: pasillo_armas, puerta, puerta_gris, puerta_prohibida, puerta_roja, puerta_vieja."
   visited: false
 spatial_anchor: null
