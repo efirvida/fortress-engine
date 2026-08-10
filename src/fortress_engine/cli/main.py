@@ -1,12 +1,14 @@
 """CLI entry point for fortress-engine.
 
-Provides the `fortress-engine` console script with three subcommands:
-run, validate, and test. Bridges the engine core to the terminal.
+Provides the `fortress-engine` console script with four subcommands:
+run, validate, test, and audit-graph. Bridges the engine core to the
+terminal.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -200,6 +202,21 @@ def main() -> None:
     test_parser.add_argument("--parser", default="classic", help="Parser plugin name")
     test_parser.add_argument("--narrator", default="template", help="Narrator plugin name")
 
+    # audit-graph subcommand
+    audit_parser = subparsers.add_parser(
+        "audit-graph", help="Audit macro graph integrity"
+    )
+    audit_parser.add_argument("world_path", help="Path to the world directory")
+    audit_parser.add_argument(
+        "--episode", default=None, help="Episode to audit (default: first loaded)"
+    )
+    audit_parser.add_argument(
+        "--json", action="store_true", help="Emit deterministic JSON report"
+    )
+    audit_parser.add_argument(
+        "--include-info", action="store_true", help="Include INFO findings"
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -213,6 +230,8 @@ def main() -> None:
         cmd_validate(args)
     elif args.command == "test":
         cmd_test(args)
+    elif args.command == "audit-graph":
+        cmd_audit_graph(args)
     else:  # pragma: no cover — argparse ensures only known subcommands reach here
         parser.print_help(sys.stderr)
         raise SystemExit(2)
@@ -376,3 +395,80 @@ def cmd_test(args: argparse.Namespace) -> None:
     else:
         print("FAIL")
         raise SystemExit(1)
+
+
+def cmd_audit_graph(args: argparse.Namespace) -> None:
+    """Handle the audit-graph subcommand.
+
+    Runs the static graph audit for the selected episode (first loaded by
+    default) and prints a grouped human report or deterministic JSON.
+
+    Exit codes: 0 = no ERROR findings, 1 = one or more ERROR findings,
+    2 = usage / missing or malformed world / unknown episode.
+    """
+    from fortress_engine.autoplay.graph_audit import GraphAudit
+
+    path = Path(args.world_path)
+
+    # Check if world.yaml exists
+    if not (path / "world.yaml").is_file():
+        print(f"Error: world.yaml not found at {path / 'world.yaml'}", file=sys.stderr)
+        raise SystemExit(2)
+
+    try:
+        loader = EntityLoader(str(path))
+        # Validate world.yaml structure so malformed worlds exit 2.
+        loader.load_world_config()
+        episodes = loader.load_episodes()
+        if not episodes:
+            print("Error: no episodes found", file=sys.stderr)
+            raise SystemExit(2)
+
+        if args.episode is None:
+            episode = episodes[0]
+        else:
+            matches = [ep for ep in episodes if ep.id == args.episode]
+            if not matches:
+                print(f"Error: Episode '{args.episode}' not found", file=sys.stderr)
+                raise SystemExit(2)
+            episode = matches[0]
+
+        report = GraphAudit(loader, episode).run()
+    except SystemExit:
+        raise
+    except Exception as e:
+        print(f"Error auditing world: {e}", file=sys.stderr)
+        raise SystemExit(2) from e
+
+    findings = [
+        f for f in report.findings if args.include_info or f.severity != "INFO"
+    ]
+
+    if args.json:
+        payload = report.to_dict()
+        payload["findings"] = [f.to_dict() for f in findings]
+        print(json.dumps(payload, sort_keys=True))
+    else:
+        _print_audit_human(findings)
+
+    raise SystemExit(1 if any(f.severity == "ERROR" for f in findings) else 0)
+
+
+def _print_audit_human(findings: list[Any]) -> None:
+    """Print findings grouped by severity (INFO omitted when filtered)."""
+    groups: dict[str, list[Any]] = {"ERROR": [], "WARN": [], "INFO": []}
+    for finding in findings:
+        groups[finding.severity].append(finding)
+
+    printed_any = False
+    for severity in ("ERROR", "WARN", "INFO"):
+        items = groups[severity]
+        if not items:
+            continue
+        printed_any = True
+        print(f"{severity} ({len(items)})")
+        for finding in items:
+            print(f"  [{finding.category}] {finding.location} — {finding.message}")
+
+    if not printed_any:
+        print("No findings.")

@@ -1,0 +1,13 @@
+schema: spec-driven
+change: explorer-graph-audit
+stage: archive
+created: 2026-08-10
+phase_state:
+  explore: done
+  propose: done
+  spec: done
+  design: done
+  tasks: done
+  apply: done
+  verify: done
+  archive: done

@@ -6,3 +6,9 @@ from .explorer import (  # noqa: F401
     MapComparison,
     MapComparator,
 )
+from .graph_audit import (  # noqa: F401
+    AuditReport,
+    Finding,
+    GraphAudit,
+    PassageRecord,
+)
