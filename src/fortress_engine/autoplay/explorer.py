@@ -24,7 +24,7 @@ import unicodedata
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Iterable
 
 from fortress_engine.engine.episode_manager import EpisodeManager
 from fortress_engine.engine.orchestrator import TurnOrchestrator
@@ -69,6 +69,7 @@ class ExplorationEvent:
     ok: bool
     narrator_text: str = ""
     error_code: str | None = None
+    gate_code: str | None = None
     game_over: bool = False
     turn_ended_count: int = 1
     note: str = ""
@@ -89,9 +90,27 @@ class BlindExplorer:
         self.episodes = self.loader.load_episodes()
         self.vocabulary = self.loader.load_vocabulary()
         self.crashes: list[tuple[str, str]] = []
+        # Solver seams (default off — behavior unchanged when unused):
+        # ``commit_hook`` is called for every KEPT command; returning False
+        # marks the goal as reached (``solved``).  ``turn_counter`` counts
+        # every attempted turn, including restored probes.
+        self.commit_hook: Callable[[str], bool] | None = None
+        self.solved: bool = False
+        self.turn_counter: int = 0
         self._build_runtime()
         self._learn_vocabulary()
         self._learn_passwords()
+
+    def _commit(self, command: str) -> None:
+        """Register *command* as kept progress with the optional commit hook.
+
+        A hook returning ``False`` marks the exploration as solved (goal
+        reached); keep-point loops then stop so no post-goal commands run.
+        The default ``None`` makes this a no-op — explorer behavior is
+        unchanged unless a hook is installed.
+        """
+        if self.commit_hook is not None and self.commit_hook(command) is False:
+            self.solved = True
 
     # ------------------------------------------------------------------
     # Runtime wiring
@@ -273,17 +292,28 @@ class BlindExplorer:
         and observes whether the item left the inventory; if the action
         consumed the item WITHOUT making room progress, it restores from the
         snapshot so exploration never gets stuck.
+
+        The LIGHTEST carried items are dropped first: heavy items are far
+        more likely to be plot keys (tools, artifacts) than 1kg filler, so
+        sacrificing a heavy item to carry a lighter one would strand
+        exploration.
         """
         need = self._item_weight(item_id)
-        inv = list(self.inventory())
         guard = 0
-        while self._current_weight() + need > self._max_weight() and inv:
+        while (
+            self._current_weight() + need > self._max_weight()
+            and not self.solved
+        ):
             guard += 1
             if guard > 100:
                 break
-            victim = inv.pop(0)
-            if victim not in self.inventory():
-                continue
+            candidates = [
+                i for i in self.inventory()
+                if self._item_weight(i) < need
+            ]
+            if not candidates:
+                break
+            victim = min(candidates, key=self._item_weight)
             snap = self.snapshot()
             for verb in self.verbs:
                 if verb in self.movement_verbs:
@@ -292,6 +322,7 @@ class BlindExplorer:
                 self._turn(f"{verb} {victim}")
                 if victim not in self.inventory():
                     # Item left inventory — keep this action committed.
+                    self._commit(f"{verb} {victim}")
                     break
             else:
                 # No verb removed it — restore and move on.
@@ -303,18 +334,29 @@ class BlindExplorer:
 
         Each probe runs under snapshot/restore so a lethal verb (e.g.
         ``abandonar``) never kills the explorer while searching for the
-        take verb.
+        take verb.  If the item is too heavy for the current inventory, the
+        explorer first drops carried items (via the world's own drop verb)
+        until it fits — otherwise a carry cap would permanently block items
+        such as the hacha that unlock passages.
         """
         if item_id in self.inventory():
             return True
-        for verb in self.verbs:
-            if verb in self.movement_verbs:
-                continue
-            snap = self.snapshot()
-            self._turn(f"{verb} {item_id}")
-            if item_id in self.inventory():
-                return True
-            self.restore(snap)
+        for attempt in range(2):
+            for verb in self.verbs:
+                if self.solved:
+                    return item_id in self.inventory()
+                if verb in self.movement_verbs:
+                    continue
+                snap = self.snapshot()
+                self._turn(f"{verb} {item_id}")
+                if item_id in self.inventory():
+                    self._commit(f"{verb} {item_id}")
+                    return True
+                self.restore(snap)
+            if attempt == 0:
+                # Make room (drop light fillers) and retry once — a key item
+                # may have failed only because the carry weight was full.
+                self._drop_for(item_id)
         return False
 
     def _probe_actions(
@@ -322,47 +364,114 @@ class BlindExplorer:
         anchor: str,
         discovery: Discovery,
         log: list[ExplorationEvent],
+        probed_cmds: dict[str, set[str]],
+        probed_sets: dict[str, tuple[set[str], set[str]]],
     ) -> None:
-        """Probe every verb from the vocabulary against every entity in the
-        current anchor, using snapshot/restore so a destructive action never
-        permanently blocks progress.
+        """Probe verbs against entities in the current anchor, using
+        snapshot/restore so a destructive action never permanently blocks
+        progress.
 
         For each (verb, target) the explorer snapshots, executes, observes
         what changed (inventory, flags, crossings), and KEEPS the action only
-        if it produced observable progress; otherwise it restores.  This is
-        fully generic: the explorer never assumes a verb means "take", "give",
-        "kill" or "drop".
+        if it produced positive observable progress (acquired an item or set
+        a flag); otherwise it restores.  Fully generic: the explorer never
+        assumes a verb means "take", "give", "kill" or "drop".
+
+        Revisits are DIFFERENTIAL: a (verb, target) already probed, and
+        instrument/recipient combos already probed for a given target/item
+        pair, are skipped.  Only NEW targets (entities newly seen in the
+        anchor) and NEW carried items (as instruments/recipients) are probed
+        — a freshly acquired item can unlock an action on an old target
+        (e.g. ``romper cama con hacha``), but a command that previously did
+        nothing does not need re-probing.
         """
-        targets = set(self.entities_in_anchor()) | set(self.inventory())
-        # Measure progress: inventory + flags + reachable exits.
+        # Probe targets are the room's OWN entities (what a player sees in the
+        # room); carried items only matter as instruments/recipients.  Probing
+        # carried items as TARGETS (e.g. ``mirar maza``) almost never opens a
+        # passage and bloats the matrix, so it is skipped.
+        current_targets = set(self.entities_in_anchor())
+        current_items = list(self.inventory())
+        anchor_entities = set(self.entities_in_anchor())
+        seen_targets, seen_items = probed_sets.get(anchor, (set(), set()))
+        new_targets = current_targets - seen_targets
+        new_items = set(current_items) - seen_items
+
         def progress_sig() -> tuple:
             return (
                 tuple(sorted(self.inventory())),
                 tuple(sorted(k for k, v in self.state.flag_book.items() if v)),
             )
 
-        for target in targets:
+        # Instrument/recipient probing is bounded to the most recently
+        # carried items (plus items present in the room): a fresh acquisition
+        # is the one most likely to unlock a new action on an old target
+        # (e.g. ``romper cama con hacha``), and capping the window keeps the
+        # probe matrix from exploding as the inventory grows.
+        MAX_PROBE_ITEMS = 6
+        instrument_items = sorted(anchor_entities & set(current_items))
+        instrument_items += [i for i in reversed(current_items)
+                             if i not in instrument_items][:MAX_PROBE_ITEMS]
+
+        # 1. Direct verb+target for NEW targets, plus instrument/recipient
+        #    combos using the bounded instrument window.  Targets iterate in
+        #    sorted order so exploration is byte-deterministic.
+        for target in sorted(new_targets):
+            if self.solved:
+                return
             for verb in self.verbs:
                 if verb in self.movement_verbs:
                     continue
-                # Direct verb+target.
                 self._probe_one(
-                    anchor, verb, target, None, discovery, log, progress_sig
+                    anchor, verb, target, None, discovery, log, progress_sig,
+                    probed_cmds,
                 )
-                # verb+target with each carried item as instrument.
-                for item in list(self.inventory()):
+                if self.solved:
+                    return
+                for item in instrument_items:
                     for prep in self.instrument_preps:
                         self._probe_one(
                             anchor, verb, target, item, discovery, log,
-                            progress_sig, use_instrument=True, prep=prep,
+                            progress_sig, probed_cmds, use_instrument=True,
+                            prep=prep,
                         )
-                # verb+carried-item with target as recipient.
-                for item in list(self.inventory()):
+                        if self.solved:
+                            return
                     for prep in self.recipient_preps:
                         self._probe_one(
                             anchor, verb, item, target, discovery, log,
-                            progress_sig, prep=prep,
+                            progress_sig, probed_cmds, prep=prep,
                         )
+                        if self.solved:
+                            return
+
+        # 2. For targets seen before, only NEW items used against the room's
+        #    OWN entities (anchor targets, not carried items) can unlock a new
+        #    action (e.g. ``romper cama con hacha``).  Direct verb+target was
+        #    already probed; combos among carried items never open a passage.
+        for target in sorted(anchor_entities - new_targets):
+            if self.solved:
+                return
+            for verb in self.verbs:
+                if verb in self.movement_verbs:
+                    continue
+                for item in new_items:
+                    for prep in self.instrument_preps:
+                        self._probe_one(
+                            anchor, verb, target, item, discovery, log,
+                            progress_sig, probed_cmds, use_instrument=True,
+                            prep=prep,
+                        )
+                        if self.solved:
+                            return
+                    for prep in self.recipient_preps:
+                        self._probe_one(
+                            anchor, verb, item, target, discovery, log,
+                            progress_sig, probed_cmds, prep=prep,
+                        )
+                        if self.solved:
+                            return
+
+        probed_sets[anchor] = (current_targets, set(current_items))
 
     def _probe_one(
         self,
@@ -373,6 +482,7 @@ class BlindExplorer:
         discovery: Discovery,
         log: list[ExplorationEvent],
         progress_sig,
+        probed_cmds: dict[str, set[str]],
         use_instrument: bool = False,
         prep: str | None = None,
     ) -> None:
@@ -384,6 +494,11 @@ class BlindExplorer:
         else:
             cmd = f"{verb} {target}"
 
+        tried = probed_cmds.setdefault(anchor, set())
+        if cmd in tried:
+            return
+        tried.add(cmd)
+
         before = progress_sig()
         snap = self.snapshot()
         ev = self._turn(cmd)
@@ -393,12 +508,20 @@ class BlindExplorer:
         if ev.game_over:
             # Death is never committed progress — restore immediately.
             self.restore(snap)
-        elif ev.ok and after != before:
-            # Observable progress — keep it committed.
-            # Record any newly acquired items.
-            for item_id in self.inventory():
-                if item_id not in before[0]:
-                    discovery.found_items[item_id] = anchor
+            return
+        before_inv, before_flags = before
+        after_inv, after_flags = after
+        gained = set(after_inv) - set(before_inv)
+        flags_changed = before_flags != after_flags
+        if ev.ok and (gained or flags_changed):
+            # POSITIVE progress — keep it committed: the explorer acquired an
+            # item or set a flag.  A pure item REMOVAL (e.g. ``dejar x``)
+            # without any gain or flag change is not progress and is restored,
+            # so a carried key/item (e.g. the panuelo that unlocks a passage)
+            # is never needlessly dropped.
+            for item_id in gained:
+                discovery.found_items[item_id] = anchor
+            self._commit(cmd)
         else:
             # No progress or destructive — restore to keep exploring.
             self.restore(snap)
@@ -408,6 +531,7 @@ class BlindExplorer:
     # ------------------------------------------------------------------
 
     def _turn(self, command: str) -> ExplorationEvent:
+        self.turn_counter += 1
         anchor_before = self.anchor()
         narrator_text = ""
         try:
@@ -436,10 +560,27 @@ class BlindExplorer:
             ok=error is None and not game_over,
             narrator_text=narrator_text.strip(),
             error_code=error.payload.get("error_code") if error else None,
+            gate_code=(
+                (error.payload.get("data") or {}).get("gate_code")
+                if error
+                else None
+            ),
             game_over=game_over,
             turn_ended_count=turn_ended,
             note=(f" turn_ended={turn_ended}" if turn_ended != 1 else ""),
         )
+
+    def _speech_marker(self) -> str:
+        """Return the world's speech marker (e.g. "diciendo"), or the
+        documented fallback when the world defines none.
+
+        Replaces the hardcoded literal in the password open command so a
+        non-Spanish world (or a world with a custom marker) still opens its
+        text-gated passages.
+        """
+        if self.vocabulary and self.vocabulary.speech_markers:
+            return self.vocabulary.speech_markers[0]
+        return "diciendo"
 
     # ------------------------------------------------------------------
     # Tokenization of narrator text (language from vocabulary)
@@ -513,6 +654,186 @@ class BlindExplorer:
     # Blind exploration driver
     # ------------------------------------------------------------------
 
+    def _progress_sig(self) -> tuple:
+        """Inventory + flags signature — used to detect whether a probe pass
+        changed anything (so movement passes are only re-run when useful)."""
+        return (
+            tuple(sorted(self.inventory())),
+            tuple(sorted(k for k, v in self.state.flag_book.items() if v)),
+        )
+
+    def _collect_room_tokens(
+        self,
+        anchor: str,
+        discovery: Discovery,
+        log: list[ExplorationEvent],
+    ) -> set[str]:
+        """Look around — read the narrator (for room discovery tokens)."""
+        room_tokens: set[str] = set()
+        for cmd in self._look_commands():
+            ev = self._turn(cmd)
+            log.append(ev)
+            room_tokens.update(self._tokenize(ev.narrator_text))
+        discovery.room_tokens.setdefault(anchor, set()).update(room_tokens)
+        return room_tokens
+
+    def _take_present_items(
+        self,
+        anchor: str,
+        discovery: Discovery,
+    ) -> bool:
+        """Try to acquire every item present in this anchor (observed from
+        runtime state — a player sees what is in the room).  The explorer
+        does not know which verb means "take": it probes all non-movement
+        verbs and observes whether the item entered the inventory.
+        Returns True if at least one item was acquired."""
+        took = False
+        for item_id in self.entities_in_anchor():
+            if item_id in self.inventory():
+                continue
+            if self._take_if_present(item_id):
+                discovery.found_items[item_id] = anchor
+                took = True
+        return took
+
+    def _movement_pass(
+        self,
+        anchor: str,
+        tokens: set[str],
+        discovery: Discovery,
+        log: list[ExplorationEvent],
+        visited: set[str],
+        queue: deque,
+        in_queue: set[str],
+        blocked_rooms: dict[str, set[str]],
+        room_snap: dict[str, Any] | None = None,
+        passwords: Iterable[str] | None = None,
+    ) -> bool:
+        """Try movement through *tokens* (all inferred tokens, or only the
+        previously-blocked ones on a re-run/revisit).
+
+        On a successful crossing the explorer returns to the current room;
+        if the reverse crossing is observed it is recorded too, so
+        ``_navigate_to`` can later travel back through the discovery tree.
+        A crossing into a one-way dead-end (the return fails) is recorded
+        but *room_snap* is restored so the explorer never gets trapped in a
+        sink room.  A passage that stays blocked (item, flag or text gate)
+        is remembered in *blocked_rooms* for a later re-visit.
+
+        Text-closed passages brute-force the GLOBAL password list read from
+        the YAML config (cultural knowledge a human player would have).
+
+        No per-token snapshot is taken: a blocked/no-action attempt leaves
+        state unchanged, and a fatal movement gate emits ``game_over``
+        WITHOUT mutating state (the engine does not teleport or set flags on
+        a fatal gate).  The only restore point needed is the room-entry
+        snapshot, used when a one-way crossing strands the explorer.
+        """
+        crossed_any = False
+        for token in sorted(tokens):
+            if self.solved:
+                return True
+            gate_blocked = False
+            crossed = False
+            for cmd in self._movement_commands(token):
+                ev = self._turn(cmd)
+                log.append(ev)
+                new_anchor = self.anchor()
+                if ev.game_over:
+                    # Fatal gate (forbids_item/requires_item + death_message):
+                    # the engine does not change state, so the explorer is
+                    # still alive in this room.  Remember the token so the
+                    # room is re-visited once the needed item/flag is acquired.
+                    gate_blocked = True
+                    continue
+                if ev.ok and new_anchor and new_anchor != anchor:
+                    discovery.crossed_passages.add(
+                        (anchor, new_anchor, token)
+                    )
+                    blocked_rooms.get(anchor, set()).discard(token)
+                    if new_anchor not in visited:
+                        visited.add(new_anchor)
+                        queue.append(new_anchor)
+                        in_queue.add(new_anchor)
+                    crossed = True
+                    crossed_any = True
+                    self._commit(cmd)
+                    if self.solved:
+                        # Goal reached by the crossing — stop, do not return.
+                        return True
+                    # Return to keep exploring this room.
+                    back = self._turn(cmd)
+                    log.append(back)
+                    if self.anchor() == anchor:
+                        # Bidirectional — record the reverse crossing so
+                        # navigation can come back through this passage.
+                        discovery.crossed_passages.add(
+                            (new_anchor, anchor, token)
+                        )
+                        self._commit(cmd)
+                    elif room_snap is not None:
+                        # One-way / sink: restore so the explorer is not
+                        # trapped in the destination; the crossing is already
+                        # recorded and the destination is queued.  Nothing is
+                        # committed for the failed return.
+                        self.restore(room_snap)
+                    break  # one movement verb is enough per token
+
+                if ev.error_code in ("blocked", "text_closed"):
+                    # A real gate (item/flag/text).  Try each password from
+                    # the knowledge base (text gates); remember the room for
+                    # a later re-visit once the needed item/flag is acquired.
+                    gate_blocked = True
+                    password_source = (
+                        self.passwords if passwords is None else passwords
+                    )
+                    for password in sorted(password_source):
+                        if not password or len(password) < 2:
+                            continue
+                        open_cmd = (
+                            f"{self.movement_verbs[0]} {token} "
+                            f"{self._speech_marker()} {password}"
+                        )
+                        ev2 = self._turn(open_cmd)
+                        log.append(ev2)
+                        if ev2.game_over:
+                            continue
+                        if ev2.ok and not ev2.game_over:
+                            # The open command already crossed into the new
+                            # room — record the discovery NOW.
+                            opened_anchor = self.anchor()
+                            if opened_anchor and opened_anchor != anchor:
+                                discovery.crossed_passages.add(
+                                    (anchor, opened_anchor, token)
+                                )
+                                blocked_rooms.get(anchor, set()).discard(token)
+                                if opened_anchor not in visited:
+                                    visited.add(opened_anchor)
+                                    queue.append(opened_anchor)
+                                    in_queue.add(opened_anchor)
+                                crossed = True
+                                crossed_any = True
+                                self._commit(open_cmd)
+                                if self.solved:
+                                    return True
+                            # Return to the current room to keep exploring it
+                            # (the door is open now).
+                            back = self._turn(cmd)
+                            log.append(back)
+                            if self.anchor() == anchor:
+                                discovery.crossed_passages.add(
+                                    (opened_anchor, anchor, token)
+                                )
+                                self._commit(cmd)
+                            elif room_snap is not None:
+                                self.restore(room_snap)
+                            break
+                    if crossed:
+                        break
+            if not crossed and gate_blocked:
+                blocked_rooms.setdefault(anchor, set()).add(token)
+        return crossed_any
+
     def explore(self, max_rooms: int | None = None):
         """Play the game by reading the narrator.  Returns the discovered
         topology and the full event log."""
@@ -524,92 +845,89 @@ class BlindExplorer:
 
         visited: set[str] = set()
         queue: deque = deque([start])
+        in_queue: set[str] = {start}
         visited.add(start)
         guard = 0
+        # Rooms where a movement token was blocked (item/flag/text gate),
+        # mapped to the tokens that failed.  They are re-queued (bounded)
+        # when the inventory/flags change so a later-acquired item or flag
+        # can unlock them.
+        blocked_rooms: dict[str, set[str]] = {}
+        # Signature observed the last time each blocked room was processed.
+        room_sig: dict[str, tuple] = {}
+        revisit: dict[str, int] = {}
+        MAX_REVISITS = 8
+        # Commands already probed per room (memoized across visits/revisits
+        # so a revisited room does not re-probe the same command matrix).
+        probed_cmds: dict[str, set[str]] = {}
+        # Per-room sets of already-probed targets and carried items, so a
+        # revisit only probes NEW targets/items (differential probing).
+        probed_sets: dict[str, tuple[set[str], set[str]]] = {}
 
-        while queue and (max_rooms is None or len(visited) < max_rooms):
+        def _requeue(room: str) -> None:
+            """Re-queue *room* unless it is already queued (dedup — a room
+            must never be queued twice, which would re-probe it repeatedly)."""
+            if room not in in_queue:
+                queue.append(room)
+                in_queue.add(room)
+
+        while queue and not self.solved and (
+            max_rooms is None or len(visited) < max_rooms
+        ):
             guard += 1
             if guard > 20_000:
                 break
             anchor = queue.popleft()
+            in_queue.discard(anchor)
             if anchor != self.anchor():
-                self._navigate_to(anchor, discovery, log)
-
-            # 1. Look around — read the narrator (for room discovery tokens).
-            room_tokens: set[str] = set()
-            for cmd in self._look_commands():
-                ev = self._turn(cmd)
-                log.append(ev)
-                room_tokens.update(self._tokenize(ev.narrator_text))
-            discovery.room_tokens.setdefault(anchor, set()).update(room_tokens)
-
-            # 1b. Try to acquire every item present in this anchor (observed
-            # from runtime state — a player sees what is in the room).  The
-            # explorer does not know which verb means "take": it probes all
-            # non-movement verbs and observes whether the item entered the
-            # inventory.
-            for item_id in self.entities_in_anchor():
-                if item_id in self.inventory():
+                if not self._navigate_to(anchor, discovery, log):
+                    # Could not navigate there yet (one-way chain or unknown
+                    # crossing) — re-queue instead of processing the WRONG
+                    # room.  Bounded by the guard + a retry cap.
+                    revisit[anchor] = revisit.get(anchor, 0) + 1
+                    if revisit[anchor] <= MAX_REVISITS:
+                        _requeue(anchor)
                     continue
-                if self._take_if_present(item_id):
-                    discovery.found_items[item_id] = anchor
 
-            # 2. Try movement through every inferred token.  If a passage is
-            # text-closed, brute-force the GLOBAL password list read from the
-            # YAML config (cultural knowledge a human player would have).
-            for token in room_tokens:
-                for cmd in self._movement_commands(token):
-                    ev = self._turn(cmd)
-                    log.append(ev)
-                    new_anchor = self.anchor()
-                    if (
-                        ev.ok
-                        and not ev.game_over
-                        and new_anchor
-                        and new_anchor != anchor
-                    ):
-                        discovery.crossed_passages.add(
-                            (anchor, new_anchor, token)
-                        )
-                        if new_anchor not in visited:
-                            visited.add(new_anchor)
-                            queue.append(new_anchor)
-                        # Return to keep exploring this room.
-                        back = self._turn(cmd)
-                        log.append(back)
-                        break  # one movement verb is enough per token
+            room_tokens = self._collect_room_tokens(anchor, discovery, log)
 
-                    # Text-closed: try each password from the YAML list.
-                    if ev.error_code in ("blocked", "text_closed"):
-                        for password in self.passwords:
-                            if not password or len(password) < 2:
-                                continue
-                            open_cmd = (
-                                f"{self.movement_verbs[0]} {token} "
-                                f"diciendo {password}"
-                            )
-                            ev2 = self._turn(open_cmd)
-                            log.append(ev2)
-                            if ev2.ok and not ev2.game_over:
-                                # The open command already crossed into the
-                                # new room — record the discovery NOW.
-                                opened_anchor = self.anchor()
-                                if opened_anchor and opened_anchor != anchor:
-                                    discovery.crossed_passages.add(
-                                        (anchor, opened_anchor, token)
-                                    )
-                                    if opened_anchor not in visited:
-                                        visited.add(opened_anchor)
-                                        queue.append(opened_anchor)
-                                # Return to the current room to keep exploring
-                                # it (the door is open now).
-                                back = self._turn(cmd)
-                                log.append(back)
-                                break
+            # Room-entry snapshot: the restore point for a one-way sink (a
+            # crossing whose return fails would otherwise trap the explorer
+            # in a dead-end destination).
+            room_snap = self.snapshot()
 
-            # 3. Probe every verb against every entity in this anchor,
-            # snapshot/restore so destructive actions never block progress.
-            self._probe_actions(anchor, discovery, log)
+            # Take + move, then probe once, then re-run take + movement so an
+            # item or flag acquired by the probe pass unlocks a gated passage
+            # in the SAME room visit.  The movement re-run only re-tries the
+            # tokens that were blocked (already-crossed passages are skipped).
+            self._take_present_items(anchor, discovery)
+            self._movement_pass(
+                anchor, room_tokens | blocked_rooms.get(anchor, set()),
+                discovery, log, visited, queue, in_queue, blocked_rooms,
+                room_snap,
+            )
+            self._probe_actions(anchor, discovery, log, probed_cmds, probed_sets)
+            # Re-run movement so an item or flag acquired by the probe pass
+            # unlocks a gated passage in the SAME room visit.  Only the
+            # blocked tokens are re-tried (already-crossed ones are skipped).
+            self._movement_pass(
+                anchor, blocked_rooms.get(anchor, set()),
+                discovery, log, visited, queue, in_queue, blocked_rooms,
+                room_snap,
+            )
+
+            # Re-visit blocked rooms whose gates may now be satisfiable —
+            # new items/flags were acquired somewhere else since they were
+            # last processed.  Bounded by MAX_REVISITS + the hard guard.
+            # (Revisits are enabled via DISABLE_REVISITS flag for profiling.)
+            sig_now = self._progress_sig()
+            if not getattr(self, "_no_revisit", False):
+                for room in list(blocked_rooms):
+                    if room in visited and room_sig.get(room) != sig_now:
+                        if revisit.get(room, 0) < MAX_REVISITS:
+                            revisit[room] = revisit.get(room, 0) + 1
+                            _requeue(room)
+            room_sig[anchor] = sig_now
 
         discovery.visited_rooms = visited
         return discovery, log
@@ -619,16 +937,21 @@ class BlindExplorer:
         target: str,
         discovery: Discovery,
         log: list[ExplorationEvent],
-    ) -> None:
-        """Move to *target* using only already-discovered crossings."""
+    ) -> bool:
+        """Move to *target* using only already-discovered crossings.
+
+        Reverse crossings are recorded when the return trip was observed, so
+        the BFS can travel back up the discovery tree as well as forward.
+        Returns True only if the protagonist actually arrives at *target*.
+        """
         start = self.anchor()
         if start == target:
-            return
+            return True
         q: deque = deque([(start, [])])
         seen = {start}
         while q:
             node, path = q.popleft()
-            for (f, t, p) in discovery.crossed_passages:
+            for (f, t, p) in sorted(discovery.crossed_passages):
                 if f != node or t in seen:
                     continue
                 seen.add(t)
@@ -640,10 +963,18 @@ class BlindExplorer:
                         else "ir"
                     )
                     for passage in np:
-                        ev = self._turn(f"{verb} {passage}")
+                        cmd = f"{verb} {passage}"
+                        ev = self._turn(cmd)
                         log.append(ev)
-                    return
+                        if ev.game_over or not ev.ok:
+                            # A step failed (e.g. one-way in reverse) — abort.
+                            return False
+                        self._commit(cmd)
+                        if self.solved:
+                            return True
+                    return self.anchor() == target
                 q.append((t, np))
+        return False
 
 
 # ======================================================================

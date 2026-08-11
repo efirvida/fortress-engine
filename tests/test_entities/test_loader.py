@@ -240,6 +240,80 @@ carry_over:
         loader.load_episodes()
 
 
+def test_load_episodes_skips_answers_yaml(tmp_path):
+    """episodes/answers.yaml (curated per-episode mapping) is exempted from
+    EpisodeYAML validation by filename: the real episode still loads and the
+    mapping file never raises (solver KB file, explorer-solver change 2.1).
+    """
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = tmp_path / "answers_skip"
+    _write_yaml(base / "world.yaml", "world_id: test\nname: Test\n")
+    (base / "episodes").mkdir(parents=True)
+    _write_yaml(
+        base / "episodes" / "episode-01.yaml",
+        """\
+id: "episode-01"
+name: "Ep"
+order: 1
+start_anchor: "r1"
+goal:
+  conditions: []
+  output: "Win!"
+carry_over:
+  inventory: []
+  flags: []
+""",
+    )
+    _write_yaml(
+        base / "episodes" / "answers.yaml",
+        """\
+episode-01:
+  passwords:
+    - "abrete sesamo"
+  riddle_answers:
+    - "el sol"
+""",
+    )
+    loader = EntityLoader(str(base))
+    episodes = loader.load_episodes()
+
+    assert [e.id for e in episodes] == ["episode-01"]
+
+
+def test_load_episodes_answers_skip_is_filename_exact(tmp_path):
+    """The exemption is filename-exact: episodes/notes.yaml is still
+    validated as an EpisodeYAML and raises on an invalid shape.
+    """
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = tmp_path / "notes_still_validated"
+    _write_yaml(base / "world.yaml", "world_id: test\nname: Test\n")
+    (base / "episodes").mkdir(parents=True)
+    _write_yaml(
+        base / "episodes" / "episode-01.yaml",
+        """\
+id: "episode-01"
+name: "Ep"
+order: 1
+start_anchor: "r1"
+goal:
+  conditions: []
+  output: "Win!"
+carry_over:
+  inventory: []
+  flags: []
+""",
+    )
+    _write_yaml(
+        base / "episodes" / "notes.yaml",
+        "just: notes\nnot: an episode\n",
+    )
+    loader = EntityLoader(str(base))
+    with pytest.raises(ValueError, match="Invalid episode in"):
+        loader.load_episodes()
+
+
 # ===================================================================
 # load_shared_entities
 # ===================================================================

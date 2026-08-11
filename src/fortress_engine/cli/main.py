@@ -217,6 +217,28 @@ def main() -> None:
         "--include-info", action="store_true", help="Include INFO findings"
     )
 
+    # solve subcommand
+    solve_parser = subparsers.add_parser(
+        "solve", help="Verify episode completability via blind exploration"
+    )
+    solve_parser.add_argument("world_path", help="Path to the world directory")
+    solve_parser.add_argument(
+        "--episode", default=None,
+        help="Episode to solve (default: first loaded)",
+    )
+    solve_parser.add_argument(
+        "--answers", default=None,
+        help="Path to curated answers YAML override",
+    )
+    solve_parser.add_argument(
+        "--json", action="store_true",
+        help="Emit deterministic JSON verdict",
+    )
+    solve_parser.add_argument(
+        "--max-turns", type=int, default=50_000,
+        help="Maximum turn budget (default: 50000)",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -232,6 +254,8 @@ def main() -> None:
         cmd_test(args)
     elif args.command == "audit-graph":
         cmd_audit_graph(args)
+    elif args.command == "solve":
+        cmd_solve(args)
     else:  # pragma: no cover — argparse ensures only known subcommands reach here
         parser.print_help(sys.stderr)
         raise SystemExit(2)
@@ -452,6 +476,92 @@ def cmd_audit_graph(args: argparse.Namespace) -> None:
         _print_audit_human(findings)
 
     raise SystemExit(1 if any(f.severity == "ERROR" for f in findings) else 0)
+
+
+def cmd_solve(args: argparse.Namespace) -> None:
+    """Handle the solve subcommand.
+
+    Runs the static graph audit and BFS solver for the selected episode.
+    Exit codes: 0 = completable, 1 = not completable (diagnosis),
+    2 = usage / missing or malformed world / unknown episode.
+    """
+    from fortress_engine.autoplay.solver import AnswerBook, Solver
+
+    path = Path(args.world_path)
+
+    if not (path / "world.yaml").is_file():
+        print(f"Error: world.yaml not found at {path / 'world.yaml'}", file=sys.stderr)
+        raise SystemExit(2)
+
+    try:
+        loader = EntityLoader(str(path))
+        loader.load_world_config()
+        episodes = loader.load_episodes()
+        if not episodes:
+            print("Error: no episodes found", file=sys.stderr)
+            raise SystemExit(2)
+
+        if args.episode is None:
+            episode = episodes[0]
+        else:
+            matches = [ep for ep in episodes if ep.id == args.episode]
+            if not matches:
+                print(
+                    f"Error: Episode '{args.episode}' not found",
+                    file=sys.stderr,
+                )
+                raise SystemExit(2)
+            episode = matches[0]
+
+        kb = AnswerBook(
+            episode_id=episode.id,
+            world_path=str(path),
+            answers_path=args.answers,
+        )
+
+        solver = Solver(loader, episode)
+        verdict = solver.solve(max_turns=args.max_turns)
+    except SystemExit:
+        raise
+    except Exception as e:
+        print(f"Error solving world: {e}", file=sys.stderr)
+        raise SystemExit(2) from e
+
+    if args.json:
+        print(json.dumps(verdict.to_dict(), sort_keys=True))
+    else:
+        _print_solve_human(verdict)
+
+    raise SystemExit(0 if verdict.completable else 1)
+
+
+def _print_solve_human(verdict) -> None:
+    """Print human-readable solve result: verdict line, walkthrough, diagnosis."""
+    if verdict.completable:
+        print(f"Verdict: SOLVABLE ({verdict.total_turns} turns)")
+    else:
+        print(f"Verdict: NOT SOLVABLE ({verdict.total_turns} turns)")
+
+    if verdict.static_errors:
+        print("\nStatic Errors:")
+        for finding in verdict.static_errors:
+            print(f"  [{finding.category}] {finding.location} — {finding.message}")
+
+    if verdict.walkthrough:
+        print("\nWalkthrough:")
+        for i, cmd in enumerate(verdict.walkthrough, 1):
+            print(f"  {i:>2}. {cmd}")
+
+    if verdict.stuck_rooms:
+        print(f"\nStuck Rooms: {', '.join(verdict.stuck_rooms)}")
+
+    if verdict.unsatisfiable_gates:
+        print("\nUnsatisfiable Gates:")
+        for gate in verdict.unsatisfiable_gates:
+            print(
+                f"  {gate.passage} | {gate.predicate}: {gate.required} "
+                f"— {gate.reason}"
+            )
 
 
 def _print_audit_human(findings: list[Any]) -> None:

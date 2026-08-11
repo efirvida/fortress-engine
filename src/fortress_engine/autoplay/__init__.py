@@ -1,4 +1,4 @@
-"""Autoplay — blind world explorer + map comparator for the fortress engine."""
+"""Autoplay — blind world explorer, static graph audit and Stage B solver."""
 from .explorer import (  # noqa: F401
     BlindExplorer,
     Discovery,
@@ -11,4 +11,11 @@ from .graph_audit import (  # noqa: F401
     Finding,
     GraphAudit,
     PassageRecord,
+)
+from .solver import (  # noqa: F401
+    AnswerBook,
+    GateDiagnosis,
+    GateReason,
+    Solver,
+    SolveVerdict,
 )
