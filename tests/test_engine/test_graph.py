@@ -1270,6 +1270,51 @@ def test_resolve_special_values_literal():
 # ===================================================================
 
 
+@pytest.mark.parametrize("anchor_ids", [[], ["unused"]])
+def test_iter_macro_edges_empty(anchor_ids, capsys):
+    """Empty graphs and anchors without edges yield nothing, repeatedly."""
+    engine = DualGraphEngine()
+    for anchor_id in anchor_ids:
+        engine.add_anchor(_make_entity(anchor_id))
+
+    assert list(engine.iter_macro_edges()) == []
+    assert list(engine.iter_macro_edges()) == []
+    assert engine.get_edges_from_anchor("unused") == []
+    assert engine.get_macro_edge_by_passage_name("unused", "north") is None
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == ("", "")
+
+
+def test_iter_macro_edges_preserves_group_order_and_references(capsys):
+    """Traversal groups by first source insertion, not anchor or global order."""
+    from dataclasses import asdict
+
+    engine = DualGraphEngine()
+    for anchor_id in ["a", "empty", "z"]:
+        engine.add_anchor(_make_entity(anchor_id))
+    first = MacroEdge("first", "z", "a", "bidirectional", "north",
+                      requires_text="secret", open=False)
+    second = MacroEdge("second", "a", "z", "unidirectional", "south")
+    third = MacroEdge("third", "z", "empty", "unidirectional", "east")
+    engine.build_macro_graph([], [first, second, third])
+    before = [asdict(edge) for edge in [first, second, third]]
+
+    for _ in range(2):
+        result = list(engine.iter_macro_edges())
+        assert len(result) == 3
+        assert all(actual is expected for actual, expected in
+                   zip(result, [first, third, second], strict=True))
+    assert [asdict(edge) for edge in [first, second, third]] == before
+    assert engine.get_edges_from_anchor("z") == [first, third]
+    assert engine.get_edges_from_anchor("a") == [second]
+    assert engine.get_edges_from_anchor("empty") == []
+    assert engine.get_macro_edge_by_passage_name("z", "north") is first
+    assert engine.get_macro_edge_by_passage_name("a", "south") is second
+    assert engine.get_macro_edge_by_passage_name("a", "north") is None
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == ("", "")
+
+
 def test_get_edges_from_anchor():
     """get_edges_from_anchor returns macro edges from a given room."""
     from fortress_engine.engine.graph import MacroEdge, DualGraphEngine
