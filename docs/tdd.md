@@ -639,8 +639,10 @@ def execute_transfer(
 
     Validaciones:
     - Si to_container es el protagonista activo:
-      1. Si entity.weight > player.max_weight → error_code: "not_portable" + data.
-      2. Si sum(inventory_items.weight) + entity.weight > player.max_weight → error_code: "too_heavy" + data.
+      max_weight ausente, None o booleano False significa capacidad ilimitada.
+      Un límite numérico, incluido 0, es explícito; no hay default numérico.
+      1. Si existe límite y entity.weight > player.max_weight → error_code: "not_portable" + data.
+      2. Si existe límite y sum(inventory_items.weight) + entity.weight > player.max_weight → error_code: "too_heavy" + data.
       3. Si entity.portable == false → error: entidad no portable.
     - entity debe existir en from_container.
 

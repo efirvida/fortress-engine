@@ -100,7 +100,7 @@ def _build_engine(
         state = WorldState(
             entities={
                 "hero": Entity(
-                    "hero", "player", "Hero", {"max_weight": 20}, None
+                    "hero", "player", "Hero", {}, None
                 ),
             },
             player_controlled_entities=["hero"],

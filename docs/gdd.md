@@ -199,7 +199,7 @@ Componentes obligatorios de Player:
 | Componente | Tipo | Descripción |
 |------------|------|-------------|
 | `player_controlled` | boolean | `true` para todos los protagonistas controlables. El motor trata esta colección como un conjunto, nunca como singleton. |
-| `max_weight` | integer | Capacidad máxima de carga. Por defecto 40. |
+| `max_weight` | integer / null / false | Capacidad máxima de carga definida por el mundo. Ausente, `null` o booleano `false`: ilimitada. `0` numérico: capacidad cero. Sin default numérico en el motor. |
 | `state` | string | `"alive"` o `"dead"`. Si `"dead"` para el protagonista activo, el motor emite `game_over`. |
 
 Componentes opcionales:
@@ -465,8 +465,8 @@ Mueve una entidad de un contenedor a otro.
 **Precondiciones**:
 - `entity` existe en `from`.
 - Si `to` es un inventario (`player_controlled`), se valida el peso:
-- Si `entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `error_code="not_portable"` + `data`; el texto español vive en el narrador (`DEFAULT_SPANISH_MESSAGES["error_output.not_portable"]`).
-- Si `sum(inventory_items.weight) + entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `error_code="too_heavy"` + `data`; el texto español vive en el narrador (`DEFAULT_SPANISH_MESSAGES["error_output.too_heavy"]`).
+- Si hay un límite numérico y `entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `error_code="not_portable"` + `data`; el texto español vive en el narrador (`DEFAULT_SPANISH_MESSAGES["error_output.not_portable"]`).
+- Si hay un límite numérico y `sum(inventory_items.weight) + entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `error_code="too_heavy"` + `data`; el texto español vive en el narrador (`DEFAULT_SPANISH_MESSAGES["error_output.too_heavy"]`).
 - Si `entity.portable == false` y `to` es un inventario: la acción falla.
 
 **Postcondiciones**:

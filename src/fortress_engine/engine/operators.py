@@ -12,7 +12,7 @@ from dataclasses import dataclass, field, fields
 from typing import Any, Union, TYPE_CHECKING
 
 from fortress_engine.engine.state import LIMBO_ROOM_ID, WorldState
-from fortress_engine.entities.components import WEIGHT, MAX_WEIGHT
+from fortress_engine.entities.components import WEIGHT, inventory_capacity
 
 if TYPE_CHECKING:
     from fortress_engine.engine.graph import DualGraphEngine
@@ -149,10 +149,10 @@ def execute_transfer(
         item_weight: int = entity.components.get(WEIGHT, 0)
 
         protagonist = state.get_entity(protagonist_id)
-        max_capacity: int = protagonist.components.get(MAX_WEIGHT, 40)
+        max_capacity = inventory_capacity(protagonist)
 
         # Individual weight exceeds max capacity.
-        if item_weight > max_capacity:
+        if max_capacity is not None and item_weight > max_capacity:
             return OperatorResult(
                 success=False,
                 code="not_portable",
@@ -165,7 +165,7 @@ def execute_transfer(
 
         # Inventory capacity check.
         current_weight = state.get_inventory_weight(protagonist_id)
-        if current_weight + item_weight > max_capacity:
+        if max_capacity is not None and current_weight + item_weight > max_capacity:
             return OperatorResult(
                 success=False,
                 code="too_heavy",
