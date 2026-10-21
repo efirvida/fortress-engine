@@ -6,6 +6,8 @@ and coordinates graph replacement and player teleportation.
 All tests follow Strict TDD: RED first (this file), then GREEN in episode_manager.py.
 """
 
+import pytest
+
 from fortress_engine.entities.entity import CarryOver, Episode, Entity, GoalCondition, GoalConditions
 from fortress_engine.engine.graph import DualGraphEngine
 from fortress_engine.engine.state import WorldState
@@ -197,6 +199,83 @@ def test_constructor_stores_episodes(tmp_path):
     bus = EventBus()
     mgr = EpisodeManager(episodes, str(world), bus)
     assert mgr is not None
+
+
+def test_goal_evaluator_for_is_fresh_and_bound_without_mutation(tmp_path, capsys):
+    from dataclasses import asdict
+    from fortress_engine.engine.episode_manager import EpisodeManager
+    from fortress_engine.engine.goal_evaluator import GoalEvaluator
+    from fortress_engine.entities.loader import EntityLoader
+
+    world = _make_two_episode_world(tmp_path)
+    episodes = EntityLoader(str(world)).load_episodes()
+    definitions_before = [asdict(ep) for ep in episodes]
+    bus = EventBus()
+    received = []
+    bus.subscribe("*", received.append)
+    mgr = EpisodeManager(episodes, str(world), bus)
+    available_before = mgr.get_available_episodes()
+    state = WorldState(current_episode_id="episode-01", turn_number=7)
+    state.set_flag("won_ep1", True)
+    state_before = state.to_dict()
+
+    first = mgr.goal_evaluator_for("episode-01")
+    again = mgr.goal_evaluator_for("episode-01")
+    second = mgr.goal_evaluator_for("episode-02")
+    assert isinstance(first, GoalEvaluator)
+    assert isinstance(again, GoalEvaluator)
+    assert isinstance(second, GoalEvaluator)
+    assert first is not again
+    assert first is not second
+    assert again is not second
+    assert first.output == again.output == "You completed Part One!"
+    assert second.output == "You completed Part Two!"
+    assert first.side_effects == again.side_effects == second.side_effects == []
+    assert first.check(state) is True
+    assert again.check(state) is True
+    assert second.check(state) is False
+    assert state.to_dict() == state_before
+
+    state.set_flag("won_ep1", False)
+    state.set_flag("won_ep2", True)
+    updated_before = state.to_dict()
+    assert first.check(state) is False
+    assert again.check(state) is False
+    assert second.check(state) is True
+    assert state.to_dict() == updated_before
+    assert [asdict(ep) for ep in episodes] == definitions_before
+    assert mgr.get_available_episodes() == available_before
+    assert len(available_before) == 1
+    assert available_before[0] is next(ep for ep in episodes if ep.id == "episode-01")
+    assert received == []
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == ("", "")
+
+
+@pytest.mark.parametrize("unknown_id", ["missing-episode", ""])
+def test_goal_evaluator_for_unknown_id_is_exact_and_nonmutating(tmp_path, capsys, unknown_id):
+    from dataclasses import asdict
+    from fortress_engine.engine.episode_manager import EpisodeManager
+    from fortress_engine.entities.loader import EntityLoader
+
+    world = _make_two_episode_world(tmp_path)
+    episodes = EntityLoader(str(world)).load_episodes()
+    before = [asdict(ep) for ep in episodes]
+    bus = EventBus()
+    received = []
+    bus.subscribe("*", received.append)
+    mgr = EpisodeManager(episodes, str(world), bus)
+    available = mgr.get_available_episodes()
+
+    with pytest.raises(KeyError) as error:
+        mgr.goal_evaluator_for(unknown_id)
+
+    assert error.value.args == (unknown_id,)
+    assert [asdict(ep) for ep in episodes] == before
+    assert mgr.get_available_episodes() == available
+    assert received == []
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == ("", "")
 
 
 def test_get_available_episodes(tmp_path):

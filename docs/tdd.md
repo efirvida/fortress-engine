@@ -536,6 +536,15 @@ class DualGraphEngine:
         """Retorna las aristas Macro que salen de una anchor."""
         return self._macro_edges.get(anchor_id, [])
 
+    def iter_macro_edges(self) -> Iterator[MacroEdge]:
+        """Itera referencias a las aristas registradas sin modificar el grafo.
+
+        Orden: grupos de anchor origen según su primera inserción de arista;
+        dentro de cada grupo, orden de inserción de aristas. Sin aristas,
+        no produce valores. No crea aristas inversas ni ordena los datos.
+        """
+        ...
+
     def get_macro_edge_by_passage_name(
         self, anchor_id: str, passage_name: str
     ) -> MacroEdge | None:
@@ -915,6 +924,15 @@ class EpisodeManager:
 
     def get_available_episodes(self) -> list[Episode]:
         """Retorna los episodios disponibles para iniciar."""
+        ...
+
+    def goal_evaluator_for(self, episode_id: str) -> GoalEvaluator:
+        """Retorna un GoalEvaluator nuevo ligado al goal del episodio indicado.
+
+        No inicia episodios ni cambia estado, disponibilidad o eventos; también
+        permite consultar episodios no disponibles. ID desconocido: KeyError
+        con args == (episode_id,).
+        """
         ...
 
     def unload_graph(self, graph: DualGraphEngine) -> None:

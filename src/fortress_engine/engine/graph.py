@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import sys
 import unicodedata
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
 
@@ -260,6 +261,14 @@ class DualGraphEngine:
     def get_edges_from_anchor(self, anchor_id: str) -> list[MacroEdge]:
         """Return macro edges originating from *anchor_id*."""
         return list(self._macro_edges.get(anchor_id, []))
+
+    def iter_macro_edges(self) -> Iterator[MacroEdge]:
+        """Yield registered edges by source-group insertion order, then edge order.
+
+        Yields the original edge references without changing the graph.
+        """
+        for edges in self._macro_edges.values():
+            yield from edges
 
     def get_macro_edge_by_passage_name(
         self, anchor_id: str, passage_name: str

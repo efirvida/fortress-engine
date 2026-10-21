@@ -20,6 +20,7 @@ from fortress_engine.events.event_types import (
 )
 
 if TYPE_CHECKING:
+    from fortress_engine.engine.goal_evaluator import GoalEvaluator
     from fortress_engine.engine.graph import DualGraphEngine
 
 
@@ -319,6 +320,16 @@ class EpisodeManager:
             for eid in self._available_ids
             if eid in self._episodes
         ]
+
+    def goal_evaluator_for(self, episode_id: str) -> GoalEvaluator:
+        """Return a fresh evaluator bound to the specified episode's goal.
+
+        Does not start the episode or change availability. Unknown IDs raise
+        ``KeyError`` with ``args == (episode_id,)``.
+        """
+        from fortress_engine.engine.goal_evaluator import GoalEvaluator
+
+        return GoalEvaluator(self._episodes[episode_id].goal)
 
     def unload_graph(self, graph: DualGraphEngine) -> None:
         """Clear the graph's internal data structures."""
