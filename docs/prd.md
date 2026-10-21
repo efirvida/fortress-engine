@@ -153,7 +153,7 @@ Cuando el destino de una operación TRANSFER es `player.inventory`, el motor eje
 1. **Peso máximo individual**: si `entity.weight > player.max_weight`, la acción se rechaza con output `"Usted no puede cargar con eso."`.
 2. **Capacidad del inventario**: si `sum(inventory_items.weight) + entity.weight > player.max_weight`, la acción se rechaza con output `"Sería demasiado peso."`.
 
-El valor `player.max_weight` se configura en `world.yaml` (por defecto 40). Cada entidad portable define su `weight` como componente (ej: `weight: 39` para el Bote y la Maza, objetos al borde del límite).
+El valor `player.max_weight` se define como componente del protagonista en los datos del mundo. Si `max_weight` está ausente, es `null` o es el booleano `false`, la capacidad es ilimitada. Un valor numérico, incluido `0`, define un límite explícito; no hay un límite numérico por defecto en el motor. Fortaleza configura `max_weight: 40` en su protagonista. Cada entidad portable define su `weight` como componente (ej: `weight: 39` para el Bote y la Maza, objetos al borde del límite de Fortaleza).
 
 ### 4.5 Estado Global y Persistencia
 

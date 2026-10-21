@@ -218,14 +218,15 @@ def test_transfer_non_portable_with_weight_fails():
     assert state.get_entity("statue").spatial_anchor == "room_01"
 
 
-def test_transfer_default_max_weight_is_40():
-    """Protagonist without max_weight can carry items up to 40 units."""
+@pytest.mark.parametrize("capacity", [{}, {MAX_WEIGHT: None}, {MAX_WEIGHT: False}])
+def test_transfer_without_numeric_capacity_is_unlimited(capacity):
+    """Worlds may omit capacity or explicitly disable its weight limit."""
     from fortress_engine.engine.operators import TransferOp, execute_transfer
 
     hero = _make_entity(
         "hero",
         type_="player",
-        components={"player_controlled": True},
+        components={"player_controlled": True, **capacity},
         spatial_anchor="room_01",
         name="Hero",
     )
@@ -247,13 +248,38 @@ def test_transfer_default_max_weight_is_40():
 
     op_too = TransferOp(entity="too_heavy", from_container="room_01", to_container="hero")
     result_too = execute_transfer(state, op_too, protagonist_id="hero")
-    assert result_too.success is False
-    assert result_too.code == "not_portable"
-    assert result_too.data == {
+    assert result_too.success is True
+    assert result_too.code is None
+    assert result_too.data == {}
+    assert result_too.events_payload == {
         "entity_id": "too_heavy",
-        "item_weight": 41,
-        "max_capacity": 40,
+        "from_container_id": "room_01",
+        "to_container_id": "hero",
     }
+    assert state.get_inventory_weight("hero") == 81
+
+@pytest.mark.parametrize("weight, success", [(0, True), (1, False)])
+def test_transfer_zero_capacity_is_not_unlimited(weight, success):
+    from fortress_engine.engine.operators import TransferOp, execute_transfer
+
+    item = _make_entity("parcel", components={WEIGHT: weight}, spatial_anchor="room_01")
+    state = _minimal_state(_make_player(capacity=0), extras={"parcel": item})
+    before = state.to_dict()
+    result = execute_transfer(
+        state, TransferOp(entity="parcel", from_container="room_01", to_container="hero"), "hero"
+    )
+    assert result.success is success
+    if success:
+        assert result.code is None
+        assert result.events_payload == {
+            "entity_id": "parcel", "from_container_id": "room_01", "to_container_id": "hero"
+        }
+        assert item.spatial_anchor == "hero"
+    else:
+        assert result.code == "not_portable"
+        assert result.data == {"entity_id": "parcel", "item_weight": 1, "max_capacity": 0}
+        assert result.events_payload is None
+        assert state.to_dict() == before
 
 
 def test_transfer_to_nonexistent_container_fails():
