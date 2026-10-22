@@ -432,7 +432,7 @@ def test_load_macro_edges(tmp_path):
     loader = EntityLoader(str(base))
     edges = loader.load_macro_edges("episode-01")
 
-    assert len(edges) == 1
+    assert len(edges) == 2  # bidirectional declaration plus generated reverse
     edge = edges[0]
     assert isinstance(edge, MacroEdge)
     assert edge.macro_edge_id == "door_to_hall"
@@ -505,6 +505,52 @@ def test_load_macro_edges_maps_generic_predicates(tmp_path):
     assert edge.open is False
 
 
+
+
+
+@pytest.mark.parametrize("declared_reverse", [False, True])
+def test_bidirectional_loading_copies_fields_and_preserves_authored_edges(tmp_path, declared_reverse, capsys):
+    from dataclasses import asdict
+    import yaml
+    from fortress_engine.entities.loader import EntityLoader
+
+    forward = dict(
+        macro_edge_id="door", from_anchor="a", to_anchor="b",
+        direction="bidirectional", passage_name="Puerta", passage_description="Piedra.",
+        question="¿Quién?", requires_text="ábrete", requires_item="key",
+        forbids_item="sword", requires_flag="ready", forbids_flag="curse",
+        death_message="Has muerto.", open=False,
+    )
+    reverse = {**forward, "macro_edge_id": "authored", "from_anchor": "b",
+               "to_anchor": "a", "passage_description": "Otro lado."}
+    # Separate files ensure deduplication considers all declarations, not just
+    # the file currently being read. Directed edges and self-loops stay intact.
+    _write_yaml(tmp_path / "ep/macros/a.yaml", yaml.safe_dump(forward))
+    others = [dict(macro_edge_id="loop", from_anchor="a", to_anchor="a",
+                   direction="bidirectional", passage_name="loop"),
+              dict(macro_edge_id="exit", from_anchor="a", to_anchor="b",
+                   direction="unidirectional", passage_name="exit")]
+    if declared_reverse:
+        others.append(reverse)
+    _write_yaml(tmp_path / "ep/macros/z.yml", yaml.safe_dump(others))
+    loader = EntityLoader(str(tmp_path))
+    edges = loader.load_macro_edges("ep")
+    assert [e.macro_edge_id for e in edges] == (
+        ["door", "loop", "exit", "authored"] if declared_reverse
+        else ["door", "loop", "exit", "door_reverse"]
+    )
+    assert asdict(edges[0]) == forward
+    expected = reverse if declared_reverse else {
+        **forward, "macro_edge_id": "door_reverse", "from_anchor": "b", "to_anchor": "a"
+    }
+    assert asdict(edges[-1]) == expected
+    edges[-1].open = True
+    assert edges[0].open is False
+    assert [asdict(e) for e in loader.load_macro_edges("ep")][-1] == expected
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == ("", "")
+
+
 # ===================================================================
 # load_hyper_edges
 # ===================================================================
@@ -575,7 +621,7 @@ def test_load_episode_data(tmp_path):
     assert len(data["rooms"]) == 1
     assert len(data["items"]) == 1
     assert len(data["npcs"]) == 1
-    assert len(data["macro_edges"]) == 1
+    assert len(data["macro_edges"]) == 2  # forward and generated reverse
     assert len(data["hyper_edges"]) == 1
 
 
@@ -767,7 +813,7 @@ passage_name: "up"
     loader = EntityLoader(str(base))
     edges = loader.load_macro_edges("episode-01")
 
-    assert len(edges) == 2  # original list + single dict
+    assert len(edges) == 3  # bidirectional list entry expands; directed dict does not
     single = [e for e in edges if e.macro_edge_id == "single_door"]
     assert len(single) == 1
     assert single[0].to_anchor == "room_03"

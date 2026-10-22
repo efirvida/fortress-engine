@@ -492,13 +492,12 @@ class DualGraphEngine:
         is_fatal = edge.death_message is not None
         passage = edge.passage_name
 
-        # Text gate: a closed edge unlocks when the player says the right text.
-        if edge.requires_text is not None and not edge.open:
-            if text is not None and _normalize_text(text) == _normalize_text(
+        # Check text now, but commit the unlock only after every gate passes.
+        unlocking = edge.requires_text is not None and not edge.open
+        if unlocking:
+            if text is None or _normalize_text(text) != _normalize_text(
                 edge.requires_text
             ):
-                edge.open = True
-            else:
                 return MacroGateResult(
                     is_valid=False,
                     is_fatal=is_fatal,
@@ -558,12 +557,32 @@ class DualGraphEngine:
                 ),
             )
 
+        if unlocking:
+            edge.open = True
+            self._open_reverse_edges(edge)
+
         return MacroGateResult(
             is_valid=True,
             is_fatal=False,
             gate_code="",
             data={"passage_name": passage},
         )
+
+    def _open_reverse_edges(self, edge: MacroEdge) -> None:
+        """Unlock matching bidirectional mirrors, never independent directed edges.
+
+        Match topology and exact passage name, not generated IDs: authored
+        reverses and unlocking from the generated side obey the same contract.
+        """
+        if edge.direction != "bidirectional":
+            return
+        for candidate in self.get_edges_from_anchor(edge.to_anchor):
+            if (
+                candidate.direction == "bidirectional"
+                and candidate.to_anchor == edge.from_anchor
+                and candidate.passage_name == edge.passage_name
+            ):
+                candidate.open = True
 
     # -------------------------------------------------------------------
     # Special values

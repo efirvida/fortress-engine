@@ -1200,6 +1200,62 @@ def test_macro_edge_forbids_flag_kills_with_flag():
 # -------------------------------------------------------------------
 
 
+@pytest.mark.parametrize("direction", ["bidirectional", "unidirectional"])
+@pytest.mark.parametrize("start_reverse", [False, True])
+def test_locked_passage_opens_only_its_bidirectional_mirror(direction, start_reverse, capsys):
+    from dataclasses import replace
+
+    state = _minimal_state()
+    engine = DualGraphEngine()
+    forward = MacroEdge("door", "a", "b", direction, "Puerta",
+                        requires_text="ábrete", open=False)
+    reverse = replace(forward, macro_edge_id="authored", from_anchor="b", to_anchor="a")
+    unrelated = [replace(reverse, macro_edge_id="door_reverse", from_anchor="elsewhere"),
+                 replace(reverse, macro_edge_id="other", passage_name="Otra"),
+                 replace(reverse, macro_edge_id="wrong_target", to_anchor="c")]
+    engine.build_macro_graph([], unrelated + [forward, reverse])
+    first, mirror = (reverse, forward) if start_reverse else (forward, reverse)
+    before = state.to_dict()
+    assert engine.validate_macro_edge(first, state, " ABRETE ") == MacroGateResult(
+        True, False, "", {"passage_name": "Puerta"})
+    assert first.open is True
+    assert mirror.open is (direction == "bidirectional")
+    assert [edge.open for edge in unrelated] == [False, False, False]
+    assert state.to_dict() == before
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == ("", "")
+
+
+@pytest.mark.parametrize("gate,value,code,data_key", [
+    ("requires_item", "key", "requires_item", "required_item"),
+    ("forbids_item", "sword", "forbids_item", "forbids_item"),
+    ("requires_flag", "ready", "requires_flag", "required_flag"),
+    ("forbids_flag", "curse", "forbids_flag", "forbids_flag"),
+])
+@pytest.mark.parametrize("fatal", [False, True])
+def test_text_unlock_waits_for_all_gates(gate, value, code, data_key, fatal, capsys):
+    from dataclasses import asdict, replace
+
+    engine = DualGraphEngine()
+    state = _minimal_state()
+    state.entities["sword"] = _make_entity("sword", spatial_anchor="hero")
+    state.set_flag("curse", True)
+    edge = MacroEdge("door", "a", "b", "bidirectional", "Puerta",
+                     requires_text="secret", open=False,
+                     death_message="Has muerto." if fatal else None, **{gate: value})
+    reverse = replace(edge, macro_edge_id="door_reverse", from_anchor="b", to_anchor="a")
+    engine.build_macro_graph([], [edge, reverse])
+    before = (state.to_dict(), [asdict(e) for e in engine.iter_macro_edges()])
+    data = {"passage_name": "Puerta", data_key: value}
+    if fatal:
+        data["death_message"] = "Has muerto."
+    assert engine.validate_macro_edge(edge, state, "secret") == MacroGateResult(
+        False, fatal, code, data)
+    assert (state.to_dict(), [asdict(e) for e in engine.iter_macro_edges()]) == before
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == ("", "")
+
+
 def test_macro_gate_result_is_frozen():
     """MacroGateResult is a frozen dataclass."""
     mr = MacroGateResult(

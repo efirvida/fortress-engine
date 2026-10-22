@@ -213,6 +213,8 @@ class MacroEdge:
 - Las aristas con `requires_text` arrancan con `open: False`. Se abren cuando el jugador dice el texto correcto (coincidencia insensible a mayúsculas y tildes).
 - Una arista sin predicados tiene `open: True` siempre.
 - El campo `open` es mutable — se modifica durante el juego (a diferencia del resto de campos que son inmutables después de la carga).
+- El loader expande `direction: bidirectional`: conserva primero todas las declaraciones en su orden de carga y agrega una copia inversa con ID `<id>_reverse`, anchors intercambiadas y los demás campos intactos. No agrega copia si ya existe la combinación inversa `(from_anchor, to_anchor, passage_name)` exacta; las declaraciones explícitas, los self-loops y las aristas dirigidas se conservan. Sin aristas, retorna `[]`.
+- Desbloquear por texto solo modifica `open` después de aprobar **todos** los predicados. Un rechazo conserva ambas aristas y el estado del mundo, sin cambiar códigos de error ni eventos/turnos. Al aprobar, abre también las aristas bidireccionales registradas con anchors inversas y el mismo `passage_name` exacto, incluso si fueron declaradas explícitamente o se desbloquea desde la copia inversa. Las aristas unidireccionales son independientes; sus demás predicados no se omiten.
 - `death_message` es el único discriminador entre fatal y bloqueado; el motor nunca interpreta nombres de tipos de conexión.
 
 ### 3.4 Operators
@@ -584,7 +586,7 @@ class DualGraphEngine:
         ...
 
     def validate_macro_edge(
-        self, edge: MacroEdge, state: WorldState
+        self, edge: MacroEdge, state: WorldState, text: str | None = None
     ) -> 'MacroGateResult':
         """
         Evalúa los predicados de una arista Macro (GDD 2.2).
@@ -1283,7 +1285,7 @@ class EntityLoader:
         ...
 
     def load_macro_edges(self, episode_id: str) -> list['MacroEdge']:
-        """Carga todas las aristas Macro desde episode-XX/macros/*.yaml."""
+        """Carga aristas Macro y expande las bidireccionales según §3.3."""
         ...
 
     def load_hyper_edges(self, episode_id: str) -> list['HyperEdge']:
@@ -1781,7 +1783,7 @@ Este flujo describe lo que ocurre cuando el motor carga un mundo (PRD 4.8, GDD 2
    - Validar componentes `mood`, `brain_type`, `hit_points`.
 
 8. **Cargar aristas Macro** desde `episode-XX/macros/*.yaml`:
-   - Cada archivo → un `MacroEdge`.
+   - Cada declaración → un `MacroEdge`; luego se agregan las inversas bidireccionales faltantes según §3.3. La inserción en el grafo no vuelve a expandirlas.
    - Validar que no contengan campos legados (`connection_type`, `password`, `answer`): `MacroEdgeYAML` usa `extra="forbid"` y falla ruidosamente ante ellos.
 
 9. **Cargar Hiper-Aristas** desde `episode-XX/actions/*.yaml`:
