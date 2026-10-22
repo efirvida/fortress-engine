@@ -270,6 +270,16 @@ class DualGraphEngine:
         for edges in self._macro_edges.values():
             yield from edges
 
+    def iter_hyper_edges(self) -> Iterator[HyperEdge]:
+        """Yield registered hyper edges by anchor group, verb group, then priority.
+
+        Yields the original edge references without changing the graph. An
+        edge registered under several anchors is yielded once per anchor.
+        """
+        for by_verb in self._hyper_edges.values():
+            for edges in by_verb.values():
+                yield from edges
+
     def get_macro_edge_by_passage_name(
         self, anchor_id: str, passage_name: str
     ) -> MacroEdge | None:
