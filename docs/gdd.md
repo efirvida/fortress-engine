@@ -5,6 +5,8 @@
 **Idioma**: Español
 **Depende de**: PRD v2.0, Gap Analysis #12, Event System #13
 
+**Última limpieza**: 2026-10-21 — contradicciones entre PRD/GDD/TDD resueltas contra el código. Decisiones de diseño abiertas: ver epic #99 (https://github.com/efirvida/fortress-engine/issues/99).
+
 ---
 
 ## 1. Introducción
@@ -17,7 +19,7 @@ Este documento define el diseño completo del Motor de Grafo Semántico —una m
 |-----------|-----|
 | **PRD** (`prd.md`) | Qué construimos, por qué, para quién. Define la visión y el alcance. |
 | **GDD** (este documento) | **Puente entre el PRD y el TDD.** Describe el diseño con suficiente detalle para que un desarrollador lo implemente y un diseñador cree mundos. |
-| **TDD** (futuro) | Cómo se implementa: estructura de clases Python, esquema SQLite, API REST. |
+| **TDD** (`tdd.md`) | Cómo se implementa: estructura de clases Python, esquema SQLite, contratos de plugins. No existe ni está planificada una API REST. |
 
 **El GDD responde WHAT y WHY, no HOW**. Los detalles de implementación (clases concretas, nombres de módulos, firmas de métodos) pertenecen al TDD.
 
@@ -42,7 +44,7 @@ El motor modela todos los elementos del mundo como **entidades**: una bolsa de c
 
 ```yaml
 entity_id: "fortaleza-1-antorcha-01"
-type: "item"          # item | room | npc | player | container | door
+type: "item"          # cadena opaca definida por el creador del mundo (convención: item | room | npc | player | container | door)
 name: "Antorcha"
 components:
   description: |
@@ -60,12 +62,32 @@ spatial_anchor: "fortaleza-1-room-07"
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `entity_id` | string | Identificador único global. Se recomienda la convención `<mundo>-<episodio>-<tipo>-<nombre>`. |
-| `type` | enum | Uno de: `item`, `room`, `npc`, `player`, `container`, `door` |
+| `type` | string | Cadena opaca definida por el creador del mundo. El motor no la valida ni ramifica por ella; `item`, `room`, `npc`, `player`, `container` y `door` son solo convenciones. |
 | `name` | string | Nombre que el parser usa para matchear comandos del jugador. En español, con tildes. |
 | `components` | dict | Diccionario clave-valor con los atributos de la entidad. Las claves son strings; los valores pueden ser string, número, booleano, o lista. |
 | `spatial_anchor` | string \| null | `entity_id` del contenedor donde está la entidad. `null` significa que no está en ninguna parte (destruida, en limbo). Para el jugador, es el `entity_id` de la room actual. |
 
+#### Componentes reservados por el motor
+
+Solo estos componentes son leídos por el código del motor. Todo lo demás es dato del mundo (se usa únicamente a través del mecanismo genérico de `{placeholders}` en `output`, o por predicados de las Hiper-Aristas).
+
+| Componente | Quién lo lee | Semántica |
+|------------|--------------|-----------|
+| `weight` | Operadores (TRANSFER) | Peso de la entidad al calcular la carga de un contenedor. |
+| `max_weight` | `inventory_capacity` (`entities/components.py`) | Capacidad máxima del contenedor. Ausente, `null` o `false`: ilimitada. `0` numérico: capacidad cero. Sin default numérico en el motor. |
+| `portable` | Operadores (TRANSFER) | Si es `false`, el TRANSFER falla con el código `not_portable`. |
+
+Los errores de peso se devuelven como códigos (`not_portable`, `too_heavy`); el texto vive en el narrador (`DEFAULT_SPANISH_MESSAGES` de `plugins/template_narrator.py`: «Usted no puede cargar con eso.» / «Sería demasiado peso.»).
+
+> **Nota:** el CLI lee `is_dead` en el protagonista, y la bandera de derrota `player_dead` está fijada en el orquestador (ver 2.5). Ninguno es un componente o bandera configurable por el mundo.
+>
+> **Abierto:** componentes reservados, derrota como dato y rama por `type == "player"` en el CLI — ver #88.
+
+Los componentes `dark`, `visited`, `synonyms`, `combat_pattern`, `mood`, `brain_type`, `hit_points`, `lethalweap`, `likeness`, `dialogue` y `player_controlled` que aparecen en las secciones siguientes son **convenciones del mundo Fortaleza que el motor no lee** (la oscuridad no está implementada, el motor no establece `visited`, el parser clásico solo compara `name`).
+
 #### Tipos de entidad y sus componentes
+
+Los «tipos» siguientes son convenciones de ejemplo: el motor es agnóstico al `type`.
 
 ##### Room
 
@@ -87,13 +109,13 @@ components:
 spatial_anchor: null   # las rooms no tienen anclaje — son el anclaje
 ```
 
-Componentes obligatorios de Room:
+Componentes convencionales de Room:
 
 | Componente | Tipo | Descripción |
 |------------|------|-------------|
-| `description` | string (multilínea) | Texto que se muestra al entrar por primera vez, y al ejecutar `MIRAR`. |
-| `visited` | boolean | El motor lo establece en `true` la primera vez que un protagonista entra. Se usa para decidir si mostrar la descripción completa. |
-| `dark` | boolean | Si es `true`, la room requiere una fuente de luz en el inventario del protagonista. Sin ella, el motor impide ver, examinar o interactuar. |
+| `description` | string (multilínea) | Texto que se muestra al entrar por primera vez, y al ejecutar `MIRAR` (vía `{placeholder}` en el `output` de la Hiper-Arista). |
+| `visited` | boolean | Convención del mundo. **El motor no lo establece** (TELEPORT no lo modifica); un mundo que lo quiera debe marcarlo con TRANSFORM. |
+| `dark` | boolean | Convención del mundo. **La oscuridad no está implementada**: el motor no consulta este componente. |
 
 Componentes opcionales:
 
@@ -119,12 +141,12 @@ components:
 spatial_anchor: "fortaleza-1-room-01"
 ```
 
-Componentes obligatorios de Item:
+Componentes convencionales de Item (`weight` y `portable` son leídos por el motor; ver «Componentes reservados»):
 
 | Componente | Tipo | Descripción |
 |------------|------|-------------|
-| `description` | string | Texto mostrado al examinar el ítem (`EXAMINAR <item>`). |
-| `weight` | integer | Peso en unidades. Se compara con `player.max_weight` durante TRANSFER al inventario. |
+| `description` | string | Texto mostrado al examinar el ítem (`EXAMINAR <item>`), vía `{placeholder}`. |
+| `weight` | integer | Peso en unidades. Se compara con el `max_weight` del destino durante TRANSFER. |
 | `portable` | boolean | Si es `false`, el ítem no puede transferirse al inventario (ej: una estatua fija, un mueble). |
 
 Componentes opcionales:
@@ -133,7 +155,7 @@ Componentes opcionales:
 |------------|------|-------------|
 | `state` | string | Estado actual del ítem: `"idle"`, `"encendida"`, `"volteado"`, `"roto"`. Se modifica con TRANSFORM. |
 | `light_source` | boolean | Si es `true`, ilumina rooms oscuras. |
-| `synonyms` | list | Nombres alternativos que el parser reconoce para este ítem. |
+| `synonyms` | list | Convención del mundo; **el parser clásico no lo lee** (solo compara `name`). |
 | `edible` | boolean | Si es `true`, puede consumirse (no usado en Fortaleza, pero disponible para otros mundos). |
 
 ##### NPC
@@ -160,7 +182,7 @@ components:
 spatial_anchor: "fortaleza-1-room-06"
 ```
 
-Componentes obligatorios de NPC:
+Componentes convencionales de NPC (el motor no lee ninguno de ellos salvo el mecanismo genérico de placeholders):
 
 | Componente | Tipo | Descripción |
 |------------|------|-------------|
@@ -173,10 +195,10 @@ Componentes opcionales:
 
 | Componente | Tipo | Descripción |
 |------------|------|-------------|
-| `lethalweap` | string | Nombre del arma que mata a este NPC. Solo aplica a NPCs tipo Guard y TDaugther. Si no está presente, el NPC muere con cualquier arma (Troll). |
+| `lethalweap` | string | Convención del mundo: nombre del arma que mata a este NPC. El motor no lo lee; la lógica real vive en las Hiper-Aristas (instrument + prioridad). |
 | `likeness` | string | Nombre del ítem que el NPC acepta como regalo. Solo para Trolls. |
 | `dialogue` | dict | Mapa de claves de estado (`HiData`, `LowData`) a texto de diálogo. |
-| `combat_pattern` | string | `"guard"`, `"troll"`, o `"tdaugther"`. Define qué patrón de combate usar. Si no se especifica, se infiere de la presencia de `lethalweap`. |
+| `combat_pattern` | string | Convención del mundo (`"guard"`, `"troll"`, `"tdaugther"`). El motor no lo lee ni infiere nada de `lethalweap`. |
 
 ##### Player
 
@@ -194,13 +216,13 @@ components:
 spatial_anchor: "fortaleza-1-room-01"
 ```
 
-Componentes obligatorios de Player:
+Componentes convencionales de Player (el motor solo lee `max_weight`; el CLI lee `is_dead`; `player_controlled` no es leído por el motor):
 
 | Componente | Tipo | Descripción |
 |------------|------|-------------|
 | `player_controlled` | boolean | `true` para todos los protagonistas controlables. El motor trata esta colección como un conjunto, nunca como singleton. |
-| `max_weight` | integer | Capacidad máxima de carga. Por defecto 40. |
-| `state` | string | `"alive"` o `"dead"`. Si `"dead"` para el protagonista activo, el motor emite `game_over`. |
+| `max_weight` | integer / null / false | Capacidad máxima de carga definida por el mundo. Ausente, `null` o booleano `false`: ilimitada. `0` numérico: capacidad cero. Sin default numérico en el motor. |
+| `state` | string | Convención del mundo (`"alive"` / `"dead"`). El motor no lo lee: la derrota la decide la bandera `player_dead` (orquestador) y el CLI consulta `is_dead` — ver #88. |
 
 Componentes opcionales:
 
@@ -349,6 +371,8 @@ Cuando el jugador ejecuta un comando de movimiento (ej: `IR PUERTA PRINCIPAL`), 
 
 1. Busca en la room actual una arista Macro cuyo `passage_name` matchee el comando del jugador.
 2. **Predicado de texto** (`requires_text`): si la arista está cerrada (`open: false`), el motor espera que el comando incluya el texto (`ABRIR PUERTA PRINCIPAL DICIENDO <texto>`). Si coincide (insensible a mayúsculas y tildes), abre la arista (`open: true`) y permite cruzar. Si no, el cruce se bloquea (o es fatal si hay `death_message`).
+
+   > **Abierto:** el estado `open` vive en la arista del grafo (`MacroEdge.open`), no en `WorldState` ni en el log de eventos, así que se pierde al guardar/cargar; abrir una arista bidireccional abre también su espejo (`<id>_reverse`) — ver #79.
 3. **Predicados de ítem** (`requires_item` / `forbids_item`): verifica el inventario del protagonista activo. Si fallan, el cruce se bloquea (o es fatal si hay `death_message`).
 4. **Predicados de bandera** (`requires_flag` / `forbids_flag`): verifica el libro de banderas. Si fallan, el cruce se bloquea (o es fatal si hay `death_message`).
 5. `death_message` es el único discriminador entre **fatal** y **bloqueado**: el motor nunca interpreta nombres de tipos de conexión.
@@ -358,6 +382,8 @@ Cuando el jugador ejecuta un comando de movimiento (ej: `IR PUERTA PRINCIPAL`), 
 ### 2.3 Grafo Micro (Interacciones de Escena)
 
 Dentro de cada room, el Grafo Micro contiene Hiper-Aristas que definen qué acciones son posibles en esa escena. Cada Hiper-Arista es un nodo de acción que requiere una **Clique de Participación** para activarse.
+
+> **Abierto:** en la práctica las aristas funcionan como un índice global: el cargador copia las registradas en `start_anchor` a cada anchor que no tiene ninguna, y el filtrado por escena ocurre solo al validar la clique (presencia de los miembros en la anchor del sujeto) — ver #83.
 
 #### Estructura completa de una Hiper-Arista
 
@@ -378,8 +404,8 @@ clique:
 operators:
   - type: "TRANSFER"
     entity: "fortaleza-1-npc-ciclope"
-    from: "fortaleza-1-room-06"
-    to: null
+    from_container: "fortaleza-1-room-06"
+    to_container: null
   - type: "FLAG"
     flag: "ciclope_muerto"
     value: true
@@ -413,6 +439,8 @@ Una Hiper-Arista solo se ejecuta si todos los miembros requeridos de la Clique e
 | `target` | La entidad sobre la que se actúa. | Debe estar en la misma anchor que `subject`, o en el inventario de `subject`. |
 | `instrument` | La herramienta o arma usada. | Si se especifica, debe estar en el inventario de `subject` o en la anchor. |
 | `context` | Entidad contextual (ej: una segunda entidad `player_controlled` para puzles cooperativos). | Debe satisfacer la misma regla de presencia que `target`. |
+
+> **Abierto:** los predicados conviven hoy en tres dialectos (campos de la clique como `flag`/`flag_not`, predicados de las aristas Macro como `requires_flag`, y condiciones de goal) — ver #84.
 
 #### Comodín `"*"` para instrument
 
@@ -449,7 +477,9 @@ Si la Hiper-Arista tiene `operators: []` (secuencia vacía), solo se emite el `o
 
 ### 2.4 Operadores Atómicos
 
-El motor implementa exactamente 5 operadores. Son transaccionales: o se ejecutan todos, o ninguno. Una Hiper-Arista define una secuencia de operadores que se ejecutan en orden.
+El motor implementa exactamente 5 operadores. Una Hiper-Arista define una secuencia de operadores que se ejecutan en orden. **Comportamiento actual:** la secuencia se detiene en el primer fallo; las mutaciones anteriores se conservan, junto con los eventos de cambio de estado ya emitidos (no hay rollback).
+
+> **Abierto:** los operadores no son atómicos — ver #80.
 
 #### TRANSFER
 
@@ -458,25 +488,27 @@ Mueve una entidad de un contenedor a otro.
 ```yaml
 - type: "TRANSFER"
   entity: "fortaleza-1-item-antorcha"
-  from: "fortaleza-1-room-07"      # contenedor origen (room, inventory, null)
-  to: "fortaleza-1-player"          # contenedor destino (room, inventory, null)
+  from_container: "fortaleza-1-room-07"   # contenedor origen (room, inventory, null)
+  to_container: "fortaleza-1-player"       # contenedor destino (room, inventory, null)
 ```
 
+Las claves son `from_container` / `to_container`: el cargador rechaza las claves desconocidas (`from` / `to` provocan `ValueError`). Además de ids literales, `@anchor` se resuelve al anchor del protagonista.
+
 **Precondiciones**:
-- `entity` existe en `from`.
-- Si `to` es un inventario (`player_controlled`), se valida el peso:
-- Si `entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `error_code="not_portable"` + `data`; el texto español vive en el narrador (`DEFAULT_SPANISH_MESSAGES["error_output.not_portable"]`).
-- Si `sum(inventory_items.weight) + entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `error_code="too_heavy"` + `data`; el texto español vive en el narrador (`DEFAULT_SPANISH_MESSAGES["error_output.too_heavy"]`).
-- Si `entity.portable == false` y `to` es un inventario: la acción falla.
+- `entity` existe en `from_container`.
+- Si `to_container` es un inventario (`player_controlled`), se valida el peso:
+- Si hay un límite numérico y `entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `error_code="not_portable"` + `data`; el texto español vive en el narrador (`DEFAULT_SPANISH_MESSAGES["error_output.not_portable"]`).
+- Si hay un límite numérico y `sum(inventory_items.weight) + entity.weight > player.max_weight`: la acción falla. Se emite `error_output` con `error_code="too_heavy"` + `data`; el texto español vive en el narrador (`DEFAULT_SPANISH_MESSAGES["error_output.too_heavy"]`).
+- Si `entity.portable == false` y `to_container` es un inventario: la acción falla.
 
 **Postcondiciones**:
-- `entity.spatial_anchor` cambia a `to`.
-- Si `to` es `null`, la entidad se marca como destruida (no aparece en ninguna room ni inventario).
+- `entity.spatial_anchor` cambia a `to_container`.
+- Si `to_container` es `null`, la entidad se marca como destruida (no aparece en ninguna room ni inventario).
 - Se emite `entity_transferred`.
 
 **Casos especiales**:
-- `to: null` = destruir/consumir la entidad (ej: dar un ítem a un Troll lo consume).
-- `from: null` = la entidad no estaba en ninguna parte (solo útil para spawn desde limbo — ver TELEPORT).
+- `to_container: null` = destruir/consumir la entidad (ej: dar un ítem a un Troll lo consume).
+- `from_container: null` = la entidad no estaba en ninguna parte (solo útil para spawn desde limbo — ver TELEPORT).
 
 #### TRANSFORM
 
@@ -573,8 +605,10 @@ Cambia el anclaje espacial de una entidad, moviéndola a otra room.
 
 **Postcondiciones**:
 - `entity.spatial_anchor` cambia a `to_anchor`.
-- Si la entidad es un protagonista, se emite `entity_entered` con la descripción de la nueva room, y se marca `visited: true`.
+- Si la entidad es un protagonista, se emite `entity_entered` con la descripción de la nueva room.
 - Se emite `entity_teleported`.
+
+> **Nota:** TELEPORT no establece `visited` (no implementado). Si un mundo quiere ese dato, es una convención del mundo que debe mantener con TRANSFORM.
 
 **Casos de uso**:
 - Mover al jugador a otra room (cruce de arista Macro, transición de episodio).
@@ -753,6 +787,7 @@ PASO 11: EVALUAR CONDICIONES DE VICTORIA/DERROTA
       RETORNAR
 
   // Verificar derrota
+  // (la bandera "player_dead" está fijada en el orquestador; no es configurable por el mundo — ver #88)
   SI flag_book["player_dead"] == true:
     EMITIR game_over({
       reason: "player_died",
@@ -778,83 +813,59 @@ El narrador V1 (plantillas) simplemente emite el texto tal cual está definido e
 
 ### 2.6 Sistema de Guardado/Carga (Event Sourcing)
 
-El motor implementa persistencia mediante event sourcing: cada acción exitosa se registra como un evento en un log inmutable. El estado del mundo se reconstruye reproduciendo el log desde el inicio.
+El motor implementa persistencia mediante event sourcing: cada cambio de estado se registra como un evento en un log, y el estado del mundo se reconstruye reproduciendo ese log. Los snapshots son solo una caché de rendimiento, nunca la fuente de verdad.
 
 #### Principio
 
 ```
-Estado(t) = reproducir(event_log[0..t], estado_inicial)
+Estado(t) = reproducir(eventos_de_cambio_de_estado[snapshot..t], snapshot)
 ```
 
-Donde `estado_inicial` es el estado del mundo recién cargado (entidades en sus posiciones iniciales, todas las banderas en `false`).
+Donde `snapshot` es el último snapshot del slot (o el estado inicial del mundo recién cargado si el slot no tiene ninguno).
 
-#### Formato de registro de acción
+#### Almacenamiento
 
-Cada entrada en el log es un evento de Hiper-Arista ejecutada:
+La persistencia pasa por el `WorldStateRepository` (`persistence/repository.py`), implementado con SQLAlchemy sobre SQLite (`persistence/sqlite_repository.py`). No hay archivos JSONL ni `snapshot_turn_N.json`. Tablas:
 
-```json
-{
-  "event_id": "a1b2c3d4-...",
-  "type": "action_resolved",
-  "turn_number": 42,
-  "timestamp": 142.841,
-  "payload": {
-    "hyper_edge_id": "fortaleza-1-action-matar-ciclope-maza",
-    "operators_executed": ["TRANSFER", "FLAG", "FLAG"],
-    "protagonist_id": "player_1"
-  },
-  "protagonist_id": "player_1",
-  "episode_id": "episode-01"
-}
-```
+- `event_log`: eventos persistidos, con número de turno y slot.
+- `save_snapshots`: snapshots completos del estado por slot y turno.
 
-El log **no guarda** comandos de solo-lectura (MIRAR, INVENTARIO, INTERROGAR sin cambio de estado) ni Hiper-Aristas con `operators: []` y `has_effects: false`. Solo se registran acciones que modifican el Estado del Mundo.
+El esquema exacto (columnas, índices, migraciones) está en el TDD §5; este documento no lo duplica. Alembic no está inicializado: el MVP usa `Base.metadata.create_all` (#22).
 
-#### Estrategia de snapshots
+> **Abierto:** formato de serialización de los eventos y versionado de los saves — ver #81. Decisión JSON vs SQLite — ver #97.
 
-Para evitar reproducir cientos de turnos al cargar, el motor toma snapshots periódicos del Estado Global completo:
+#### Qué eventos se persisten
 
-```
-Save slot #1/
-├── event_log.jsonl          # Cada línea es un evento serializado
-└── snapshot_turn_847.json   # Snapshot completo del estado en el turno 847
-```
+Solo se persisten eventos con efectos sobre el estado:
 
-**Flujo de guardado**:
-1. El jugador ejecuta `GUARDAR 1` (o el motor guarda automáticamente al cambiar de episodio).
-2. El motor serializa el Estado Global (todas las entidades con sus componentes actuales + libro de banderas) a JSON.
-3. Guarda `snapshot_turn_<N>.json` en el directorio del slot.
-4. Emite `game_saved`.
+- Los cinco eventos de cambio de estado: `entity_transferred`, `entity_transformed`, `entity_combined`, `flag_set`, `entity_teleported`.
+- `action_resolved`, únicamente cuando la Hiper-Arista tiene `has_effects` (solo con fines de auditoría; el replay lo ignora).
 
-**Flujo de carga**:
-1. El jugador ejecuta `CARGAR 1`.
-2. El motor carga el snapshot más reciente del slot.
-3. Si el event log tiene eventos posteriores al snapshot, los reproduce secuencialmente (modo silencioso: emite eventos pero la UI los suprime).
-4. Emite `game_loaded`.
-5. El motor reanuda el ciclo de turnos donde estaba.
+Los eventos narrativos (`action_output`, `entity_entered`, `error_output`, …) y las acciones de solo lectura (MIRAR, INVENTARIO, Hiper-Aristas con `operators: []`) **no** se registran: son derivables del estado.
 
-#### Esquema SQLite para la tabla de eventos
+#### Flujo de guardado
 
-Aunque el almacenamiento primario del event log es JSONL (archivo de texto, fácil de inspeccionar y versionar), el motor mantiene una tabla SQLite para consultas rápidas:
+> **Estado actual:** la capa de persistencia (repositorio, `EventSourcingSaveSystem`, replay) está implementada y probada de forma aislada, pero el CLI **no la conecta**: `fortress-engine run --save` solo imprime «persistence deferred» y no se crea ningún sistema de guardado (`cli/main.py:287`). El flujo siguiente describe el diseño que se activará al conectarla.
 
-```sql
-CREATE TABLE event_log (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_id    TEXT NOT NULL UNIQUE,
-    event_type  TEXT NOT NULL,        -- 'action_resolved', 'flag_set', etc.
-    turn_number INTEGER NOT NULL,
-    timestamp   REAL NOT NULL,
-    payload     TEXT NOT NULL,        -- JSON string
-    protagonist_id TEXT,
-    episode_id  TEXT,
-    save_slot   TEXT NOT NULL DEFAULT 'auto',
-    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-);
+1. El jugador ejecuta `GUARDAR <slot>` (no hay autoguardado: `game_saved` solo se emite desde ese comando).
+2. Se emite `game_saved`.
+3. `EventSourcingSaveSystem` (`persistence/event_log.py`), suscrito al `EventBus`, toma un snapshot del estado vía `state_provider` y lo guarda con `save_snapshot(state, turn, save_slot)`.
 
-CREATE INDEX idx_event_log_turn ON event_log(turn_number);
-CREATE INDEX idx_event_log_type ON event_log(event_type);
-CREATE INDEX idx_event_log_slot ON event_log(save_slot);
-```
+Los eventos de cambio de estado se van añadiendo al log (`append_event`) a medida que ocurren durante la partida.
+
+> **Abierto:** los errores de guardado dentro de los handlers del bus se tragan (`events/event_bus.py`), por lo que un fallo de persistencia no interrumpe el turno ni se notifica al jugador — ver #82.
+
+#### Algoritmo de replay (carga)
+
+`EventSourcingSaveSystem.replay_state(state, save_slot, graph=None)`:
+
+1. Emite `save_replay_started`.
+2. Carga el snapshot más reciente del slot (`load_latest_snapshot`) y lo aplica al estado.
+3. Lee los eventos posteriores al snapshot (`get_event_log(since_turn=...)`) y aplica cada evento de cambio de estado **directamente** sobre el estado, sin re-emitirlo por el bus.
+4. Omite `action_resolved`; ante un tipo de evento desconocido lanza `CorruptEventError`.
+5. Emite `save_replay_ended`; el motor reanuda el ciclo de turnos.
+
+> **Abierto:** el estado `open` de las aristas Macro no forma parte del `WorldState` ni del log, por lo que no se restaura al cargar — ver #79.
 
 **Ventajas del event sourcing para IA**: El log estructurado de acciones es el contexto perfecto para un LLM. Cada acción ejecutada es un dato inequívoco — no hay ambigüedad sobre qué hizo el jugador, en qué orden, con qué resultado. Un futuro narrador IA puede consumir este log para generar resúmenes de sesión, pistas contextuales, o narración adaptativa.
 
@@ -945,7 +956,7 @@ episodio_actual.completado
 #### Cómo el motor determina qué episodios están disponibles
 
 Al cargar un mundo:
-1. Carga todos los episodios definidos en `world.yaml` → `episodes: []`.
+1. Carga todos los episodios desde `episodes/*.yaml` (un archivo por episodio; `world.yaml` no contiene la lista de episodios).
 2. Marca como `available` aquellos cuyo `requires` está vacío.
 3. Cuando un episodio se completa, marca como `available` aquellos cuyo `requires` contiene el episodio recién completado.
 4. El jugador puede elegir entre los episodios disponibles (si hay más de uno).
@@ -973,47 +984,26 @@ worlds/fortaleza/
 │   └── episode-02.yaml           # Parte II: goal, carry_over, configuración
 ├── shared/
 │   ├── player.yaml               # Definición del protagonista (compartido)
-│   └── vocabulary.yaml           # Per-world (worlds/<nombre>/shared/): verbos y sinónimos, stopwords, preposiciones y marcadores de habla del parser; opcionalmente: messages (texto del narrador por error_code), movement_verbs y system_commands
+│   └── vocabulary.yaml           # Vocabulario del mundo: verbos y sinónimos, stopwords, preposiciones y marcadores de habla del parser; opcionalmente: messages (texto del narrador por error_code), movement_verbs y system_commands
 ├── episode-01/
-│   ├── rooms/
-│   │   ├── room-01.yaml          # "el exterior de la fortaleza"
-│   │   ├── room-02.yaml          # "el Salón de recepciones"
-│   │   └── ...                   # 33 archivos (rooms 1-33 + laberinto)
-│   ├── items/
-│   │   ├── maza.yaml
-│   │   ├── antorcha.yaml
-│   │   └── ...                   # ~70 archivos
-│   ├── npcs/
-│   │   ├── ciclope.yaml
-│   │   ├── troll-01.yaml
-│   │   └── ...                   # ~25 archivos (14 Trolls + 8 Guards + otros)
-│   ├── actions/
-│   │   ├── matar-ciclope-maza.yaml
-│   │   ├── matar-ciclope-fallback.yaml
-│   │   ├── dar-escoba-bruja.yaml
-│   │   └── ...                   # ~200 Hiper-Aristas
-│   └── macros/
-│       ├── edges-room-01.yaml
-│       ├── edges-room-02.yaml
-│       └── ...                   # Aristas Macro por room (~60 aristas)
+│   ├── rooms/                    # 50 archivos, uno por room (alcoba_de_la_bruja.yaml, almacenes.yaml, …)
+│   ├── items/                    # 57 archivos (antorcha_1.yaml, maza.yaml, …)
+│   ├── npcs/                     # 24 archivos (arana.yaml, arpia.yaml, ciclope.yaml, …)
+│   ├── actions/                  # 8 archivos, uno por verbo, cada uno con una lista de Hiper-Aristas
+│   │   ├── he_dar.yaml           #   (he_matar.yaml, he_tomar.yaml, he_dejar.yaml, …)
+│   │   └── ...
+│   └── macros/                   # 124 archivos, una arista Macro por archivo (me_almacenes_jardin.yaml, …)
 ├── episode-02/
-│   ├── rooms/
-│   │   ├── room-01.yaml          # "una habitación para huéspedes"
-│   │   └── ...                   # 55 archivos
-│   ├── items/
-│   │   ├── daga.yaml
-│   │   └── ...                   # ~53 archivos
-│   ├── npcs/
-│   │   ├── grifo.yaml
-│   │   └── ...                   # ~25 archivos
-│   ├── actions/
-│   │   ├── matar-grifo-daga.yaml
-│   │   └── ...                   # ~250 Hiper-Aristas
-│   └── macros/
-│       └── ...                   # ~80 aristas Macro
-└── narrator/
-    └── templates.yaml            # Strings del narrador basado en plantillas
+│   ├── rooms/                    # 55 archivos
+│   ├── items/                    # 67 archivos
+│   ├── npcs/                     # 23 archivos
+│   ├── actions/                  # 9 archivos (he_dar_ep2.yaml, he_matar_ep2.yaml, …)
+│   └── macros/                   # 61 archivos
+└── narrator/                     # Existe pero está vacío: el narrador V1 usa DEFAULT_SPANISH_MESSAGES
+                                  # (plugins/template_narrator.py) y los `messages` de shared/vocabulary.yaml
 ```
+
+Las acciones se agrupan por verbo en listas YAML (el cargador acepta una lista por archivo); entre los dos episodios hay 17 archivos de acciones y 248 Hiper-Aristas.
 
 ### 3.2 Mapeo: Original → Motor
 
@@ -1048,6 +1038,8 @@ Cada concepto del código original (Turbo Pascal 7, `CASTLES.PAS`) se traduce a 
 ### 3.3 Ejemplos Concretos
 
 Los siguientes 5 ejemplos muestran cómo elementos específicos de Fortaleza se traducen al formato YAML del motor. Se eligieron para cubrir los patrones más representativos.
+
+> **Nota:** los ejemplos son ilustrativos. En el mundo real los ids de Fortaleza son cortos (`he_matar_ciclope`, `ciclope`, `maza`) y los textos deben provenir del original (ver #98: test automatizado de fidelidad de texto). Las claves de TRANSFER son `from_container` / `to_container`.
 
 #### Ejemplo 1: Sala inicial (room-01, Parte I)
 
@@ -1111,8 +1103,8 @@ clique:
 operators:
   - type: "TRANSFER"
     entity: "fortaleza-1-npc-ciclope"
-    from: "fortaleza-1-room-06"
-    to: null
+    from_container: "fortaleza-1-room-06"
+    to_container: null
   - type: "FLAG"
     flag: "ciclope_muerto"
     value: true
@@ -1271,13 +1263,13 @@ Cada palabra del texto original —descripciones de habitaciones, diálogos de N
 | **Rooms** | 33 (1-33 + laberinto) | 55 (1-55) | 88 |
 | **Ítems** | ~70 | ~53 | ~123 |
 | **NPCs** | 14 Trolls + 8 Guards | 18 Trolls + 5 Guards + 1 TDaugther | ~46 |
-| **Hiper-Aristas estimadas** | ~200 | ~250 | ~450 |
+| **Hiper-Aristas** | estimado ~200 | estimado ~250 | estimado ~450; **real: 248** en 17 archivos |
 | **Aristas Macro** | ~40 | ~60 | ~100 |
 | **Acertijos (RiddleLink)** | 4 | 3 | 7 |
 | **Palabras de texto** | ~11,000 | ~11,000 | ~22,000 |
 | **Episodios** | 1 (episode-01) | 1 (episode-02, secuencial) | 2 |
 
-Nota sobre la estimación de Hiper-Aristas: cada puzzle se descompone en múltiples acciones (dar, interrogar con/sin regalo, matar con/sin arma correcta, romper, tomar, dejar). Los ~93 puzles del PRD resultan en ~450 Hiper-Aristas porque cada uno requiere múltiples entradas en el grafo.
+Nota sobre la estimación de Hiper-Aristas: cada puzzle se descompone en múltiples acciones (dar, interrogar con/sin regalo, matar con/sin arma correcta, romper, tomar, dejar). La estimación original era ~450; el mundo actual tiene 248 (las acciones genéricas con comodín, `target: "*"` y `@anchor`, reducen el número; la cobertura completa de los 93 puzles la verifica el walkthrough, #41).
 
 ---
 
@@ -1310,25 +1302,13 @@ parser:
 narrator:
   plugin: "template"
   options: {}
-
-player_defaults:
-  max_weight: 40
-  start_anchor: "mi-aventura-1-room-01"
-
-episodes:
-  - id: "episode-01"
-    name: "Capítulo 1"
-    requires: []
-    start_anchor: "mi-aventura-1-room-01"
-    goal:
-      conditions:
-        - type: entity_dead
-          entity: "mi-aventura-1-npc-dragon"
-      output: "¡Has derrotado al dragón!"
-    carry_over:
-      inventory: []
-      flags: []
 ```
+
+> El cargador (`WorldYAML`) solo lee `world_id`, `name`, `language`, `parser` y
+> `narrator`; las demás claves (`version`, `author`, `description`) son
+> informativas y se ignoran. Los episodios **no** van en `world.yaml`: cada uno
+> vive en `episodes/<id>.yaml` (ver Paso 9). `max_weight` se define en el
+> protagonista (`shared/player.yaml`, Paso 3), no en `world.yaml`.
 
 > La forma de objeto (`parser: {plugin: "classic", options: {}}`) y la forma
 > legacy de string (`parser: "classic"`, `narrator: "template"`) son aceptadas;
@@ -1351,7 +1331,7 @@ spatial_anchor: "mi-aventura-1-room-01"
 
 ### Paso 4: Crear rooms
 
-Una room por archivo YAML. Incluir `description` (lo que el jugador lee al entrar), `visited: false` y `dark: false`.
+Una room por archivo YAML. Incluir `description` (lo que el jugador lee al entrar). `visited` y `dark` son convenciones del mundo que el motor no lee (ver 2.1).
 
 ```yaml
 # episode-01/rooms/room-01.yaml
@@ -1388,7 +1368,7 @@ spatial_anchor: "mi-aventura-1-room-01"
 
 ### Paso 6: Crear NPCs
 
-Definir `mood`, `brain_type`, y si corresponde, `lethalweap` o `likeness`.
+Definir `description` y los componentes que el mundo necesite (`mood`, `brain_type`, `lethalweap`, `likeness`… son convenciones que el motor no lee; la lógica real vive en las Hiper-Aristas).
 
 ```yaml
 # episode-01/npcs/dragon.yaml
@@ -1437,8 +1417,8 @@ clique:
 operators:
   - type: "TRANSFER"
     entity: "mi-aventura-1-npc-dragon"
-    from: "mi-aventura-1-room-03"
-    to: null
+    from_container: "mi-aventura-1-room-03"
+    to_container: null
   - type: "FLAG"
     flag: "dragon_muerto"
     value: true
@@ -1461,85 +1441,72 @@ output: "¡Tus ataques no pueden atravesar sus escamas!"
 
 ### Paso 9: Definir condiciones de victoria
 
-En `episodes/episode-01.yaml`, el campo `goal` define qué debe cumplirse para ganar.
+En `episodes/episode-01.yaml`, el campo `goal` define qué debe cumplirse para ganar:
 
-### Paso 10: Validar el mundo (herramienta futura)
+```yaml
+# worlds/<nombre>/episodes/episode-01.yaml
+id: "episode-01"
+name: "Capítulo 1"
+order: 1
+requires: []
+start_anchor: "mi-aventura-1-room-01"
+goal:
+  conditions:
+    - type: entity_dead
+      entity: "mi-aventura-1-npc-dragon"   # o anidado: params: {entity: ...}
+  output: "¡Has derrotado al dragón!"
+carry_over:
+  inventory: []
+  flags: []
+```
 
-Una herramienta CLI (`motor validate worlds/mi-aventura/`) verificará:
+Las condiciones aceptan parámetros planos (`entity:`, `room:`) o anidados en `params:`.
 
-- Que no haya referencias colgantes (entidades referenciadas que no existen).
-- Que todas las rooms sean alcanzables desde `start_anchor`.
-- Que el goal sea alcanzable (no haya condiciones imposibles).
-- Que no haya Hiper-Aristas con la misma `priority` para el mismo `(verb, target)`.
+### Paso 10: Validar el mundo
+
+El CLI `fortress-engine` ya incluye tres herramientas de verificación:
+
+```bash
+fortress-engine validate worlds/mi-aventura/ [--verbose]      # integridad del mundo (referencias colgantes, etc.)
+fortress-engine audit-graph worlds/mi-aventura/ [--episode ID] [--json] [--include-info]   # auditoría estática del grafo Macro
+fortress-engine solve worlds/mi-aventura/ [--episode ID] [--answers FILE] [--json] [--max-turns N]   # completabilidad por exploración ciega
+```
+
+- `validate` carga el mundo y devuelve los problemas de integridad (código de salida distinto de 0 si hay alguno).
+- `audit-graph` audita la integridad del grafo Macro de un episodio.
+- `solve` verifica que el episodio sea completable explorando a ciegas dentro de un presupuesto de turnos.
+
+> **Abierto:** el alcance del validador (más allá de lo anterior) — ver #46.
 
 ### Paso 11: Probar con el walkthrough
 
 Escribir un archivo `walkthrough.txt` con la secuencia de comandos para completar el mundo y ejecutarlo contra el motor:
 
 ```bash
-motor run worlds/mi-aventura/ --walkthrough walkthrough.txt
+fortress-engine test worlds/mi-aventura/ --walkthrough walkthrough.txt [--episode episode-01]
 ```
 
-Esto ejecuta cada comando y verifica que el mundo sea completable.
+Esto ejecuta cada comando y comprueba si se cumple el goal del episodio.
 
 ---
 
 ## 5. Decisiones de Diseño Pendientes (para TDD)
 
-Este GDD define el diseño del motor y del mundo Fortaleza en suficiente detalle para que un desarrollador entienda QUÉ construir. Las siguientes decisiones corresponden al TDD (Technical Design Document) y NO se definen aquí:
+El TDD ya existe (`tdd.md`) y resolvió la mayoría de las decisiones que este GDD dejaba abiertas. Estado actual:
 
-### Estructura de clases Python
-
-- Jerarquía de clases para entidades, grafos, Hiper-Aristas, operadores.
-- Cómo se modela el State Container (diccionarios, dataclasses, objetos inmutables).
-- Cómo se implementa el World Loader (escaneo de directorios, parsing de YAML, validación).
-
-### Esquema exacto de base de datos SQLite
-
-- Tablas adicionales más allá de `event_log`.
-- Índices, constraints, foreign keys.
-- Estrategia de migraciones (Alembic vs manual).
-
-### API REST (si aplica)
-
-- Endpoints para iniciar mundo, enviar comandos, recibir eventos.
-- Formato de request/response.
-- WebSockets para streaming de eventos en tiempo real.
-
-### Formato de serialización de eventos
-
-- Estructura exacta del JSONL del event log.
-- Cómo se serializan y deserializan snapshots del estado completo.
-- Manejo de versiones de esquema (¿qué pasa si el formato de eventos cambia entre versiones del motor?).
-
-### Implementación del parser V1
-
-- Algoritmo de matching de comandos (tokenización, normalización de tildes, matching parcial).
-- Lista exacta de stopwords.
-- Tabla de sinónimos (ej: `COGER` = `TOMAR`, `ASESINAR` = `MATAR`).
-
-### Implementación del narrador V1 (plantillas)
-
-- Cómo se formatean las descripciones de room (¿se incluye la lista de ítems visibles? ¿NPCs presentes?).
-- Formato de `narrator/templates.yaml`.
-- Mensajes de sistema (guardado, carga, error, victoria, derrota).
-
-### Sistema de plugin loading
-
-- Cómo se descubren y cargan parsers y narradores alternativos.
-- Mecanismo de registro (entry points, configuración, archivos de manifiesto).
-- Aislamiento de errores de plugins (no deben tumbar el motor).
-
-### Manejo de concurrencia
-
-- El motor v1.0 es single-threaded y síncrono (ver `docs/13-event-system.md`, sección 4.3).
-- Si en el futuro se agregan narradores IA asíncronos o múltiples jugadores, el TDD deberá definir la estrategia de concurrencia.
-
-### Testing
-
-- Estrategia de tests unitarios, de integración y de aceptación.
-- Tests de regresión para el walkthrough de Fortaleza (ejecutar el walkthrough completo y verificar que el goal se cumple).
-- Tests de round-trip para event sourcing (guardar → cargar → el estado es idéntico).
+| Tema | Estado |
+|------|--------|
+| Estructura de clases Python | Resuelto — TDD §3–4 |
+| Esquema SQLite | Resuelto — TDD §5 (migraciones: Alembic sin inicializar, #22) |
+| API REST | No planificada |
+| Serialización y versionado de eventos | Abierto — #81 (decisión JSON vs SQLite: #97) |
+| Parser V1 | Resuelto — TDD §4.15 |
+| Parser NLP | Abierto — #91 (el parser clásico se mantiene como réplica fiel del original) |
+| Narrador V1 (plantillas) | Resuelto — TDD §4.16 |
+| Plugins | Resuelto — TDD §9 |
+| Concurrencia | Resuelto — TDD §11.2 (single-threaded, síncrono) |
+| Testing | Resuelto — TDD §7 |
+| Fidelidad de texto | Abierto — #98 |
 
 ---
 

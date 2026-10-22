@@ -3,6 +3,7 @@
 **Versión**: 2.0
 **Tipo**: Product Requirements Document
 **Idioma**: Español
+**Última limpieza**: 2026-10-21 — contradicciones entre PRD/GDD/TDD resueltas contra el código. Decisiones de diseño abiertas: ver epic #99 (https://github.com/efirvida/fortress-engine/issues/99).
 
 ---
 
@@ -57,6 +58,8 @@ Cada elemento del mundo —jugador, NPC, puerta, habitación, contenedor, concep
 - **Componentes**: diccionarios clave-valor que definen estado (`state: "open"`, `durability: 10`, `mood: "hostile"`, `weight: 39`)
 - **Anclaje Espacial**: referencia a la entidad contenedora ("la mesa está en la cocina", "el jugador está en el bosque")
 - **Protagonistas**: el motor soporta **múltiples protagonistas** controlados por el jugador. Cualquier entidad con el componente `player_controlled: true` es un protagonista. No hay límite en la cantidad de entidades controlables simultáneamente.
+
+  > **Abierto:** hoy el motor no lee el componente `player_controlled`: el CLI toma la primera entidad compartida con `type == "player"` y la registra como `"hero"` (`player_controlled_entities=["hero"]`) — ver #88.
   - El **protagonista activo** es la entidad `player_controlled` que actualmente tiene el foco de entrada del jugador.
   - **Cambiar de protagonista** es una acción de primera clase: el jugador transfiere el foco de una entidad controlable a otra con el comando `CAMBIAR A <nombre>`.
   - Cada protagonista mantiene su propio estado, inventario y posición en la escena que habita. Cambiar de protagonista no mueve entidades ni fusiona inventarios.
@@ -73,6 +76,8 @@ Dos capas de grafo interconectadas separan el espacio de la interacción:
 - Dentro de cada Nodo Macro existe un subgrafo completo
 - **Nodos Micro**: objetos, NPCs, elementos contextuales presentes en esa escena
 - **Aristas Micro**: interacciones potenciales entre elementos (ej. "fósforo" se conecta con "leña")
+
+> **Abierto:** hoy el Grafo Micro por anclaje es vestigial: `episode_manager.py` copia cada Hiper-Arista registrada en `start_anchor` a todos los anclajes que no tienen ninguna, y el filtrado por escena ocurre en `graph.validate_clique` — ver #83.
 
 ### 4.3 Hiper-Aristas (Acciones Reificadas)
 
@@ -106,7 +111,7 @@ Esto requiere **cero operadores nuevos**. El motor solo necesita evaluar Hiper-A
 
 El combate no es un concepto del motor — es un **patrón de diseño de mundo** que los diseñadores siguen al definir Hiper-Aristas. Tres patrones cubren todos los enfrentamientos de Fortaleza:
 
-**Patrón Guard**: enemigo que solo muere con su arma letal (`lethalweap`). Con cualquier otra arma, se burla sin cambio de estado.
+**Patrón Guard**: enemigo que solo muere con su arma letal (convención `lethalweap` del mundo). Con cualquier otra arma, se burla sin cambio de estado.
 - Hiper-Arista A (prioridad 10): `instrument: "<lethalweap>"` → TRANSFER(enemigo, sala, null) + FLAG(enemigo_muerto) + output de confesión
 - Hiper-Arista B (prioridad 0): `instrument_any: true` → secuencia vacía + output de burla
 
@@ -119,7 +124,7 @@ El combate no es un concepto del motor — es un **patrón de diseño de mundo**
 
 Estos patrones son **convenciones YAML**, no conceptos del motor. Cualquier diseñador de mundo puede definir sus propios patrones de combate o interacción usando múltiples Hiper-Aristas con prioridad.
 
-**Dónde se define `lethalweap`**: Es un **componente de la entidad NPC**, no un concepto del motor. Se define en el archivo YAML del NPC:
+**Dónde se define `lethalweap`**: Es una **convención de documentación del mundo** almacenada como componente del NPC; no es un concepto del motor. Se define en el archivo YAML del NPC:
 
 ```yaml
 # npcs/ciclope.yaml
@@ -132,7 +137,9 @@ components:
   description: "Un cíclope enorme bloquea el paso..."
 ```
 
-Las Hiper-Aristas de combate consultan este componente mediante el predicado `instrument: "<valor>"`. El motor solo compara el instrumento usado por el jugador con el valor del componente `lethalweap` — no tiene lógica de combate cableada.
+El `instrument` de la clique de cada Hiper-Arista de combate nombra directamente el arma (p. ej. `instrument: "maza"`). El componente `lethalweap` es solo documentación para quien diseña el mundo: el motor nunca lo lee y no tiene lógica de combate cableada.
+
+> **Abierto:** el motor tampoco lee `combat_pattern`, `mood`, `hit_points` ni `brain_type`; la derrota depende de la bandera fija `player_dead` y el CLI elige al protagonista por `type == "player"` — ver #88.
 
 ### 4.4 Cinco Operadores Atómicos Universales
 
@@ -150,10 +157,14 @@ El motor solo implementa 5 operadores transaccionales. Cada Hiper-Arista ejecuta
 
 Cuando el destino de una operación TRANSFER es `player.inventory`, el motor ejecuta dos validaciones antes de aplicar la transferencia:
 
-1. **Peso máximo individual**: si `entity.weight > player.max_weight`, la acción se rechaza con output `"Usted no puede cargar con eso."`.
-2. **Capacidad del inventario**: si `sum(inventory_items.weight) + entity.weight > player.max_weight`, la acción se rechaza con output `"Sería demasiado peso."`.
+1. **Peso máximo individual**: si `entity.weight > player.max_weight` (o la entidad no es `portable`), el operador devuelve el código de error `not_portable`.
+2. **Capacidad del inventario**: si `sum(inventory_items.weight) + entity.weight > player.max_weight`, el operador devuelve el código de error `too_heavy`.
 
-El valor `player.max_weight` se configura en `world.yaml` (por defecto 40). Cada entidad portable define su `weight` como componente (ej: `weight: 39` para el Bote y la Maza, objetos al borde del límite).
+El motor solo emite los códigos; el texto vive en el narrador (`plugins/template_narrator.py`). Los mensajes por defecto en español son, por ejemplo, `error_output.not_portable` → `"Usted no puede cargar con eso."` y `error_output.too_heavy` → `"Sería demasiado peso."`.
+
+> **Abierto:** una secuencia de operadores se detiene en el primer fallo, pero las mutaciones previas y sus eventos se conservan (no es atómica) — ver #80.
+
+El valor `player.max_weight` se define como componente del protagonista en los datos del mundo. Si `max_weight` está ausente, es `null` o es el booleano `false`, la capacidad es ilimitada. Un valor numérico, incluido `0`, define un límite explícito; no hay un límite numérico por defecto en el motor. Fortaleza configura `max_weight: 40` en su protagonista. Cada entidad portable define su `weight` como componente (ej: `weight: 39` para el Bote y la Maza, objetos al borde del límite de Fortaleza).
 
 ### 4.5 Estado Global y Persistencia
 
@@ -161,7 +172,12 @@ Un único contenedor de estado mutable:
 
 - **Diccionario de Entidades**: todos los nodos del grafo con sus componentes actualizados
 - **Libro de Banderas**: variables globales que actúan como "memoria del mundo" — cualquier condición de acceso en una arista puede consultar este libro
-- **100% serializable** a JSON/BSON. Aunque el estado completo es 100% serializable, la estrategia de persistencia canónica es **Event Sourcing**: se almacena un log de Hiper-Aristas ejecutadas (ver sección 10). El motor puede regenerar cualquier estado reproduciendo el log desde el estado inicial. Opcionalmente, para acelerar la carga, el motor puede mantener un snapshot caché del último estado guardado, pero la fuente de verdad es el log de eventos.
+- **100% serializable** a JSON/BSON. Aunque el estado completo es 100% serializable, la estrategia de persistencia canónica es **Event Sourcing** (ver sección 10). Los eventos persistidos son los 5 eventos de cambio de estado (`entity_transferred`, `entity_transformed`, `entity_combined`, `flag_set`, `entity_teleported`), más `action_resolved` solo cuando tiene `has_effects` (únicamente como auditoría). La reconstrucción carga el último snapshot del slot y aplica los eventos de cambio de estado posteriores a él; `action_resolved` se omite y un tipo de evento desconocido lanza `CorruptEventError`. Los snapshots son cachés de rendimiento; la fuente de verdad es el log de eventos.
+
+> **Estado actual:** la capa de persistencia está implementada y probada, pero el CLI aún no la conecta (`run --save` solo imprime «persistence deferred»).
+
+> **Abierto:** el contrato del log de eventos y el versionado de guardados no están definidos — ver #81. Los fallos de guardado dentro de los manejadores del bus se tragan en silencio — ver #82. El estado de apertura de pasajes (`MacroEdge.open`) vive en el grafo, no en `WorldState` ni en el log — ver #79.
+
 
 ### 4.6 Orquestador de Turnos
 
@@ -209,6 +225,8 @@ La IA (LLM) NO participa en la lógica del mundo — solo en la interfaz humano-
 
 - **Parser Intencional**: toma entrada en texto libre del jugador ("toma el farol viejo de la mesa") y la traduce a una tupla estructurada: `{subject: "player", verb: "take", target: "lantern", context: "table"}`. El motor encuentra este verbo en el Grafo Micro de la escena actual.
 
+> **Abierto:** hoy los plugins reciben el `WorldState` completo, no una vista acotada a lo que el protagonista percibe — ver #95.
+
 - **Narrador Inmersivo**: después de que el motor ejecuta una transacción y obtiene un resultado crudo ("Objeto transferido al inventario"), se invoca al LLM con el estado actual y el resultado. El LLM genera prosa atmosférica y rica ("Tomas el farol de bronce frío; el polvo centellea en la tenue luz que se filtra por la ventana"). **La IA decora la realidad; no la crea.**
 
 ### 4.8 Carga del Mundo desde Archivos YAML
@@ -217,11 +235,11 @@ El motor carga los datos del mundo escaneando directorios de archivos YAML. El p
 
 1. Escanea el directorio `worlds/<nombre-del-mundo>/`
 2. Carga `world.yaml` primero (configuración global, banderas iniciales)
-3. Carga todos los `rooms/*.yaml` → construye los Nodos del Grafo Macro
-4. Carga todos los `items/*.yaml` y `npcs/*.yaml` → los ubica en sus habitaciones iniciales (anclaje espacial)
-5. Carga todos los `actions/*.yaml` → construye las Hiper-Aristas
+3. Carga `shared/` (entidades y vocabulario compartidos por todos los episodios, p. ej. `player.yaml`, `vocabulary.yaml`) y `episodes/<id>.yaml`
+4. Para el episodio activo, carga `episode-XX/rooms/*.yaml` → construye los Nodos del Grafo Macro, y `episode-XX/macros/*.yaml` → las Aristas Macro
+5. Carga `episode-XX/items/*.yaml` y `episode-XX/npcs/*.yaml` → los ubica en sus anclajes iniciales (anclaje espacial); luego `episode-XX/actions/*.yaml` → construye las Hiper-Aristas
 
-   El motor escanea **recursivamente** todos los subdirectorios de `actions/` (y cualquier otro directorio de datos). El orden de precedencia entre archivos no importa porque las Hiper-Aristas se ordenan por prioridad en tiempo de ejecución, no por orden de archivo.
+   El motor escanea **recursivamente** todos los subdirectorios de datos (p. ej. `actions/`). Un archivo puede contener una lista de definiciones. El orden de precedencia entre archivos no importa porque las Hiper-Aristas se ordenan por prioridad en tiempo de ejecución, no por orden de archivo.
 
 6. Valida el grafo completo:
    - Sin referencias colgantes (toda entidad referenciada en cliques, predicados y operadores existe)
@@ -235,7 +253,7 @@ El motor carga los datos del mundo escaneando directorios de archivos YAML. El p
 
 Un mundo puede dividirse en múltiples episodios, cada uno con su propio grafo, condiciones de victoria y reglas de continuidad.
 
-**Definición de episodios** (`world.yaml` → `episodes: []`):
+**Definición de episodios**: un archivo por episodio en `episodes/<id>.yaml` (el cargador lee `episodes/*.yaml`; `world.yaml` no contiene la lista). El bloque siguiente muestra ambos episodios juntos solo por brevedad:
 
 ```yaml
 episodes:
@@ -266,6 +284,8 @@ episodes:
       inventory: []
       flags: []
 ```
+
+> Los ids son ilustrativos: en Fortaleza los episodios son `episode-01`/`episode-02` y los anclajes usan ids cortos (p. ej. `start_anchor: "el_exterior_de_la_fortaleza"`). Las condiciones aceptan parámetros planos (`entity:`, `room:`) o anidados en `params:`; el goal real de Fortaleza usa `flag_is_set` con `params`.
 
 **Campos de cada episodio**:
 - `id`: identificador único del episodio
@@ -331,7 +351,7 @@ goal:
 El evaluador se ejecuta al final de cada turno. Si todas las condiciones se cumplen, el episodio se considera completado.
 
 **Gestión de memoria**: El motor solo mantiene en memoria el grafo del episodio activo. Durante una transición, el grafo del episodio completado se descarga completamente antes de cargar el grafo del episodio siguiente. Esto:
-- Minimiza el uso de memoria (solo ~88 nodos Macro en el peor caso para Fortaleza)
+- Minimiza el uso de memoria (solo se carga el episodio activo; el peor caso en Fortaleza es el episodio 2 con 55 habitaciones)
 - Evita conflictos de identificadores entre episodios (dos episodios pueden tener room-01 sin colisión)
 - Simplifica el modelo mental: el motor siempre opera sobre un solo grafo de mundo en cada momento
 
@@ -357,6 +377,8 @@ Output: { subject: EntityID, verb: string, target: EntityID, context: EntityID?,
 
 El motor recibe esta tupla y busca el verbo en el Grafo Micro de la escena actual para formar la Clique de Participación.
 
+> **Abierto:** hoy el parser recibe el `WorldState` completo (no una vista acotada por percepción) y devuelve una tupla plana, no un `ParseResult` estructurado — ver #95 y #90.
+
 ### V1: Parser Clásico (MVP)
 
 Réplica exacta del parser original de Fortaleza:
@@ -371,6 +393,25 @@ Réplica exacta del parser original de Fortaleza:
 ### V2: Parser Clásico Expandido (SUPERSEDED — fusionado en V1)
 
 La expansión de stopwords (agrega `UN`, `UNA`, `DEL`, `LOS`, `LAS` a la lista original) fue adoptada directamente en el parser V1. Ya no existe una versión V2 separada del parser clásico — el parser V1 usa la lista expandida de 9 stopwords. Esta sección se conserva como registro histórico.
+
+### Parser NLP (spaCy / Spark NLP) — planificado
+
+El parser clásico V1 es una réplica fiel e intencional del parser original de Fortaleza y debe seguir siendo simple: **no se modifica**. La comprensión de lenguaje más flexible se agrega como un plugin aparte, sin tocar el motor ni el parser clásico:
+
+- **Plugin opcional**: se instala con `fortress-engine[nlp]` y se registra como entry point de parser. Usa un backend NLP intercambiable: spaCy por defecto y Spark NLP como backend opcional (`[nlp-spark]`), que exige Java y PySpark y es pesado para un juego de un jugador; su uso depende de un spike (#91).
+- **Análisis de dependencias** para separar verbo, objeto e instrumento sin reglas posicionales.
+- **Clíticos** ("cógelo", "dáselo") y **pronombres**.
+- **Múltiples objetos** ("toma todo") y **comandos encadenados**.
+- **Mapeo "inteligente" de verbos desconocidos** al verbo conocido más cercano del vocabulario del mundo, mediante vectores de palabras con umbral. Por debajo del umbral el verbo se trata como palabra desconocida: nunca se adivina.
+- **Determinista** con un modelo fijado; sin coste por turno ni acceso a red.
+
+Depende de #90 (`ParseResult` estructurado) y #95 (vista del mundo acotada por percepción). Seguimiento en #91.
+
+### Parser con modelo "System One" (Jev) — planificado
+
+Otro plugin opcional (`fortress-engine[jev]`), basado en modelos que devuelven **decisiones tipadas con probabilidades calibradas** en lugar de texto (p. ej. Jev de TypeSafe AI, en acceso temprano; respuesta en ~70–500 ms). Como el espacio de salida es cerrado (verbos del mundo + entidades en alcance), no puede inventar verbos ni entidades, y las probabilidades se traducen a `Command` / `Ambiguous` / `UnknownWord`.
+
+A diferencia del nivel spaCy es un **servicio alojado**: requiere red, clave de API y coste por llamada, y envía la entrada del jugador y la vista acotada del mundo (#95) a un tercero. Por eso debe poder encadenarse con un respaldo local (Jev → spaCy → clásico) y sus decisiones se registran para que el replay y los tests no dependan de llamadas en vivo (#96). Seguimiento en #102; depende de #90, #95 y #96.
 
 ### V3: Parser Intencional (IA)
 
@@ -514,32 +555,25 @@ Hiper-Arista: "ritual_final"
 
 ```
 worlds/fortaleza/
-├── world.yaml              # Metadatos del mundo (nombre, versión, idioma, max_weight)
+├── world.yaml              # Metadatos del mundo (nombre, versión, idioma, banderas iniciales, plugins)
 ├── episodes/
-│   ├── parte-1.yaml        # Episodio 1: goal, carry_over, configuración
-│   └── parte-2.yaml        # Episodio 2: goal, carry_over, configuración
-├── rooms/
-│   ├── room-01.yaml        # "Entrada de la Fortaleza"
-│   ├── room-02.yaml        # "Pasillo Oscuro"
-│   └── ...                 # 88 archivos de habitaciones, una por archivo
-├── items/
-│   ├── antorcha.yaml
-│   ├── maza.yaml
-│   └── ...                 # ~120 archivos de objetos
-├── npcs/
-│   ├── ciclope.yaml
-│   ├── troll-01.yaml
-│   └── ...                 # ~50 archivos de NPCs
-├── actions/
-│   ├── matar-ciclope-maza.yaml
-│   ├── matar-ciclope-fallback.yaml
-│   └── ...                 # ~400-450 Hiper-Aristas (una por archivo)
-├── macros/
-│   ├── vocabulary.yaml     # Definiciones de verbos y sinónimos
-│   └── parser-rules.yaml   # Reglas del parser clásico
-└── narrator/
-    └── templates.yaml      # Strings del narrador basado en plantillas
+│   ├── episode-01.yaml     # Episodio 1: goal, carry_over, start_anchor
+│   └── episode-02.yaml     # Episodio 2: goal, carry_over, start_anchor
+├── shared/
+│   ├── player.yaml         # Protagonista compartido entre episodios
+│   └── vocabulary.yaml     # Vocabulario del parser clásico
+├── episode-01/
+│   ├── rooms/              # Nodos Macro (una habitación por archivo)
+│   ├── items/              # Objetos
+│   ├── npcs/               # NPCs
+│   ├── actions/            # Hiper-Aristas agrupadas por verbo (he_matar.yaml, he_tomar.yaml, …)
+│   └── macros/             # Aristas Macro (conexiones entre habitaciones)
+├── episode-02/
+│   ├── rooms/ items/ npcs/ actions/ macros/   # misma estructura
+└── narrator/               # Reservado para plantillas del narrador (hoy vacío)
 ```
+
+Las acciones se agrupan por verbo en listas YAML (17 archivos, 248 Hiper-Aristas en el mundo actual); el cargador acepta una lista de definiciones por archivo.
 
 ---
 
@@ -557,7 +591,7 @@ worlds/fortaleza/
 | **Narrador por Plantillas V1** | Salida de texto directa desde datos del mundo |
 | **Sistema de Turnos con arquitectura multi-protagonista** | La colección `player_controlled_entities` es siempre una lista, incluso con 1 elemento; el loop itera sobre ella |
 | **Formato de Mundo YAML** | Esquema de definición de mundos con validación |
-| **Guardado/Carga vía Event Sourcing** | Log de Hiper-Aristas ejecutadas, con snapshot caché opcional |
+| **Guardado/Carga vía Event Sourcing** | Log de eventos de cambio de estado, con snapshot caché |
 | **Mundo Fortaleza** | Datos de grafo completos para ambas partes (88 habitaciones, ~120 objetos, ~50 NPCs, 93 puzles) |
 | **Mundo Fortaleza jugable** | El walkthrough documentado funciona comando por comando |
 | **Texto en español preservado** | Las ~22,000 palabras del original reproducidas exactamente |
@@ -567,7 +601,7 @@ worlds/fortaleza/
 | Feature | Detalle |
 |---------|---------|
 | **Herramienta de edición de mundos** | CLI o visual para crear/modificar grafos sin editar YAML manualmente |
-| **Validador de mundos** | Detecta habitaciones inalcanzables, objetos huérfanos, puzles sin solución |
+| **Validador de mundos** | Detecta habitaciones inalcanzables, objetos huérfanos, puzles sin solución. El CLI ya incluye `audit-graph` (auditoría estática del grafo) y `solve` (solucionador de completabilidad) — ver #46 |
 | **Cerebro scripteado de NPCs** | Selección de acciones por prioridad en el Grafo Micro |
 | **Soporte multi-protagonista** | Comandos de usuario `CAMBIAR A`, `GRUPO`, `ESPERAR`; cliques cooperativas; cerebros autónomos para otros protagonistas; mundos de ejemplo con múltiples personajes controlables |
 | **Comando de cambio de protagonista** | `CAMBIAR A <nombre>` transfiere el foco de entrada entre protagonistas |
@@ -579,10 +613,12 @@ worlds/fortaleza/
 
 | Feature | Detalle |
 |---------|---------|
+| **Parser NLP (spaCy / Spark NLP)** | Plugin opcional `fortress-engine[nlp]`: dependencias, clíticos, múltiples objetos y mapeo de verbos desconocidos con umbral; el parser clásico no se modifica — ver #91 |
+| **Parser System One (Jev)** | Plugin opcional `fortress-engine[jev]`: decisiones tipadas con probabilidades calibradas (servicio alojado, con respaldo local) — ver #102 |
 | **Parser Intencional con IA (V3)** | LLM traduce texto libre a tupla estructurada |
 | **Narrador Inmersivo con IA (V2)** | LLM decora resultados crudos con prosa atmosférica |
 | **Cerebro generativo de NPCs** | LLM selecciona acciones entre las aristas disponibles |
-| **Mundos de ejemplo adicionales** | Un mundo tutorial de 5 habitaciones + un demo pequeño |
+| **Mundos de ejemplo adicionales** | Un mundo tutorial de 5 habitaciones + un demo pequeño. Propuesta en #99 de promoverlo a Must como prueba de agnosticismo (#54) |
 | **Visualización de grafos** | Herramienta de debugging para explorar el grafo en tiempo real |
 
 ### 8.4 Won't Have (v1)
@@ -605,11 +641,12 @@ worlds/fortaleza/
 │                        CAPA DE DATOS                                │
 │                                                                     │
 │  worlds/fortaleza/                    worlds/demo/                  │
-│  ├── macro-graph.json                 ├── macro-graph.json          │
-│  ├── micro-graphs/*.json              ├── micro-graphs/*.json       │
-│  ├── entities.json                    ├── entities.json             │
-│  ├── hyper-edges.json                 ├── hyper-edges.json          │
-│  └── vocabulary.json                  └── vocabulary.json           │
+│  ├── world.yaml                       ├── world.yaml                │
+│  ├── episodes/                        ├── episodes/                 │
+│  ├── shared/                          ├── shared/                   │
+│  └── episode-XX/                      └── episode-XX/               │
+│      └── {rooms,items,npcs,               └── {rooms,items,npcs,    │
+│           actions,macros}/                       actions,macros}/   │
 └──────────────────────────────────┬──────────────────────────────────┘
                                    │ carga
                                    ▼
@@ -648,9 +685,13 @@ worlds/fortaleza/
 │  │    text → {subject,    │    │    structured result      │        │
 │  │    verb, target, ctx}  │    │    → player-facing text   │        │
 │  │                        │    │                           │        │
-│  │  V2: AI Intentional    │    │  V2: AI Immersive         │        │
-│  │    LLM translates      │    │    LLM decorates raw      │        │
-│  │    free text → tuple   │    │    result with prose      │        │
+│  │  NLP (spaCy, planned)  │    │  V2: AI Immersive         │        │
+│  │    dependency parse,   │    │    LLM decorates raw      │        │
+│  │    clitics, fuzzy verb │    │    result with prose      │        │
+│  │                        │    │                           │        │
+│  │  V3 (IA): Intentional  │    │                           │        │
+│  │    LLM translates      │    │                           │        │
+│  │    free text → tuple   │    │                           │        │
 │  └────────────┬───────────┘    └─────────────┬─────────────┘        │
 │               │                              │                      │
 │               └──────────────┬───────────────┘                      │
@@ -683,11 +724,13 @@ worlds/fortaleza/
 
 ### Sistema de Guardado/Carga: Event Sourcing
 
-El guardado no almacena snapshots del estado — almacena **logs de Hiper-Aristas ejecutadas**. Cada acción exitosa (TRANSFER, TRANSFORM, COMBINE, FLAG, TELEPORT) se registra como un evento en el log. Reconstruir cualquier estado del juego es replay el log desde el estado inicial.
+La fuente de verdad del guardado es un **log de eventos de cambio de estado**, no snapshots. Los eventos persistidos son los 5 eventos de cambio de estado (`entity_transferred`, `entity_transformed`, `entity_combined`, `flag_set`, `entity_teleported`), más `action_resolved` solo cuando tiene `has_effects` (únicamente como auditoría). Los eventos narrativos (`action_output`, `entity_entered`) no se registran. Reconstruir el estado (`EventSourcingSaveSystem.replay_state`) carga el último snapshot del slot y aplica directamente los eventos de cambio de estado posteriores a él; `action_resolved` se omite y un tipo de evento desconocido lanza `CorruptEventError`. El snapshot se toma al emitirse `game_saved`.
 
-- El log se persiste en SQLite vía SQLAlchemy
-- Ventajas: historial completo de acciones, debugging determinístico, posibilidad de "deshacer" rebobinando el log, tamaño de archivo mínimo
+- El log y los snapshots se persisten en SQLite vía SQLAlchemy (tablas `event_log` y `save_snapshots`, creadas con `Base.metadata.create_all`; Alembic aún no está inicializado — ver #22)
+- Ventajas: historial completo de cambios de estado, debugging determinístico, posibilidad de "deshacer" rebobinando el log, tamaño de archivo mínimo
 - Compatible con el sistema de "rastro" original de Fortaleza (que guardaba comandos relevantes en texto)
+
+> **Abierto:** contrato del log y versionado de guardados — ver #81; fallos de guardado tragados por el bus — ver #82; decisión JSON vs SQLite — ver #97.
 
 ### Interfaz de Persistencia (Repository)
 
@@ -695,16 +738,16 @@ Una interfaz limpia `WorldStateRepository` (clase base abstracta) que encapsula 
 
 ```
 WorldStateRepository (ABC)
-├── append_event(event: HyperEdgeEvent) → void
-├── get_event_log(since_turn: int) → list[HyperEdgeEvent]
+├── append_event(event) → void
+├── get_event_log(since_turn: int = 0) → list[event]
 ├── get_latest_turn() → int
-├── save_snapshot(state: WorldState, turn: int) → void   # caché opcional
-└── load_latest_snapshot() → (WorldState, int) | None     # caché opcional
+├── save_snapshot(state: WorldState, turn: int, save_slot: str) → void   # caché
+└── load_latest_snapshot(save_slot: str) → (WorldState, int) | None      # caché
 ```
 
-La interfaz incluye métodos de snapshot como caché opcional para acelerar la carga. La fuente de verdad es siempre el log de eventos.
+La interfaz incluye métodos de snapshot como caché para acelerar la carga. La fuente de verdad es siempre el log de eventos.
 
-Esta interfaz permite intercambiar SQLite por PostgreSQL, Redis o DynamoDB en el futuro sin tocar el código del motor. Implementación inicial: **SQLite** (módulo `sqlite3` de stdlib). Futuro: backend web-capable.
+Esta interfaz permite intercambiar SQLite por PostgreSQL, Redis o DynamoDB en el futuro sin tocar el código del motor. Implementación inicial: **SQLAlchemy sobre SQLite** (`persistence/sqlite_repository.py`). Futuro: backend web-capable.
 
 ### Formato de Datos del Mundo
 
@@ -724,44 +767,17 @@ Esta interfaz permite intercambiar SQLite por PostgreSQL, Redis o DynamoDB en el
 
 ### Estructura Multi-Archivo del Mundo
 
-Cada tipo de entidad tiene su propio directorio de archivos YAML, NO un archivo monolítico:
+Cada tipo de entidad tiene su propio directorio de archivos YAML, NO un archivo monolítico. Ver §7.5 para la estructura real.
 
-```
-worlds/fortaleza/
-├── world.yaml           # Metadatos del mundo, banderas globales, estado inicial
-├── episodes/
-│   ├── parte-1.yaml     # Episodio 1: configuración, goal, carry_over
-│   └── parte-2.yaml     # Episodio 2: configuración, goal, carry_over
-├── rooms/
-│   ├── room-01.yaml     # "Entrada de la Fortaleza"
-│   ├── room-02.yaml     # "Pasillo Oscuro"
-│   └── ...              # 88 archivos de habitaciones en total
-├── items/
-│   ├── antorcha.yaml
-│   ├── espada.yaml
-│   └── ...              # ~120 archivos de objetos
-├── npcs/
-│   ├── troll-01.yaml
-│   ├── guardia-01.yaml
-│   └── ...              # ~50 archivos de NPCs
-├── actions/
-│   ├── encender-fuego.yaml
-│   ├── abrir-puerta.yaml
-│   └── ...              # Definiciones de acciones / hiper-aristas
-├── macros/
-│   ├── vocabulary.yaml  # Definiciones de verbos y sinónimos
-│   └── parser-rules.yaml # Reglas del parser clásico
-└── narrator/
-    └── templates.yaml   # Strings del narrador basado en plantillas
-```
-
-Cada archivo define UNA entidad. El motor carga el directorio al iniciar, descubre todos los archivos y construye el grafo en memoria. Esto permite:
+Las entidades viven en archivos YAML dentro de su subdirectorio; un archivo puede agrupar definiciones relacionadas (p. ej. acciones por verbo). El motor carga el directorio al iniciar, descubre todos los archivos y construye el grafo en memoria. Esto permite:
 
 - Diffs de control de versiones a nivel de entidad (no buscar en un archivo de 5000 líneas)
 - Diseñadores de mundo trabajando en diferentes habitaciones/NPCs en paralelo
 - Agregar o quitar entidades sin tocar otros archivos
 - Usar anclas y alias de YAML entre archivos para definiciones compartidas
 - Futuro: un editor de mundos puede generar estos archivos automáticamente
+
+> **Abierto:** una biblioteca estándar de Hiper-Aristas genéricas reutilizables entre mundos — ver #89.
 
 ### Sistema de Eventos
 
@@ -775,9 +791,9 @@ El motor se comunica con la UI exclusivamente a través de eventos (diseño deta
 
 - **Interfaces** como contratos estables:
   - `ParserInterface`: `parse(raw_text: string, world_state: WorldState) → { subject, verb, target, context, instrument }`
-  - `NarratorInterface`: `narrate(result, worldState) → string`
-- Comunicación vía **stdin/stdout** o **llamadas a biblioteca dinámica** — el motor no necesita saber qué hay del otro lado
-- Los plugins pueden escribirse en cualquier lenguaje que implemente la interfaz
+  - `NarratorInterface`: `__init__(language="es")`, propiedad `language`, `initialize(event_bus)` y `handle_event(event, world_state)`
+- Los plugins son **clases Python** descubiertas vía entry points (`importlib.metadata`) y resueltas por `plugins/factory.py` (`create_parser`, `create_narrator`, `list_available_plugins`). No existe un protocolo stdin/stdout ni de biblioteca dinámica.
+- Una implementación en otro lenguaje necesitaría un plugin adaptador en Python que la envuelva.
 
 ---
 
@@ -789,7 +805,7 @@ El motor se comunica con la UI exclusivamente a través de eventos (diseño deta
 | **Motor agnóstico** | Un nuevo mundo de 5 habitaciones se crea sin modificar una sola línea del código del motor |
 | **Serialización** | El Estado Global se serializa y deserializa en un ciclo completo sin pérdida de datos (round-trip fidelity) |
 | **Parser V1** | Resuelve correctamente el 100% de los comandos documentados de Fortaleza (37 verbos × sintaxis) |
-| **Independencia de plugins** | Cambiar de Parser V1 a Parser V2 no requiere modificar el motor |
+| **Independencia de plugins** | Cambiar del Parser V1 a otro parser (NLP o IA) no requiere modificar el motor |
 | **Preservación de texto** | Las ~22,000 palabras del texto original de Fortaleza se reproducen con exactitud (tildes, puntuación, mayúsculas) |
 
 ---
@@ -801,7 +817,9 @@ El motor se comunica con la UI exclusivamente a través de eventos (diseño deta
 3. **El formato de datos de mundo debe ser legible por humanos y versionable.** JSON/YAML, no binario. Un diseñador debe poder editar un archivo y ver el cambio al recargar.
 4. **El texto en español de Fortaleza debe preservarse exactamente.** Es el contrato de compatibilidad con la obra original y su comunidad.
 5. **La arquitectura debe soportar integración futura con IA sin rediseño.** Los puntos de conexión (parser intencional, narrador inmersivo, cerebro generativo) están definidos desde el día uno.
-6. **Cada habitación, objeto, NPC y acción DEBE definirse en su propio archivo YAML dentro del subdirectorio correspondiente.** No se permite agrupar múltiples entidades en un solo archivo.
+6. **Las entidades viven en archivos YAML dentro de su subdirectorio; un archivo puede agrupar definiciones relacionadas (p. ej. acciones por verbo).**
+
+   > **Abierto:** una biblioteca estándar de Hiper-Aristas genéricas — ver #89.
 7. **La capa de persistencia DEBE accederse a través de la interfaz Repository.** No se permiten llamadas directas a SQLite en el código del motor.
 8. **El motor no debe asumir un solo protagonista.** Toda la lógica de turnos, consultas al grafo y resolución de acciones debe tratar `player_controlled` como un conjunto, nunca como un singleton. Los datos del mundo definen qué entidades son controlables; el motor no hardcodea esta decisión.
 
@@ -850,9 +868,9 @@ El motor se comunica con la UI exclusivamente a través de eventos (diseño deta
 - `docs/13-event-system.md` — Diseño del sistema de eventos: bus síncrono, categorías de eventos, contrato motor-UI
 
 ### Código Original
-- `FORT1.PAS`, `FORT2.PAS` — Entry points (Turbo Pascal 7)
-- `CASTLES.PAS` — Motor de aventura conversacional (1346 líneas)
-- `LEXIC.PAS`, `VOCABL.PAS` — Lexicográfico y vocabulario del parser
+- `docs/original-source/FORT1.PAS`, `docs/original-source/FORT2.PAS` — Entry points (Turbo Pascal 7)
+- `docs/original-source/CASTLES.PAS` — Motor de aventura conversacional (1346 líneas)
+- `docs/original-source/LEXIC.PAS`, `docs/original-source/VOCABL.PAS` — Lexicográfico y vocabulario del parser
 - Issue de build original: https://github.com/merchise/fortaleza/issues/2
 
 ---

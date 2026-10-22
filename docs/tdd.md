@@ -4,6 +4,7 @@
 **Tipo**: Technical Design Document
 **Idioma**: Español
 **Depende de**: PRD v2.0, GDD v1.0, Event System #13
+**Última limpieza**: 2026-10-21 — contradicciones entre PRD/GDD/TDD resueltas contra el código. Decisiones de diseño abiertas: ver epic #99 (https://github.com/efirvida/fortress-engine/issues/99).
 
 ---
 
@@ -130,7 +131,7 @@ from typing import Any
 @dataclass
 class Entity:
     entity_id: str
-    type: str                      # "item" | "room" | "npc" | "player" | "container" | "door"
+    type: str                      # string opaco definido por el creador del mundo (el motor no lo valida)
     name: str
     components: dict[str, Any]     # key-value component dictionary
     spatial_anchor: str | None     # entity_id of container, or None (null = destroyed/limbo)
@@ -139,7 +140,9 @@ class Entity:
 **Notas de implementación**:
 - `spatial_anchor == None` es el estado "destruido" o "en limbo" (ver patrón Limbo Room, PRD 4.3).
 - No hay herencia de clases para tipos de entidad. El comportamiento se define por componentes y por Hiper-Aristas (ver PRD 4.1 y GDD 2.1).
-- Los nombres de tipos están en inglés (`"item"`, `"room"`, `"npc"`, `"player"`, `"container"`, `"door"`) para consistencia con el código Python.
+- `Entity.type` es un string opaco que pertenece al creador del mundo (p. ej. `"item"`, `"room"`, `"npc"`). El motor nunca lo valida, enumera ni ramifica sobre él.
+
+> **Abierto:** la CLI sí ramifica sobre `type == "player"` para elegir al protagonista (`cli/main.py:103-113`) — ver #88.
 
 ### 3.2 HyperEdge
 
@@ -213,8 +216,10 @@ class MacroEdge:
 **Notas de implementación**:
 - Las aristas con `requires_text` arrancan con `open: False`. Se abren cuando el jugador dice el texto correcto (coincidencia insensible a mayúsculas y tildes).
 - Una arista sin predicados tiene `open: True` siempre.
-- El campo `open` es mutable — se modifica durante el juego (a diferencia del resto de campos que son inmutables después de la carga).
-- **Propagación bidireccional**: al abrir una arista con `requires_text` que es `bidirectional`, el motor también abre la arista espejo (misma `passage_name`, dirección opuesta). Es la MISMA puerta vista desde ambos lados; la copia reverse lleva `open` por valor, así que abrir un lado debe desbloquear el otro (`_open_reverse_edges`).
+- El campo `open` es mutable — se modifica en el propio grafo durante el juego (`graph.py`), a diferencia del resto de campos que son inmutables después de la carga. No vive en `WorldState` ni se registra en el log de eventos.
+
+> **Abierto:** el estado abierto/cerrado de los pasajes queda fuera de `WorldState` y del log de eventos — ver #79.
+- **Propagación bidireccional**: el loader expande cada arista `bidirectional` en una copia `<id>_reverse` (dirección opuesta, misma `passage_name`). Al abrir una arista con `requires_text`, el grafo también abre su espejo (`_open_reverse_edges`). Es la MISMA puerta vista desde ambos lados; la copia reverse lleva `open` por valor, así que abrir un lado desbloquea el otro.
 - `death_message` es el único discriminador entre fatal y bloqueado; el motor nunca interpreta nombres de tipos de conexión.
 
 ### 3.4 Operators
@@ -275,7 +280,10 @@ Operator = Union[TransferOp, TransformOp, CombineOp, FlagOp, TeleportOp]
 - La validación de peso en `TransferOp` se aplica solo cuando `to_container` es el `entity_id` del protagonista activo (ver PRD 4.4).
 - Los valores especiales `"@anchor"` en `from_container` y `to_container` se resuelven al `spatial_anchor` actual del protagonista en tiempo de ejecución. Esto permite edges genéricos de `dejar <item>` / `tomar <item>` que operan sobre el anchor donde está el jugador, sin hardcodear un contenedor (ver GDD 2.4).
 - `CombineOp.output_entity` debe ser una entidad que existe en el grafo, típicamente con `spatial_anchor: "_limbo"` (ver patrón Limbo Room, GDD 2.4).
-- El orden de ejecución es secuencial y transaccional: si un operador falla, los anteriores no se revierten porque el grafo aún no mutó. Pero sí se detiene la secuencia — los operadores posteriores no se ejecutan.
+- `operator_from_dict` rechaza claves desconocidas con `ValueError`. En `TRANSFER` las claves son `from_container` / `to_container` (`from` / `to` no son válidas).
+- Los operadores se ejecutan en secuencia (`TurnOrchestrator._execute_operators`) y la secuencia se detiene en el primer fallo: los operadores posteriores no se ejecutan. La secuencia NO es atómica: las mutaciones anteriores y los eventos de cambio de estado ya emitidos se conservan.
+
+> **Abierto:** las secuencias de operadores no son atómicas (no hay rollback) — ver #80.
 
 ### 3.5 WorldState
 
@@ -371,6 +379,7 @@ class GoalCondition:
     type: str                       # "entity_in_room" | "entity_not_in_room" | "entity_dead"
                                     # | "flag_is_set" | "flag_is_not_set" | "entity_has_component"
     params: dict[str, Any]          # parámetros según el tipo (entity, room, flag, component, value)
+                                    # en YAML: planos (`flag: x`) o anidados bajo `params:`
 
 
 @dataclass
@@ -459,7 +468,7 @@ class TurnOrchestrator:
           10. emit action_output (si selected.output no vacío; placeholders resueltos, ver abajo)
           11. emit action_resolved
           12. _evaluate_goal() → si goal cumplido: transición de episodio o game_completed
-          13. Verificar player_dead → game_over
+          13. Verificar player_dead → game_over  (bandera hard-codeada, ver nota abajo)
           14. emit turn_ended
         """
         ...
@@ -501,9 +510,10 @@ class TurnOrchestrator:
         self, operators: list[dict], state: WorldState
     ) -> list[str]:
         """
-        Ejecuta la secuencia de operadores atómicos transaccionalmente.
+        Ejecuta la secuencia de operadores atómicos en orden.
         Retorna la lista de tipos de operadores ejecutados exitosamente.
-        Si un operador falla, detiene la secuencia y emite error_output.
+        Si un operador falla, detiene la secuencia y emite error_output;
+        las mutaciones anteriores y sus eventos se conservan (no es atómico).
         """
         ...
 
@@ -511,6 +521,15 @@ class TurnOrchestrator:
         """Evalúa condiciones de victoria del episodio. Retorna True si se cumplen."""
         ...
 ```
+
+**Notas**:
+- `_validate_clique` devuelve solo `bool`: el motivo concreto del fallo no se reporta al jugador ni al narrador.
+
+> **Abierto:** explicar por qué falla una clique — ver #92.
+
+- El paso 13 comprueba la bandera hard-codeada `player_dead` (`orchestrator.py`), y la CLI elige al protagonista por `type == "player"`: convenciones de Fortaleza dentro del motor.
+
+> **Abierto:** componentes reservados por el motor, derrota como dato y convenciones de Fortaleza fuera del motor — ver #88.
 
 **Manejo de comandos de sistema** (PRD 4.6):
 
@@ -641,6 +660,9 @@ class DualGraphEngine:
 
 **Notas de implementación**:
 - Las Hiper-Aristas se indexan por `(anchor_id, verb)` para búsqueda O(1).
+- **Distribución de aristas**: en la práctica el mundo registra todas las Hiper-Aristas bajo el `start_anchor` del episodio, y `EpisodeManager` (`episode_manager.py:257-276`) copia cada arista registrada en `start_anchor` a todos los anchors del grafo que aún no tienen ninguna. El filtrado por escena ocurre en `validate_clique`, no por el índice por anchor.
+
+> **Abierto:** el Grafo Micro por anchor es vestigial (todas las anchors comparten las mismas aristas copiadas) — ver #83.
 - El ordenamiento por prioridad descendente ocurre al insertar o al consultar. Si se hace al insertar, se usa `bisect` para mantener la lista ordenada.
 - El motor valida que no existan dos Hiper-Aristas con el mismo `(verb, target, priority)` en la misma anchor. Si las hay, emite una advertencia (PRD 4.8).
 
@@ -675,8 +697,10 @@ def execute_transfer(
 
     Validaciones:
     - Si to_container es el protagonista activo:
-      1. Si entity.weight > player.max_weight → error_code: "not_portable" + data.
-      2. Si sum(inventory_items.weight) + entity.weight > player.max_weight → error_code: "too_heavy" + data.
+      max_weight ausente, None o booleano False significa capacidad ilimitada.
+      Un límite numérico, incluido 0, es explícito; no hay default numérico.
+      1. Si existe límite y entity.weight > player.max_weight → error_code: "not_portable" + data.
+      2. Si existe límite y sum(inventory_items.weight) + entity.weight > player.max_weight → error_code: "too_heavy" + data.
       3. Si entity.portable == false → error: entidad no portable.
     - entity debe existir en from_container.
 
@@ -746,8 +770,6 @@ def execute_teleport(
 
     Postcondiciones:
     - entity.spatial_anchor = to_anchor.
-    - Si la entidad es una room (no aplica para TELEPORT, pero por completitud):
-      - Marca room.visited = True.
     """
     ...
 
@@ -1141,18 +1163,24 @@ class WorldStateRepository(ABC):
         ...
 
     @abstractmethod
-    def save_snapshot(self, state: WorldState, turn: int, save_slot: str) -> None:
-        """Guarda un snapshot del estado completo como caché opcional."""
+    def save_snapshot(
+        self, state: WorldState, turn: int, save_slot: str
+    ) -> None:
+        """Guarda un snapshot del estado completo como caché de rendimiento."""
         ...
 
     @abstractmethod
-    def load_latest_snapshot(self, save_slot: str) -> tuple[WorldState, int] | None:
+    def load_latest_snapshot(
+        self, save_slot: str
+    ) -> tuple[WorldState, int] | None:
         """
         Carga el snapshot más reciente del slot.
-        Retorna (WorldState, turn_number) o None si no hay snapshot.
+        Retorna (WorldState, turn_number) o None si el slot nunca se guardó.
         """
         ...
 ```
+
+El módulo también define la jerarquía de errores `RepositoryError` y sus subclases `NonPersistableEventError`, `CorruptEventError`, `CorruptSnapshotError` e `InvalidSlotError`.
 
 ### 4.10 `persistence/sqlite_repository.py` — Implementación SQLite
 
@@ -1174,13 +1202,13 @@ class SQLiteWorldStateRepository(WorldStateRepository):
     def __init__(self, db_path: str) -> None:
         """
         Inicializa la conexión a SQLite.
-        Crea las tablas si no existen (create_all).
-        db_path: ruta al archivo .db (ej: "saves/slot_1/fortaleza.db").
+        Crea las tablas si no existen (Base.metadata.create_all; Alembic NO está inicializado).
+        db_path: ruta al archivo .db (ej: "saves/slot_1/fortaleza.db") o ":memory:".
         """
         ...
 
     def append_event(self, event: EngineEvent) -> None:
-        """Inserta una fila en event_log."""
+        """Inserta una fila en event_log. Solo eventos persistibles; otros lanzan NonPersistableEventError."""
         ...
 
     def get_event_log(self, since_turn: int = 0) -> list[EngineEvent]:
@@ -1191,12 +1219,19 @@ class SQLiteWorldStateRepository(WorldStateRepository):
         """SELECT MAX(turn_number) FROM event_log."""
         ...
 
-    def save_snapshot(self, state: WorldState, turn: int, save_slot: str) -> None:
-        """Inserta (o actualiza) una fila en save_snapshots."""
+    def save_snapshot(
+        self, state: WorldState, turn: int, save_slot: str
+    ) -> None:
+        """Upsert de una fila en save_snapshots para (save_slot, turn)."""
         ...
 
-    def load_latest_snapshot(self, save_slot: str) -> tuple[WorldState, int] | None:
-        """SELECT * FROM save_snapshots WHERE save_slot = ? ORDER BY turn_number DESC LIMIT 1."""
+    def load_latest_snapshot(
+        self, save_slot: str
+    ) -> tuple[WorldState, int] | None:
+        """
+        SELECT * FROM save_snapshots WHERE save_slot = ? ORDER BY turn_number DESC LIMIT 1.
+        Lanza CorruptSnapshotError si world_state_json no deserializa.
+        """
         ...
 ```
 
@@ -1206,43 +1241,61 @@ class SQLiteWorldStateRepository(WorldStateRepository):
 
 **Clases principales**:
 
-- `EventSourcingSaveSystem` — suscriptor `*` del EventBus que apende eventos al repositorio.
+- `EventSourcingSaveSystem` — suscriptor `*` del EventBus que apende al repositorio los eventos persistibles, y guarda un snapshot al recibir `game_saved`.
 
 **Interfaz pública**:
 
 ```python
 class EventSourcingSaveSystem:
-    def __init__(self, event_bus: EventBus, repository: WorldStateRepository) -> None:
+    def __init__(
+        self,
+        event_bus: EventBus,
+        repository: WorldStateRepository,
+        state_provider: Callable[[], WorldState] | None = None,
+    ) -> None:
         """
-        Se suscribe a '*' en el EventBus.
-        Cada evento emitido se apende automáticamente al repository.
+        Se suscribe a '*' (persiste los eventos persistibles) y a 'game_saved'
+        (snapshot del estado devuelto por state_provider; sin provider es no-op).
         """
         ...
 
-    def _append_to_log(self, event: EngineEvent) -> None:
-        """Handler que apende el evento al repositorio."""
+    def _on_event(self, event: EngineEvent) -> None:
+        """Handler '*': apende el evento al repositorio si es persistible."""
+        ...
+
+    def _on_game_saved(self, event: EngineEvent) -> None:
+        """Handler game_saved: guarda un snapshot en payload['save_slot'] (default 'slot_1')."""
         ...
 
     def replay_state(
         self,
-        initial_state: WorldState,
-        graph: 'DualGraphEngine',
-        since_turn: int = 0,
-    ) -> tuple[WorldState, int]:
+        state: WorldState,
+        save_slot: str,
+        graph: object | None = None,
+    ) -> WorldState:
         """
-        Reconstruye el estado reproduciendo el event log desde since_turn.
-        Retorna (estado_final, último_turno).
+        Carga el snapshot más reciente de save_slot en `state` (o parte de `state`
+        tal cual si no hay snapshot) y aplica directamente los eventos de cambio
+        de estado posteriores al snapshot. Muta y retorna el mismo `state`.
 
         Durante el replay:
-        - Se emiten save_replay_started/save_replay_ended para que la UI suprima renderización.
-        - Solo se reproducen eventos de tipo action_resolved (los que modifican estado).
+        - Se emiten solo save_replay_started/save_replay_ended (la UI suprime renderización).
+        - No se re-emite ningún evento por el EventBus.
+        - Los eventos de cambio de estado se aplican directamente; action_resolved se omite.
+        - Un tipo de evento desconocido en el log lanza CorruptEventError.
         """
         ...
 ```
 
 **Notas de implementación**:
-- Solo se persisten eventos que modifican estado (`action_resolved` con `has_effects: true`). Eventos de narración (`action_output`, `entity_entered`) no se persisten porque son derivables del estado.
-- El replay carga el snapshot más reciente y reproduce solo los eventos posteriores a ese snapshot. Si no hay snapshot, reproduce todo el log desde el estado inicial.
+- Se persisten los 5 eventos de cambio de estado (`entity_transferred`, `entity_transformed`, `entity_combined`, `flag_set`, `entity_teleported`) más `action_resolved` solo cuando `has_effects` es verdadero (este último es únicamente de auditoría). Eventos de narración (`action_output`, `entity_entered`) no se persisten porque son derivables del estado.
+- El replay carga el snapshot más reciente del slot y aplica solo los eventos de cambio de estado posteriores a ese snapshot; `action_resolved` se omite. Si no hay snapshot, reproduce todo el log sobre el estado recibido.
+- El snapshot se guarda al recibir `game_saved`; es una caché de rendimiento, no la fuente de verdad.
+- Los errores de los handlers del bus (incluidos los fallos de guardado) se tragan en `EventBus.emit` (`events/event_bus.py`).
+
+> **Abierto:** contrato del log de eventos y versionado de los guardados — ver #81.
+
+> **Abierto:** los fallos de guardado se tragan silenciosamente en los handlers del bus — ver #82.
 
 ### 4.12 `entities/loader.py` — Cargador YAML de Entidades
 
@@ -1405,7 +1458,7 @@ class CliqueYAML(BaseModel):
 
 ### 4.13 `plugins/parser_interface.py` — Interfaz de Parser
 
-**Responsabilidad**: Define el contrato que todo parser debe implementar (PRD 5). Es una clase abstracta con un único método.
+**Responsabilidad**: Define el contrato que todo parser debe implementar (PRD 5). Es una clase abstracta con la propiedad `language` y un único método de parseo.
 
 **Interfaz pública**:
 
@@ -1415,6 +1468,15 @@ from abc import ABC, abstractmethod
 
 class ParserInterface(ABC):
     """Interfaz que todo parser debe implementar (PRD 5, GDD 2.5)."""
+
+    def __init__(self, language: str = "es") -> None:
+        self._language = language
+
+    @property
+    @abstractmethod
+    def language(self) -> str:
+        """Código de idioma en el que opera el parser (p. ej. 'es', 'en')."""
+        ...
 
     @abstractmethod
     def parse(self, raw_text: str, world_state: 'WorldState') -> 'ParsedCommand':
@@ -1431,6 +1493,10 @@ class ParserInterface(ABC):
         ...
 ```
 
+> **Abierto:** el parser devuelve hoy un `ParsedCommand` plano; se propone un `ParseResult` estructurado (con errores/ambigüedades) — ver #90.
+
+> **Abierto:** el parser recibe el `WorldState` completo; se propone una vista de percepción acotada para plugins — ver #95.
+
 ### 4.14 `plugins/narrator_interface.py` — Interfaz de Narrador
 
 **Responsabilidad**: Define el contrato que todo narrador debe implementar (PRD 6). El narrador se suscribe al EventBus y produce texto para el jugador.
@@ -1443,6 +1509,15 @@ from abc import ABC, abstractmethod
 
 class NarratorInterface(ABC):
     """Interfaz que todo narrador debe implementar (PRD 6, GDD 2.5)."""
+
+    def __init__(self, language: str = "es") -> None:
+        self._language = language
+
+    @property
+    @abstractmethod
+    def language(self) -> str:
+        """Código de idioma en el que opera el narrador (p. ej. 'es', 'en')."""
+        ...
 
     @abstractmethod
     def initialize(self, event_bus: 'EventBus') -> None:
@@ -1469,6 +1544,8 @@ class NarratorInterface(ABC):
         ...
 ```
 
+> **Abierto:** el narrador recibe el `WorldState` completo; se propone una vista de percepción acotada para plugins — ver #95.
+
 ### 4.15 `plugins/classic_parser.py` — Parser Clásico V1
 
 **Responsabilidad**: Implementación del parser clásico que replica el comportamiento del parser original de Fortaleza (Turbo Pascal 7). Reconoce 37 verbos (canónicos + grupos de sinónimos, según `docs/07-vocabulary.md`), ~180 sustantivos, con matching parcial, normalización de tildes y filtrado de stopwords V2.
@@ -1492,6 +1569,11 @@ class ClassicParser(ParserInterface):
     - Normalización de tildes: áéíóúüñ → aeiouun.
     - Stopwords V2: LA, EL, LOS, LAS, UN, UNA, AL, DEL, POR.
     - Sintaxis: VERBO [SUSTANTIVO] [PREPOSICIÓN SUSTANTIVO].
+
+    V1 es una réplica fiel e intencional del parser original de Fortaleza y se
+    mantiene simple (el matching de sustantivos usa solo `entity.name`). El
+    español más rico (clíticos, multi-objeto, mapeo inteligente de verbos) se
+    delega al plugin NLP basado en spaCy planificado — ver #91.
     """
 
     # Stopwords V2 (PRD 5). Desviación documentada del V1 sugerido en
@@ -1744,7 +1826,11 @@ Index("idx_snapshot_slot_turn", SaveSnapshot.save_slot, SaveSnapshot.turn_number
 
 ### 5.3 Estrategia de Migraciones
 
-Se recomienda **Alembic** para gestionar migraciones de esquema:
+> **Estado actual:** Alembic está instalado como dependencia de desarrollo pero **NO está inicializado** (no existe el directorio `alembic/`). `SQLiteWorldStateRepository.__init__` crea el esquema con `Base.metadata.create_all`.
+
+> **Abierto:** inicializar Alembic y definir la estrategia de migraciones — ver #97 / #22.
+
+**Futuro** — se recomienda **Alembic** para gestionar migraciones de esquema:
 
 ```
 fortress-engine/
@@ -1755,26 +1841,29 @@ fortress-engine/
 │   └── alembic.ini
 ```
 
-El comando `alembic upgrade head` se ejecuta automáticamente al inicializar el repositorio (`SQLiteWorldStateRepository.__init__`). Si la base de datos no existe, se crea con el esquema actual. Si existe, se aplican las migraciones pendientes.
+**Futuro (aspiracional)**: ejecutar `alembic upgrade head` automáticamente al inicializar el repositorio (si la base de datos no existe, se crea con el esquema actual; si existe, se aplican las migraciones pendientes). Hoy esto NO ocurre.
 
-**Alternativa para MVP**: `Base.metadata.create_all(engine)` al iniciar. Simple y suficiente para v1.0. Alembic se agrega en v1.1 cuando el esquema evolucione.
+**Comportamiento actual (MVP)**: `Base.metadata.create_all(engine)` al iniciar. Simple y suficiente para v1.0; Alembic se agrega cuando el esquema evolucione.
 
 ---
 
 ## 6. Flujo de Carga de Mundo
 
-Este flujo describe lo que ocurre cuando el motor carga un mundo (PRD 4.8, GDD 2.5). Es la secuencia exacta de pasos que ejecuta `TurnOrchestrator.run()`.
+Este flujo describe lo que ocurre cuando el motor carga un mundo (PRD 4.8, GDD 2.5). No existe `TurnOrchestrator.run()`: la secuencia está repartida entre la construcción del motor en `cli/main.py` (`_build_engine`) y `EpisodeManager.start_episode`; el bucle de turnos vive en `cmd_run`.
 
 ### Paso a paso
 
 1. **Leer `world.yaml`**
-   - Cargar configuración global: `world_id`, `name`, `language`, `player_defaults`, lista de episodios.
+   - Cargar configuración global: `world_id`, `name`, `language`, `player_defaults`, `parser`, `narrator`. `world.yaml` NO contiene una lista de episodios.
    - Validar con Pydantic.
+   - Los episodios se cargan aparte (`EntityLoader.load_episodes`, `entities/loader.py`), únicamente desde `episodes/*.yaml` (un archivo por episodio).
 
 2. **Crear entidad del jugador**
-   - Leer `shared/player.yaml`.
-   - Crear `Entity(type="player", ...)`.
-   - Validar componente `player_controlled: true`.
+   - Leer las entidades de `shared/` (`shared/player.yaml`).
+   - La CLI toma la primera con `type == "player"` y la guarda con id `"hero"` (`player_controlled_entities=["hero"]`); si no hay ninguna, crea un `Entity("hero", "player", ...)` por defecto.
+   - El motor no lee el componente `player_controlled`.
+
+   > **Abierto:** rama por `type` y protagonista singleton fijados en la CLI — ver #88.
 
 3. **Determinar episodio activo**
    - Si es una partida nueva: el primer episodio con `requires: []`.
@@ -1785,29 +1874,34 @@ Este flujo describe lo que ocurre cuando el motor carga un mundo (PRD 4.8, GDD 2
    - Validar con Pydantic.
 
 5. **Cargar rooms** desde `episode-XX/rooms/*.yaml`:
-   - Cada archivo → una `Entity(type="room")`.
-   - Validar componentes `description`, `visited`, `dark`.
+   - Cada archivo → una `Entity` (el `type` lo define el YAML del mundo).
+   - El loader no valida los componentes `description`, `visited` ni `dark`; el motor no lee `visited` ni `dark` (la oscuridad no está implementada). `description` solo se usa vía placeholders `{description}`.
+
+   > **Abierto:** componentes reservados por el motor y convenciones de Fortaleza fuera del motor — ver #88.
 
 6. **Cargar ítems** desde `episode-XX/items/*.yaml`:
-   - Cada archivo → una `Entity(type="item")`.
+   - Cada archivo → una `Entity` (el `type` lo define el YAML del mundo).
    - Asignar `spatial_anchor` según el campo YAML (room donde aparece inicialmente).
 
 7. **Cargar NPCs** desde `episode-XX/npcs/*.yaml`:
-   - Cada archivo → una `Entity(type="npc")`.
-   - Validar componentes `mood`, `brain_type`, `hit_points`.
+   - Cada archivo → una `Entity` (el `type` lo define el YAML del mundo).
+   - El loader no valida los componentes `mood`, `brain_type` ni `hit_points`, y el motor tampoco los lee — ver #88.
 
 8. **Cargar aristas Macro** desde `episode-XX/macros/*.yaml`:
    - Cada archivo → un `MacroEdge`.
    - Validar que no contengan campos legados (`connection_type`, `password`, `answer`): `MacroEdgeYAML` usa `extra="forbid"` y falla ruidosamente ante ellos.
 
 9. **Cargar Hiper-Aristas** desde `episode-XX/actions/*.yaml`:
-   - Cada archivo → un `HyperEdge`.
+   - Cada archivo → una lista de `HyperEdge` (agrupadas por verbo, p. ej. `he_matar.yaml`; el loader acepta una lista por archivo).
    - Validar estructura de `clique` y `operators`.
 
 10. **Construir el Grafo Dual**:
     - `DualGraphEngine.add_anchor()` para cada room.
     - `DualGraphEngine.add_macro_edge()` para cada arista Macro.
     - `DualGraphEngine.add_hyper_edge()` para cada Hiper-Arista (indexada por anchor y verbo).
+    - Distribución: `EpisodeManager.distribute_hyper_edges_to_anchors` copia las aristas registradas en `start_anchor` a todos los demás anchors sin aristas (ver §4.2).
+
+    > **Abierto:** el Grafo Micro por anchor es vestigial — ver #83.
 
 11. **Validar integridad del grafo**:
     - Sin referencias colgantes: toda entidad referenciada en cliques, predicados y operadores existe en `entities`.
@@ -2091,7 +2185,9 @@ def test_fortaleza_walkthrough_part2():
     ...
 ```
 
-**Nota sobre el walkthrough**: El test no verifica el texto de salida palabra por palabra — eso es responsabilidad de los datos YAML (que deben contener el texto exacto del original). El test verifica que la secuencia de comandos produce el resultado esperado en términos de estado (posiciones de entidades, flags, y finalmente goal cumplido).
+**Nota sobre el walkthrough**: El test no verifica el texto de salida palabra por palabra — eso es responsabilidad de los datos YAML (que deben contener el texto exacto del original). El test verifica que la secuencia de comandos produce el resultado esperado en términos de estado (posiciones de entidades, flags, y finalmente goal cumplido). Hoy ningún test comprueba la fidelidad del texto respecto al original.
+
+> **Abierto:** test automatizado de fidelidad de texto — ver #98.
 
 ### 7.4 Fixtures de Test
 
@@ -2105,21 +2201,25 @@ world_id: "test-minimal"
 name: "Test Minimal World"
 player_defaults:
   max_weight: 40
-
-episodes:
-  - id: "ep-1"
-    name: "Test Episode"
-    requires: []
-    start_anchor: "test-room-01"
-    goal:
-      conditions:
-        - type: flag_is_set
-          flag: "puzzle_solved"
-      output: "Victoria!"
-    carry_over:
-      inventory: []
-      flags: []
 ```
+
+```yaml
+# episodes/ep-1.yaml
+id: "ep-1"
+name: "Test Episode"
+requires: []
+start_anchor: "test-room-01"
+goal:
+  conditions:
+    - type: flag_is_set
+      flag: "puzzle_solved"
+  output: "Victoria!"
+carry_over:
+  inventory: []
+  flags: []
+```
+
+> **Nota:** el loader real lee los episodios únicamente de `episodes/*.yaml` (un archivo por episodio); `world.yaml` no admite una clave `episodes:`. Las condiciones de `goal` aceptan parámetros planos (`flag: ...`) o anidados bajo `params:` (`_goal_condition_from_dict`, `entities/loader.py`); el mundo Fortaleza usa la forma anidada.
 
 **Fixture: WorldState pre-construido**
 
@@ -2209,49 +2309,7 @@ python_files = "test_*.py"
 
 Los plugins son componentes intercambiables que implementan interfaces ABC. El motor nunca conoce la implementación concreta — solo la interfaz (PRD 5, PRD 6).
 
-```python
-from abc import ABC, abstractmethod
-from fortress_engine.events.event_types import EngineEvent
-from fortress_engine.engine.state import WorldState
-from fortress_engine.entities.entity import Entity
-
-
-class ParserInterface(ABC):
-    """Contrato para parsers (PRD 5)."""
-
-    @abstractmethod
-    def parse(self, raw_text: str, world_state: WorldState) -> 'ParsedCommand':
-        """
-        Traduce texto crudo a comando estructurado.
-
-        Args:
-            raw_text: texto ingresado por el jugador.
-            world_state: estado actual del mundo (entidades, flags, protagonista activo).
-
-        Returns:
-            ParsedCommand con entity_ids resueltos.
-        """
-        ...
-
-
-class NarratorInterface(ABC):
-    """Contrato para narradores (PRD 6)."""
-
-    @abstractmethod
-    def initialize(self, event_bus: 'EventBus') -> None:
-        """Se suscribe a eventos del motor que producen texto para el jugador."""
-        ...
-
-    @abstractmethod
-    def handle_event(
-        self, event: EngineEvent, world_state: WorldState
-    ) -> str | None:
-        """
-        Procesa un evento del motor y produce texto para el jugador.
-        Retorna None si el evento no produce texto visible.
-        """
-        ...
-```
+Ver §4.13 (`ParserInterface`) y §4.14 (`NarratorInterface`).
 
 ### 9.2 Carga de Plugins
 
@@ -2362,151 +2420,56 @@ def execute_turn(self, raw_text: str) -> None:
 fortress-engine run <world_path> [--save SLOT] [--parser NAME] [--narrator NAME]
     Inicia el juego interactivo.
     - world_path: ruta al directorio del mundo (ej: "worlds/fortaleza/")
-    - --save SLOT: carga desde un slot de guardado (1, 2, 3, o "auto")
+    - --save SLOT: reservado; hoy solo imprime un aviso ("persistence deferred")
     - --parser NAME: parser a usar (default: "classic")
     - --narrator NAME: narrador a usar (default: "template")
 
-fortress-engine validate <world_path>
-    Valida la integridad de los datos del mundo.
-    - Retorna 0 y "World is valid." si no hay errores.
-    - Retorna 1 y lista de errores si los hay.
-    - Opciones: --verbose (muestra warnings también)
+fortress-engine validate <world_path> [--verbose]
+    Valida la integridad de los datos del mundo (EntityLoader.validate_world).
+    - Retorna 0 e imprime "World validation passed." si no hay errores.
+    - Retorna 1 y lista los errores por stderr si los hay.
 
-fortress-engine test <world_path> --walkthrough <file> [--episode ID]
+fortress-engine test <world_path> --walkthrough <file> [--episode ID] [--parser NAME] [--narrator NAME]
     Ejecuta un walkthrough en modo no interactivo.
-    - Lee comandos del archivo (uno por línea).
-    - Ejecuta cada comando secuencialmente.
-    - Al finalizar, verifica que el goal del episodio se cumple.
-    - Retorna 0 si el walkthrough completa exitosamente.
-    - Retorna 1 si el walkthrough falla.
-    - --episode ID: episodio a ejecutar (default: primer episodio disponible)
+    - --walkthrough FILE (obligatorio): comandos del archivo, uno por línea.
+    - --episode ID: episodio a ejecutar (default: "episode-01").
+    - --parser / --narrator: como en `run` (defaults: "classic" / "template").
+    - Retorna 0 si el goal del episodio se cumple; 1 si falla.
+
+fortress-engine audit-graph <world_path> [--episode ID] [--json] [--include-info]
+    Auditoría estática del grafo macro del episodio (default: primer episodio cargado).
+    - --json: reporte JSON determinista.
+    - --include-info: incluye hallazgos INFO.
+    - Retorna 0 sin hallazgos ERROR, 1 con al menos uno, 2 por uso/mundo ausente o mal formado/episodio desconocido.
+
+fortress-engine solve <world_path> [--episode ID] [--answers FILE] [--json] [--max-turns N]
+    Verifica que el episodio sea completable (auditoría estática + búsqueda BFS a ciegas).
+    - --answers FILE: YAML con respuestas curadas (override).
+    - --json: veredicto JSON determinista.
+    - --max-turns N: presupuesto de turnos (default: 50000).
+    - Retorna 0 si es completable, 1 si no (con diagnóstico), 2 por uso/mundo ausente o mal formado/episodio desconocido.
 ```
 
 ### 10.2 Implementación del comando `run`
 
-```python
-import argparse
-import sys
+El comportamiento real vive en `src/fortress_engine/cli/main.py` (`_build_engine` y `cmd_run`); no hay `TurnOrchestrator.run()`. En resumen:
 
-def cmd_run(args: argparse.Namespace) -> int:
-    """Ejecuta el juego en modo interactivo."""
+1. `_build_engine` comprueba que exista `world.yaml` y ejecuta `EntityLoader.validate_world()`; ante cualquier error imprime a stderr y sale con código 1.
+2. Carga la configuración del mundo, el vocabulario y los episodios; crea el `EventBus`.
+3. Crea parser y narrador con `plugins/factory.py` (`create_parser`, `create_narrator`) usando el idioma del mundo y los nombres `--parser` / `--narrator`; llama a `narrator.initialize(bus)`.
+4. Crea el protagonista: la primera entidad compartida con `type == "player"` (o un `Entity("hero", "player", ...)` por defecto), guardada con id `"hero"`, y construye el `WorldState` con `player_controlled_entities=["hero"]`.
+5. `EpisodeManager.start_episode("episode-01", state)` carga el episodio y construye el grafo; `distribute_hyper_edges_to_anchors` copia las Hiper-Aristas del `start_anchor` al resto de anchors.
+6. Construye `GoalEvaluator` y `TurnOrchestrator` con las dependencias inyectadas.
+7. `cmd_run` instala un suscriptor `*` que imprime lo que devuelve `narrator.handle_event`, y avisa si se pasó `--save` (persistencia diferida).
+8. Bucle: `input("> ")`; EOF o Ctrl+C terminan; las líneas vacías se ignoran; `quit` / `exit` terminan; el resto va a `orchestrator.execute_turn(line)`. Tras cada turno, si el héroe tiene `is_dead` el bucle termina.
 
-    # 1. Cargar mundo
-    loader = EntityLoader(args.world_path)
-    world_config = loader.load_world_config()
-    episodes = loader.load_episodes()
-
-    # 2. Determinar parser, narrador y vocabulario (via plugin factory)
-    vocabulary = loader.load_vocabulary()  # worlds/<name>/shared/vocabulary.yaml o None
-    parser_cfg = world_config.get("parser", {"plugin": "classic", "options": {}})
-    narrator_cfg = world_config.get("narrator", {"plugin": "template", "options": {}})
-    if isinstance(parser_cfg, str):
-        parser_cfg = {"plugin": parser_cfg, "options": {}}
-    if isinstance(narrator_cfg, str):
-        narrator_cfg = {"plugin": narrator_cfg, "options": {}}
-    language = world_config.get("language", "es")
-    parser = create_parser(PluginConfig(**parser_cfg), language)
-    narrator = create_narrator(PluginConfig(**narrator_cfg), language)
-
-    # 3. Inicializar estado, grafo, event bus
-    state = WorldState()
-    event_bus = EventBus()
-    narrator.initialize(event_bus)
-
-    # 4. Inicializar persistencia (si --save)
-    repository = None
-    if args.save:
-        db_path = f"saves/slot_{args.save}/fortaleza.db"
-        repository = SQLiteWorldStateRepository(db_path)
-        save_system = EventSourcingSaveSystem(event_bus, repository, state_provider=lambda: state)
-        event_bus.subscribe("game_saved", save_system._on_game_saved)
-
-    # 5. Cargar episodio inicial
-    episode_manager = EpisodeManager(episodes, args.world_path, event_bus)
-    active_episode = episode_manager.get_available_episodes()[0]
-    episode_data = loader.load_episode_data(active_episode.id, active_episode)
-
-    # 6. Construir grafo
-    graph = DualGraphEngine()
-    graph.build_macro_graph(episode_data["rooms"], episode_data["macro_edges"])
-    for he in episode_data["hyper_edges"]:
-        # Determinar anchor: buscar target/spatial_anchor
-        graph.add_hyper_edge(anchor_id, he)
-
-    # 7. Inicializar WorldState
-    for entity in episode_data["rooms"] + episode_data["items"] + episode_data["npcs"]:
-        state.entities[entity.entity_id] = entity
-    player = loader.load_shared_entities(active_episode.id)[0]
-    state.entities[player.entity_id] = player
-    state.player_controlled_entities = [player.entity_id]
-    state.active_protagonist_id = player.entity_id
-    state.current_episode_id = active_episode.id
-
-    # TELEPORT a start_anchor
-    state.get_entity(player.entity_id).spatial_anchor = active_episode.start_anchor
-
-    # 8. Inicializar orquestador
-    goal_evaluator = GoalEvaluator(active_episode.goal)
-    orchestrator = TurnOrchestrator(
-        state=state,
-        graph=graph,
-        event_bus=event_bus,
-        parser=parser,
-        narrator=narrator,
-        goal_evaluator=goal_evaluator,
-        episode_manager=episode_manager,
-        repository=repository,
-        save_system=save_system if args.save else None,
-        vocabulary=vocabulary,
-    )
-
-    # 9. Emitir eventos de inicio
-    event_bus.emit(EngineEvent.create(
-        event_type="world_loaded",
-        turn_number=0,
-        payload={"world_id": world_config["world_id"], "episode_count": len(episodes)},
-    ))
-    event_bus.emit(EngineEvent.create(
-        event_type="episode_started",
-        turn_number=0,
-        payload={
-            "episode_id": active_episode.id,
-            "episode_name": active_episode.name,
-            "start_anchor_id": active_episode.start_anchor,
-        },
-    ))
-
-    # 10. Bucle principal
-    running = True
-    while running:
-        try:
-            raw_text = input("> ")
-        except (EOFError, KeyboardInterrupt):
-            event_bus.emit(EngineEvent.create(
-                event_type="game_over",
-                turn_number=state.turn_number,
-                payload={"reason": "player_quit"},
-            ))
-            break
-
-        if not raw_text.strip():
-            continue
-
-        orchestrator.execute_turn(raw_text.strip())
-
-        # Verificar si el juego terminó
-        if state.get_flag("player_dead"):
-            running = False
-        # (game_completed también detiene — manejado dentro de execute_turn)
-
-    return 0
-```
+> **Abierto:** la CLI elige al protagonista por `type == "player"`, lo fija como `"hero"` y lee `is_dead` — ver #88.
 
 ### 10.3 Protocolo stdin/stdout
 
 - El motor lee **una línea por turno** de stdin.
 - La salida se escribe a stdout **a través del narrador**, que es un suscriptor del EventBus.
-- El narrador V1 escribe directamente con `print()`. El narrador V2 (IA) podría escribir a stdout o a un callback.
+- La CLI instala un suscriptor `*` que imprime con `print()` el texto que devuelve `narrator.handle_event`. Un narrador futuro (IA) podría escribir a stdout o a un callback.
 - Los errores del motor (no del juego) se escriben a stderr.
 - El código de salida: 0 = juego terminado normalmente, 1 = error de carga/validación.
 
@@ -2581,6 +2544,8 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 Orden de implementación alineado con las prioridades MoSCoW del PRD sección 8.
 
+Estado: las fases 1–2 se rastrean en los issues #1–#43 de GitHub (mayoría cerrados); la revisión de diseño de 2026-10 se rastrea en #99.
+
 ### Fase 1 — Núcleo del Motor (MVP — Must Have)
 
 | # | Tarea | Módulo(s) | Depende de |
@@ -2602,7 +2567,7 @@ Orden de implementación alineado con las prioridades MoSCoW del PRD sección 8.
 | 15 | `Episode` + `EpisodeManager` | `engine/episode_manager.py` | 3, 8 |
 | 16 | `TurnOrchestrator` (bucle principal) | `engine/orchestrator.py` | 6, 8, 9, 10, 13, 14, 15 |
 | 17 | CLI — comando `run` | `cli/main.py` | 16, 4, 11 |
-| 18 | Datos del mundo Fortaleza en YAML | `worlds/fortaleza/` (88 rooms, ~120 ítems, ~50 NPCs, ~450 Hiper-Aristas, ~100 aristas Macro) | 3 |
+| 18 | Datos del mundo Fortaleza en YAML | `worlds/fortaleza/` (88 rooms, ~120 ítems, ~50 NPCs, 248 Hiper-Aristas en 17 archivos, ~100 aristas Macro) | 3 |
 
 ### Fase 2 — Validación (MVP — Must Have)
 
