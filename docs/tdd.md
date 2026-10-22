@@ -1690,6 +1690,57 @@ def main() -> None:
 - Los eventos del motor son consumidos internamente por los suscriptores (narrador, save system). La UI de terminal simplemente imprime el texto producido por el narrador.
 - El código de salida es 0 si el juego terminó normalmente, 1 si hubo error.
 
+### 4.18 `autoplay/runtime.py` — GameRuntime (herramienta de desarrollo)
+
+**Responsabilidad**: Cablea un motor completo para `(world_path, episode_id)`, ejecuta un turno por paso y captura/restaura el estado mutable de forma barata. Es la base de herramientas de exploración y resolución; el motor real sigue siendo la función de transición y el runtime no añade lógica de mundo.
+
+**Dependencias**: `EpisodeManager`, `TurnOrchestrator`, `WorldState`, `EntityLoader`, `EventBus` y las plugins `classic`/`template` vía `plugins.factory`. No importa ningún otro módulo de `autoplay`.
+
+**Interfaz pública** (`fortress_engine.autoplay` exporta `GameRuntime`, `StepResult`, `Checkpoint`):
+
+```python
+@dataclass(frozen=True)
+class StepResult:
+    command: str
+    ok: bool                        # sin error_output y sin game_over
+    error_code: str | None = None   # payload.error_code del primer error_output
+    gate_code: str | None = None    # payload.data.gate_code de ese error
+    game_over: bool = False
+    goal_reached: bool = False      # hubo episode_completed en este paso
+    output: str = ""                # action_output del paso, unidos por espacio
+
+@dataclass
+class Checkpoint:
+    entities: dict[str, tuple[str | None, dict]]  # solo difieren del baseline
+    flags: dict[str, bool]                        # copia completa
+    edges: dict[str, bool]                        # macro_edge_id -> open, solo diferencias
+    turn_number: int
+
+class GameRuntime:
+    def __init__(
+        self, world_path: str | Path, episode_id: str,
+        protagonist_id: str | None = None,
+    ) -> None: ...
+    def anchor(self) -> str | None: ...                  # spatial_anchor del protagonista
+    def parse(self, command: str) -> ParsedCommand: ...  # puro, no toca el estado
+    def step(self, command: str) -> StepResult: ...      # exactamente un turno
+    def checkpoint(self) -> Checkpoint: ...
+    def restore(self, cp: Checkpoint) -> None: ...
+    def state_key(self, cp: Checkpoint | None = None) -> Hashable: ...
+```
+
+**Contrato**:
+
+| Tema | Decisión |
+|------|----------|
+| Protagonista | `select_protagonist` elige entre las entidades compartidas del mundo **sin consultar `Entity.type`** (cadena opaca del autor): `protagonist_id` explícito (`KeyError(id)` si no existe); si no, la que declare el componente `player_controlled: true` (PRD 4.1); si no, la única entidad compartida; varias sin desambiguar → `ValueError` explícito. Sin entidades compartidas se crea el mismo sustituto vacío `hero` que usa el CLI (`_build_engine`), conservado solo para que esos mundos sigan ejecutables. `player_controlled_entities` es una lista de un elemento. |
+| Episodio | Se construye un `EpisodeManager` con **solo** el episodio elegido (`KeyError` si no existe). Completar el objetivo emite `episode_completed` pero no descarga el grafo ni cambia el conjunto de entidades, aunque el mundo tenga episodios sucesores. |
+| Baseline | Estado tras `start_episode` + distribución de hiper-aristas; los checkpoints son diffs contra él. |
+| `step` | Cuenta un turno en `turns`; una excepción del motor se devuelve como `StepResult(ok=False, error_code="exception")` y nunca se propaga. Los eventos no se acumulan entre pasos. |
+| `restore` | Muta **en el sitio** (mismos objetos `WorldState`, `Entity`, `components`, `flag_book` y aristas); restablece al baseline y aplica el diff con copias profundas. |
+| `state_key` | Clave hashable y canónica (entidades, banderas verdaderas, aristas); excluye `turn_number` y banderas falsas. |
+| Capacidad | El runtime no define ningún `max_weight` por defecto: ausente, `null` o `false` es ilimitada y un valor numérico (incluido `0`) es un límite explícito, tal como lo decide el motor (PRD 4.4). |
+
 ---
 
 ## 5. Esquema SQLite (SQLAlchemy)
