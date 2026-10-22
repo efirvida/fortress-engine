@@ -605,6 +605,21 @@ class DualGraphEngine:
             return "*"
         return clique_value
 
+    def resolve_target_id(
+        self, clique_target: str | None, parsed: ParsedCommand, state: WorldState
+    ) -> str | None:
+        """Report a clique's concrete target without performing validation.
+
+        A targetless clique stays targetless even if the command names an
+        entity. Wildcards use the parsed target; concrete targets use the
+        authored value. Special values follow the existing resolution rules.
+        """
+        if clique_target is None:
+            return None
+        if clique_target == "*":
+            return self.resolve_special_values(parsed.target, state)
+        return self.resolve_special_values(clique_target, state)
+
 
 # ---------------------------------------------------------------------------
 # Internal helpers

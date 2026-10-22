@@ -11,6 +11,7 @@ always a list — no singleton assumptions.
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 from fortress_engine.entities.entity import Entity, ParsedCommand
@@ -286,9 +287,13 @@ class TurnOrchestrator:
             },
         )
 
-        # 9. Execute operators.
+        # 9. Bind generic entity operators to the validated target, never
+        # modifying the stored authoring templates.
+        resolved_target = self._graph.resolve_target_id(
+            selected.clique.target, parsed, state
+        )
         ops_executed = self._execute_operators(
-            selected.operators, protagonist_id
+            selected.operators, protagonist_id, resolved_target
         )
 
         has_effects = len(ops_executed) > 0
@@ -299,7 +304,7 @@ class TurnOrchestrator:
                 ACTION_OUTPUT,
                 {
                     "hyper_edge_id": selected.hyper_edge_id,
-                    "text": selected.output,
+                    "text": self._resolve_output(selected.output, resolved_target),
                     "protagonist_id": protagonist_id,
                 },
             )
@@ -362,7 +367,10 @@ class TurnOrchestrator:
     # ------------------------------------------------------------------
 
     def _execute_operators(
-        self, operators: list[dict[str, object]], protagonist_id: str
+        self,
+        operators: list[dict[str, object]],
+        protagonist_id: str,
+        resolved_target_id: str | None = None,
     ) -> list[str]:
         """Execute a list of operator dicts sequentially.
 
@@ -373,6 +381,7 @@ class TurnOrchestrator:
         """
         ops_executed: list[str] = []
         for op_data in operators:
+            op_data = self._bind_wildcard_operator(op_data, resolved_target_id)
             result = execute_operator(
                 self._state, op_data, protagonist_id, self._graph
             )
@@ -415,6 +424,43 @@ class TurnOrchestrator:
                 return ops_executed
 
         return ops_executed
+
+    def _bind_wildcard_operator(
+        self, op_data: dict[str, object], resolved_target_id: str | None
+    ) -> dict[str, object]:
+        """Bind only entity='*'; leave unresolved operators to normal validation."""
+        if resolved_target_id is None or op_data.get("entity") != "*":
+            return op_data
+        return {**op_data, "entity": resolved_target_id}
+
+    def _resolve_output(self, output: str, resolved_target_id: str | None) -> str:
+        """Substitute authored identity/component tokens once, after operators.
+
+        Targetless or missing targets fall back to the active actor's current
+        anchor. Unknown tokens and non-token text remain exactly as authored.
+        Components override identity keys; no world-specific formatting occurs.
+        """
+        if "{" not in output:
+            return output
+        target = self._state.entities.get(resolved_target_id)
+        if target is None:
+            anchor_id = self._state.get_entity(
+                self._state.active_protagonist_id
+            ).spatial_anchor
+            target = self._state.entities.get(anchor_id)
+        if target is None:
+            return output
+        values = {
+            "name": str(target.name),
+            "entity_id": target.entity_id,
+            "type": str(target.type),
+        }
+        values.update({key: str(value) for key, value in target.components.items()})
+        return re.sub(
+            r"\{(\w+)\}",
+            lambda match: values.get(match.group(1), match.group(0)),
+            output,
+        )
 
     # ------------------------------------------------------------------
     # Private: goal evaluation
