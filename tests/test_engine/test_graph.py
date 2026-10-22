@@ -1865,3 +1865,19 @@ def test_macro_edge_carries_only_generic_predicates():
     assert "forbids_flag" in names
     assert "death_message" in names
     assert "open" in names
+
+
+def test_resolve_target_id_preserves_authored_resolution_rules():
+    """Resolution reports the clique match; validation remains separate."""
+    engine = DualGraphEngine()
+    state = WorldState(active_protagonist_id="pilot")
+    before = state.to_dict()
+    cases = [
+        (None, "token", None), ("*", None, None),
+        ("*", "token", "token"), ("*", "player", "pilot"),
+        ("player", "token", "pilot"), ("literal", "token", "literal"),
+    ]
+    for target, parsed_target, expected in cases:
+        parsed = ParsedCommand(subject="pilot", verb="examinar", target=parsed_target)
+        assert engine.resolve_target_id(target, parsed, state) == expected
+    assert state.to_dict() == before

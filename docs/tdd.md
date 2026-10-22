@@ -495,6 +495,29 @@ El orquestador intercepta los siguientes comandos antes del parseo normal. Las p
 - `"ESPERAR"` → no-op (pasa el turno).
 - `"GRUPO"` → emite `protagonists_listed`.
 
+**Output y binding genéricos (T1c)**:
+
+- Tras validar la clique, `resolve_target_id(clique_target, parsed, state)` conserva
+  `None` para cliques sin target (aunque el comando nombre uno), usa el target
+  parseado para `"*"` y el valor declarado para targets concretos. Todos usan
+  `resolve_special_values`, incluido `"player"` → protagonista activo. Esta
+  consulta no valida presencia ni cambia estado.
+- Solo `entity: "*"` en un operador se sustituye por ese target resuelto, en una
+  copia del diccionario. Sin target se conserva el operador y su validación
+  habitual; otros campos y las plantillas almacenadas no se modifican.
+- Después de los operadores, `output` sustituye una sola vez tokens `{clave}`
+  (claves `\w+`) con `str(valor)`: `name`, `entity_id`, `type` y componentes del
+  target. Los componentes prevalecen sobre claves de identidad. Sin target, o
+  si ya no existe, se consulta el anchor **actual del protagonista activo**.
+  Sin anchor existente se conserva el texto. Tokens desconocidos, llaves no
+  reconocidas y texto literal quedan intactos; output vacío/None no emite evento.
+- No hay semántica especial de `{contents}`, humanización de pasajes ni binding
+  de instrumentos. Un componente llamado `contents` sigue siendo un componente
+  ordinario. Tampoco se añaden placeholders de contenedores como `@anchor`.
+- Los eventos mantienen su orden y payloads previos salvo el texto solicitado y
+  el efecto del target ligado. Fallos de microacciones conservan su semántica
+  previa de contador de turno; no se introduce rollback de operadores anteriores.
+
 ### 4.2 `engine/graph.py` — Motor de Grafo Dual
 
 **Responsabilidad**: Construye y consulta el Grafo Dual (Macro y Micro). Almacena las estructuras de grafo en memoria y provee métodos para búsqueda de aristas, validación de cliques y pathfinding.
