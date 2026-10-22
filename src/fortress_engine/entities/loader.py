@@ -9,7 +9,7 @@ Pydantic is used ONLY at load time — runtime objects are plain dataclasses.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field as dc_field
+from dataclasses import dataclass, field as dc_field, replace
 from pathlib import Path
 from typing import Any, cast
 
@@ -505,7 +505,11 @@ class EntityLoader:
     # -------------------------------------------------------------------
 
     def load_macro_edges(self, episode_id: str) -> list[MacroEdge]:
-        """Load MacroEdges from ``episode-XX/macros/*.yaml``."""
+        """Load declared edges, then append missing bidirectional reverses.
+
+        Reverse identity is swapped anchors plus exact passage name. Authored
+        reverses (including self-loops) are preserved without duplication.
+        """
         macro_dir = self._episode_dir(episode_id) / "macros"
 
         result: list[MacroEdge] = []
@@ -518,7 +522,27 @@ class EntityLoader:
                 )
             else:
                 result.append(_macro_edge_from_model(models))
-        return result
+        return self._expand_bidirectional(result)
+
+    @staticmethod
+    def _expand_bidirectional(edges: list[MacroEdge]) -> list[MacroEdge]:
+        """Append reverse copies, preserving declaration order and all fields."""
+        expanded = list(edges)
+        existing = {(e.from_anchor, e.to_anchor, e.passage_name) for e in edges}
+        for edge in edges:
+            if edge.direction != "bidirectional":
+                continue
+            reverse_key = (edge.to_anchor, edge.from_anchor, edge.passage_name)
+            if reverse_key in existing:
+                continue
+            expanded.append(replace(
+                edge,
+                macro_edge_id=f"{edge.macro_edge_id}_reverse",
+                from_anchor=edge.to_anchor,
+                to_anchor=edge.from_anchor,
+            ))
+            existing.add(reverse_key)
+        return expanded
 
     def load_hyper_edges(self, episode_id: str) -> list[HyperEdge]:
         """Load HyperEdges from ``episode-XX/actions/*.yaml`` (recursive)."""
