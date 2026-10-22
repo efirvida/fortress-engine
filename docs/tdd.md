@@ -1287,7 +1287,10 @@ class EntityLoader:
         ...
 
     def load_episodes(self) -> list['Episode']:
-        """Carga todos los episodios desde episodes/*.yaml."""
+        """Carga todos los episodios desde episodes/*.yaml.
+
+        Omite exactamente el archivo `answers.yaml` (ver §4.20).
+        """
         ...
 
     def load_shared_entities(self, episode_id: str) -> list[Entity]:
@@ -1790,6 +1793,36 @@ def candidates(runtime: GameRuntime) -> CandidateSet: ...
 | Modelo relajado | Hechos `at`, `loc`, `gone`, `flag`, `comp` y el derivado `here`. Solo suma efectos positivos (FLAG `false` y borrados no aportan); las precondiciones negativas y los `forbids_*` se ignoran. Sirve únicamente para ordenar. |
 | `h` / `rank` | `h` es h-add sobre el cierre sin borrados contra el goal del episodio (átomos negativos cuestan 0); un átomo no derivable cuesta `UNREACHED_COST` (100), nunca infinito: el modelo subestima al motor, por lo que no prueba imposibilidad. `rank` devuelve una permutación de las mismas acciones (habilitadas primero, luego menor `h` tras la acción, luego orden original); no elimina ninguna y es determinista. |
 | No-objetivos | Búsqueda, veredictos `unreachable`, AnswerBook y límites numéricos de capacidad (la capacidad la decide el motor, ver `inventory_capacity`). |
+
+### 4.20 `autoplay/answers.py` — AnswerBook (herramienta de desarrollo)
+
+**Responsabilidad**: base de conocimiento de respuestas que un solucionador puede pronunciar en pasajes con `requires_text`. Es un módulo independiente: solo importa `unicodedata`, `dataclasses`, `pathlib`, `typing`, `yaml` y `EntityLoader`.
+
+**Interfaz pública** (`fortress_engine.autoplay` exporta `AnswerBook` y `normalize_answer`):
+
+```python
+def normalize_answer(text: str) -> str: ...      # NFKD + minúsculas + sin marcas combinantes
+
+@dataclass(frozen=True)
+class AnswerBook:
+    episode_id: str
+    world_path: Path | str
+    answers_path: Path | str | None = None       # reemplaza SOLO el archivo curado
+    @property
+    def answers(self) -> list[str]: ...
+```
+
+**Contrato**:
+
+| Tema | Decisión |
+|------|----------|
+| Derivadas | Todo `requires_text` de las aristas Macro del episodio elegido (`EntityLoader.load_macro_edges`), tal como fueron escritas. |
+| Curadas | `episodes/answers.yaml`: mapa `episode_id -> {passwords: [...], riddle_answers: [...]}`. Se leen `passwords` y luego `riddle_answers`; un valor que no es lista o un ítem que no es `str` se descarta. Archivo ausente, raíz que no es mapa o episodio sin entrada: lista vacía, sin error. |
+| `answers_path` | Reemplaza únicamente el archivo curado; las derivadas siguen aplicando. |
+| Fusión | Primero derivadas y luego curadas. Se deduplica por `normalize_answer` conservando la primera grafía; las claves vacías se descartan. La salida se ordena por esa clave. |
+| Errores propagados | Un YAML inválido (`yaml.YAMLError`) o un `world_path` inexistente (`FileNotFoundError` del loader) no se capturan. |
+
+**Regla del loader**: `load_episodes` omite el nombre de archivo exacto `answers.yaml` en `episodes/`, porque no es un episodio y fallaría la validación `EpisodeYAML`. Cualquier otro nombre (`answers.yml`, `Answers.yaml`, `mis-answers.yaml`) se sigue validando como episodio; los subdirectorios quedan fuera del glob no recursivo.
 
 ---
 

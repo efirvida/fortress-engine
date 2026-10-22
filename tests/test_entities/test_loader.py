@@ -1049,3 +1049,124 @@ carry_over:
     assert conds[0].type == "flag_is_set"
     assert conds[0].params == {"flag": "escaped"}
     assert all(isinstance(c, (GoalCondition, dict)) for c in conds)
+
+
+# ===================================================================
+# load_episodes — exact-name ``answers.yaml`` exemption
+# ===================================================================
+
+_ANSWERS_YAML = (
+    "episode-01:\n"
+    "  passwords: [clave]\n"
+    "  riddle_answers: [respuesta]\n"
+)
+
+
+def _episode_file(episode_id: str, order: int) -> str:
+    return (
+        f'id: "{episode_id}"\n'
+        f'name: "Episode {order}"\n'
+        f"order: {order}\n"
+        "requires: []\n"
+        'start_anchor: "room_01"\n'
+        "goal:\n"
+        "  conditions: []\n"
+        '  output: "Win!"\n'
+        "carry_over:\n"
+        "  inventory: []\n"
+        "  flags: []\n"
+    )
+
+
+def _episodes_world(tmp_path, name, extra_files=None):
+    base = tmp_path / name
+    _write_yaml(base / "world.yaml", "world_id: test\nname: Test\n")
+    _write_yaml(base / "episodes" / "episode-01.yaml", _episode_file("episode-01", 1))
+    _write_yaml(base / "episodes" / "episode-02.yaml", _episode_file("episode-02", 2))
+    for filename, content in (extra_files or {}).items():
+        _write_yaml(base / "episodes" / filename, content)
+    return base
+
+
+def test_load_episodes_skips_answers_yaml_exactly(tmp_path):
+    """A world with episodes/answers.yaml loads exactly the same episodes."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    without = EntityLoader(str(_episodes_world(tmp_path, "plain"))).load_episodes()
+    with_answers = EntityLoader(
+        str(_episodes_world(tmp_path, "curated", {"answers.yaml": _ANSWERS_YAML}))
+    ).load_episodes()
+
+    assert [e.id for e in without] == ["episode-01", "episode-02"]
+    assert with_answers == without
+    assert [e.id for e in with_answers] == ["episode-01", "episode-02"]
+
+
+def test_load_episodes_answers_yaml_sorts_between_episodes_without_effect(tmp_path):
+    """answers.yaml sorts between names but never shifts or drops episodes."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = _episodes_world(tmp_path, "mid")
+    _write_yaml(base / "episodes" / "aaa.yaml", _episode_file("aaa", 0))
+    _write_yaml(base / "episodes" / "zzz.yaml", _episode_file("zzz", 3))
+    _write_yaml(base / "episodes" / "answers.yaml", _ANSWERS_YAML)
+
+    ids = [e.id for e in EntityLoader(str(base)).load_episodes()]
+
+    assert ids == ["aaa", "episode-01", "episode-02", "zzz"]
+
+
+def test_load_episodes_only_answers_yaml_yields_no_episodes(tmp_path):
+    """An episodes/ dir holding only answers.yaml has no episodes."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = tmp_path / "only_answers"
+    _write_yaml(base / "world.yaml", "world_id: test\nname: Test\n")
+    _write_yaml(base / "episodes" / "answers.yaml", _ANSWERS_YAML)
+
+    assert EntityLoader(str(base)).load_episodes() == []
+
+
+def test_load_episodes_answers_yaml_content_is_never_parsed(tmp_path):
+    """The exempt file is skipped before parsing, even if it is invalid YAML."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = _episodes_world(
+        tmp_path, "broken", {"answers.yaml": "episode-01: [unclosed\n"}
+    )
+
+    assert [e.id for e in EntityLoader(str(base)).load_episodes()] == [
+        "episode-01",
+        "episode-02",
+    ]
+
+
+@pytest.mark.parametrize(
+    "filename",
+    ["answers.yml", "Answers.yaml", "answers-extra.yaml", "my-answers.yaml", "answer.yaml"],
+)
+def test_load_episodes_other_non_episode_yaml_still_fails(tmp_path, filename):
+    """Only the exact filename answers.yaml is exempt; others still validate."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = _episodes_world(tmp_path, "strict", {filename: _ANSWERS_YAML})
+
+    with pytest.raises(ValueError) as excinfo:
+        EntityLoader(str(base)).load_episodes()
+
+    message = str(excinfo.value)
+    assert message.startswith("Invalid episode in ")
+    assert str(base / "episodes" / filename) in message
+
+
+def test_load_episodes_answers_yaml_in_subdirectory_is_not_exempt(tmp_path):
+    """A nested answers.yaml is outside the non-recursive episodes glob."""
+    from fortress_engine.entities.loader import EntityLoader
+
+    base = _episodes_world(tmp_path, "nested")
+    _write_yaml(base / "episodes" / "sub" / "answers.yaml", _ANSWERS_YAML)
+
+    assert [e.id for e in EntityLoader(str(base)).load_episodes()] == [
+        "episode-01",
+        "episode-02",
+    ]
