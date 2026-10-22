@@ -453,6 +453,11 @@ class EntityLoader:
 
         result: list[Episode] = []
         for path in _glob_yaml(episodes_dir):
+            # ``answers.yaml`` is the solver's curated knowledge base (per-
+            # episode mapping), not an episode.  The exemption is filename-
+            # exact so any other stray episode file is still validated.
+            if path.name == "answers.yaml":
+                continue
             raw = _load_yaml(path)
             model = _validate_pydantic(EpisodeYAML, raw, path, "episode")
             result.append(_episode_from_model(cast(EpisodeYAML, model)))
