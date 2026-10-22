@@ -1881,3 +1881,55 @@ def test_resolve_target_id_preserves_authored_resolution_rules():
         parsed = ParsedCommand(subject="pilot", verb="examinar", target=parsed_target)
         assert engine.resolve_target_id(target, parsed, state) == expected
     assert state.to_dict() == before
+
+
+# ===================================================================
+# iter_hyper_edges
+# ===================================================================
+
+
+def test_iter_hyper_edges_empty(capsys):
+    """A graph with anchors but no hyper edges yields nothing, repeatedly."""
+    from fortress_engine.engine.graph import DualGraphEngine
+
+    engine = DualGraphEngine()
+    engine.add_anchor(_make_entity("a"))
+
+    assert list(engine.iter_hyper_edges()) == []
+    assert list(engine.iter_hyper_edges()) == []
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == ("", "")
+
+
+def test_iter_hyper_edges_order_references_and_per_anchor_repeats(capsys):
+    """Order is anchor group, verb group, then priority-desc; refs are originals."""
+    from dataclasses import asdict
+
+    from fortress_engine.engine.graph import Clique, DualGraphEngine, HyperEdge
+
+    def edge(edge_id: str, verb: str, priority: int) -> HyperEdge:
+        return HyperEdge(edge_id, edge_id, priority, Clique(verb=verb, target="t"))
+
+    engine = DualGraphEngine()
+    low_take = edge("low_take", "take", 0)
+    look = edge("look", "look", 5)
+    high_take = edge("high_take", "take", 9)
+    shared = edge("shared", "push", 1)
+    engine.add_hyper_edge("z", low_take)
+    engine.add_hyper_edge("z", look)
+    engine.add_hyper_edge("z", high_take)
+    engine.add_hyper_edge("a", shared)
+    engine.add_hyper_edge("z", shared)  # registered under two anchors
+    originals = [low_take, look, high_take, shared]
+    before = [asdict(e) for e in originals]
+
+    for _ in range(2):
+        result = list(engine.iter_hyper_edges())
+        # "z" group first (first insertion): take group [high, low], look,
+        # then push; then the "a" group. The shared edge appears once per anchor.
+        expected = [high_take, low_take, look, shared, shared]
+        assert len(result) == 5
+        assert all(a is b for a, b in zip(result, expected, strict=True))
+    assert [asdict(e) for e in originals] == before
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == ("", "")

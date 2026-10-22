@@ -570,6 +570,16 @@ class DualGraphEngine:
         """
         ...
 
+    def iter_hyper_edges(self) -> Iterator[HyperEdge]:
+        """Itera referencias a las Hiper-Aristas registradas sin modificar el grafo.
+
+        Orden: grupos de anchor según su primera inserción, luego grupos de
+        verbo, luego prioridad descendente. Una arista registrada en varias
+        anchors se produce una vez por anchor (es el mismo objeto). Sin
+        Hiper-Aristas, no produce valores.
+        """
+        ...
+
     def get_macro_edge_by_passage_name(
         self, anchor_id: str, passage_name: str
     ) -> MacroEdge | None:
@@ -1740,6 +1750,46 @@ class GameRuntime:
 | `restore` | Muta **en el sitio** (mismos objetos `WorldState`, `Entity`, `components`, `flag_book` y aristas); restablece al baseline y aplica el diff con copias profundas. |
 | `state_key` | Clave hashable y canónica (entidades, banderas verdaderas, aristas); excluye `turn_number` y banderas falsas. |
 | Capacidad | El runtime no define ningún `max_weight` por defecto: ausente, `null` o `false` es ilimitada y un valor numérico (incluido `0`) es un límite explícito, tal como lo decide el motor (PRD 4.4). |
+
+### 4.19 `autoplay/domain.py` — Dominio de acciones (herramienta de desarrollo)
+
+**Responsabilidad**: Convierte lo que el mundo define (aristas Macro, Hiper-Aristas, cliques, operadores) en comandos candidatos verificados por el parser real, y ofrece una heurística **solo consultiva**. No hace búsqueda ni emite veredictos. El motor real, vía `GameRuntime`, sigue siendo la función de transición.
+
+**Dependencias**: `GameRuntime` y `DualGraphEngine.iter_macro_edges()` / `iter_hyper_edges()`. No importa el motor de reglas ni `Entity.type`.
+
+**Interfaz pública** (`fortress_engine.autoplay` exporta `ActionDomain`, `CandidateSet`, `CommandSpec`, `RAction`, `Rejected`, `candidates`):
+
+```python
+@dataclass(frozen=True)
+class CommandSpec:   # kind "move"|"act", verb, target, context, instrument, passage, speech, edge_id
+@dataclass(frozen=True)
+class RAction:       # spec, pre: frozenset[Fact], add: frozenset[Fact], command: str | None
+@dataclass(frozen=True)
+class CandidateSet:  # actions, unrenderable: tuple[Rejected, ...], skipped: tuple[Rejected, ...]
+
+class ActionDomain:
+    def __init__(self, runtime: GameRuntime) -> None: ...
+    actions: tuple[RAction, ...]                    # modelo relajado estático (command=None)
+    def candidates(self) -> CandidateSet: ...
+    def facts(self) -> frozenset[Fact]: ...
+    def h(self, facts) -> float: ...                # puro, consultivo, siempre finito
+    def rank(self, candidates, facts) -> CandidateSet: ...
+
+def candidates(runtime: GameRuntime) -> CandidateSet: ...
+```
+
+**Contrato**:
+
+| Tema | Decisión |
+|------|----------|
+| Movimiento | Una acción por arista Macro que sale del anchor actual (`iter_macro_edges`). Texto: `"{movement_verbs[0]} {passage}"`; si la arista tiene `requires_text` y sigue cerrada se añade `"{speech_markers[0]} {texto}"`. Las palabras salen del `Vocabulary`, nunca de literales. |
+| Hiper-Aristas | Las registradas en el anchor actual. Los comodines `target`/`instrument` `"*"` se concretan sobre las entidades presentes (anchor + inventario, sin el protagonista). El comando usa `Entity.name` y las preposiciones `recipient[0]` (context) e `instrument[0]` del vocabulario. |
+| Verificación | Todo comando se pasa por `runtime.parse()`; solo entra en `actions` si verbo, target, context, instrument (y texto hablado) se resuelven a lo previsto. |
+| Nada se pierde | `unrenderable`: el parser no reproduce la acción (o falta vocabulario), con razón. `skipped`: faltan participantes concretos o no hay entidades para un comodín, con razón. Los predicados de clique (flags, instrumento, capacidad) **no** filtran: los valida el motor. |
+| Protagonista | `runtime.protagonist_id`; sin literales ni consulta de `Entity.type`. Las salas son los extremos de las aristas Macro. |
+| Modelo relajado | Hechos `at`, `loc`, `gone`, `flag`, `comp` y el derivado `here`. Solo suma efectos positivos (FLAG `false` y borrados no aportan); las precondiciones negativas y los `forbids_*` se ignoran. Sirve únicamente para ordenar. |
+| `h` / `rank` | `h` es h-add sobre el cierre sin borrados contra el goal del episodio (átomos negativos cuestan 0); un átomo no derivable cuesta `UNREACHED_COST` (100), nunca infinito: el modelo subestima al motor, por lo que no prueba imposibilidad. `rank` devuelve una permutación de las mismas acciones (habilitadas primero, luego menor `h` tras la acción, luego orden original); no elimina ninguna y es determinista. |
+| No-objetivos | Búsqueda, veredictos `unreachable`, AnswerBook y límites numéricos de capacidad (la capacidad la decide el motor, ver `inventory_capacity`). |
 
 ---
 
